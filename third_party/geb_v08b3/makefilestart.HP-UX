@@ -1,0 +1,16 @@
+SHELL = /bin/sh
+
+OS = HP-UX
+
+CC = aCC +O4 -w
+#Alternatively use GNU gcc:
+#CCpath = ${HOME}/gcc.HP-UX/installed/opt/gcc/bin/
+#http://hpux.cae.wisc.edu/hppd/hpux/Gnu/gcc-2.95.2/ 
+
+CCpath =
+CCdefs = -DgebHPUX
+CCc_include_dir  =
+CCl_lib_dir      =
+CCl_tail_options =
+
+code_version = $$(pwd | awk -F/ '{n=NF-1; print $$n}' | awk -F. '{print $$1}' | sed s/.*geb_//)

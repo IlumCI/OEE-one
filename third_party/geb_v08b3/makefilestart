@@ -1,0 +1,13 @@
+#default makefilestart [also always read on first pass]
+
+SHELL = /bin/sh
+
+OS = UnknownOS
+
+CCpath =
+CCdefs =
+CCc_include_dir  = -I${OPENWINHOME}/include -I/usr/X11/include -I/usr/X11R6/include
+CCl_lib_dir      = -L/usr/X11/lib -L/usr/X11R6/lib
+CCl_tail_options =
+
+code_version = v*

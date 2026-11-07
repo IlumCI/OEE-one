@@ -1,0 +1,19 @@
+with g0
+    autoscale
+    world ymax 1
+    s0 linestyle 1
+    s0 color 1
+    s1 linestyle 2
+#    s1 color 1
+    xaxis  tick minor 0
+    xaxis  label "Activity"
+    xaxis  ticklabel format power
+    yaxis  tick major 2
+    yaxis  tick minor 0
+    yaxis  label "Fraction of Activity Counts"
+    yaxis  ticklabel format power
+    legend on
+    legend x1 0.5
+    legend y1 0.7
+    legend string 0 "Real"
+    legend string 1 "Neutral Shadow"

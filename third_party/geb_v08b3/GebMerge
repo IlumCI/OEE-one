@@ -1,0 +1,88 @@
+#!/bin/bash
+
+if [ ! $1 ] ; then echo usage: $0 DIRECTORY                                       ; exit  1 ; fi
+
+PROG=`which $0`
+DIR=$1
+TPROG=`which ./GebTruncateToSnapshot`
+
+if [ ! -d $DIR ]                                          ; then echo $0 error  2 ; exit  2 ; fi
+#if [ -L $DIR/GebTruncateToSnapshot ] ; then
+if [ -f $DIR/GebTruncateToSnapshot ] ; then
+  if ! rm $DIR/GebTruncateToSnapshot                      ; then echo $0 error  3 ; exit  3 ; fi
+fi
+#if ! ln -s $TPROG $DIR/                                   ; then echo $0 error  4 ; exit  4 ; fi
+if ! ln    $TPROG $DIR/                                   ; then echo $0 error  4 ; exit  4 ; fi
+if ! cd $DIR                                              ; then echo $0 error  5 ; exit  5 ; fi
+
+if [ -f snapshot.geb ] ; then
+  if [ -f snapshot.geb.bz2 ]                              ; then echo $0 error  6 ; exit  6 ; fi
+  if ! $(cat snapshot.geb | bzip2 > snapshot.geb.bz2.new) ; then echo $0 error  7 ; exit  7 ; fi
+  if ! mv snapshot.geb.bz2.new snapshot.geb.bz2           ; then echo $0 error  8 ; exit  8 ; fi
+  if ! rm snapshot.geb                                    ; then echo $0 error  9 ; exit  9 ; fi
+else
+  if [ ! -f snapshot.geb.bz2 ]                            ; then echo $0 error 10 ; exit 10 ; fi
+fi
+
+if [ ! -d sofar ] ; then
+  if [ -d sofar.before_truncations ] ; then 
+    mv sofar.before_truncations sofar
+  fi
+fi
+
+if [ -d sofar ] ; then
+  if [ -f geb.out ] ; then if [ -f geb.cont ]             ; then echo $0 error 11 ; exit 11 ; fi ; fi
+  if [ -f geb.out ] ; then mv geb.out geb.cont ; fi
+  if [ -f geb.out.bz2 ] ; then if [ -f geb.cont.bz2 ]     ; then echo $0 error 12 ; exit 12 ; fi ; fi
+  if [ -f geb.out.bz2 ] ; then mv geb.out.bz2 geb.cont.bz2 ; fi
+  if [ ! -f geb.err ] ; then if [ ! -f geb.err.bz2 ] ; then touch geb.err ; fi ; fi
+  for f in geb.cont geb.err rulestat SHADOWrulestat rulestat.verifier SHADOWrulestat.verifier ; do
+    if [ -f $f.bz2 ] ; then
+      if [ -f $f ]                                        ; then echo $0 error 13 ; exit 13 ; fi
+      if ! $(bunzip2 -k $f.bz2 )                          ; then echo $0 error 14 ; exit 14 ; fi
+      if ! rm $f.bz2                                      ; then echo $0 error 16 ; exit 16 ; fi
+    else
+      if [ ! -f $f ]                                      ; then echo $0 error 17 ; exit 17 ; fi
+    fi
+  done
+  if ! $PROG sofar                                        ; then echo $0 error 18 ; exit 18 ; fi
+  C=`echo sofar/snapshot.geb.bz2* | wc -w | awk '{print $1}'`
+  if [ ! $C ]                                             ; then echo $0 error 19 ; exit 19 ; fi
+  if [ -f sofar/snapshot.geb.bz2.$C ]                     ; then echo $0 error 20 ; exit 20 ; fi
+  if [ -d GebMerge.new ]                                  ; then echo $0 error 21 ; exit 21 ; fi
+  if ! mkdir GebMerge.new                                 ; then echo $0 error 22 ; exit 22 ; fi
+  if [ -f sofar/snapshot.geb.bz2.1 ] ; then
+    if ! mv sofar/snapshot.geb.bz2.* GebMerge.new/        ; then echo $0 error 23 ; exit 23 ; fi
+  fi
+  if ! mv sofar/snapshot.geb.bz2 GebMerge.new/snapshot.geb.bz2.$C ; then
+                                                                 echo $0 error 24 ; exit 24 ; fi
+  if ! mv sofar/geb.err GebMerge.new/                     ; then echo $0 error 25 ; exit 25 ; fi
+  if ! $(awk '{print "GebMerge.'$C': "$0}' geb.err >> GebMerge.new/geb.err) ; then
+                                                                 echo $0 error 26 ; exit 26 ; fi
+  if ! rm geb.err                                         ; then echo $0 error 27 ; exit 27 ; fi
+  if ! mv sofar/geb.out GebMerge.new/                     ; then echo $0 error 28 ; exit 28 ; fi
+  if ! $(cat geb.cont >> GebMerge.new/geb.out)            ; then echo $0 error 29 ; exit 29 ; fi
+  if ! rm geb.cont                                        ; then echo $0 error 30 ; exit 30 ; fi
+  for f in rulestat SHADOWrulestat ; do
+    if ! mv sofar/$f GebMerge.new/                        ; then echo $0 error 31 ; exit 31 ; fi
+    if ! $(tail +6 $f >> GebMerge.new/$f)                 ; then echo $0 error 32 ; exit 32 ; fi
+    if ! rm $f                                            ; then echo $0 error 33 ; exit 33 ; fi
+  done
+  for f in rulestat.verifier SHADOWrulestat.verifier ; do
+    if ! mv sofar/$f GebMerge.new/                        ; then echo $0 error 34 ; exit 34 ; fi
+    if ! $(cat $f >> GebMerge.new/$f)                     ; then echo $0 error 35 ; exit 35 ; fi
+    if ! rm $f                                            ; then echo $0 error 36 ; exit 36 ; fi
+  done
+  if ! rmdir sofar                                        ; then echo $0 error 37 ; exit 37 ; fi
+  if ! mv GebMerge.new/* .                                ; then echo $0 error 38 ; exit 38 ; fi
+  if ! rmdir GebMerge.new                                 ; then echo $0 error 39 ; exit 39 ; fi
+fi
+
+if ! $TPROG                                               ; then echo $0 error 40 ; exit 40 ; fi
+
+#if [ -L GebTruncateToSnapshot ] ; then
+if [ -f GebTruncateToSnapshot ] ; then
+  if ! rm GebTruncateToSnapshot                           ; then echo $0 error 41 ; exit 41 ; fi
+fi
+
+exit 0

@@ -1,0 +1,7 @@
+ps linewidth begin 2
+with g0
+    xaxis  label "Time"
+    yaxis  label "Activity"
+    s0 symbol 1
+    s0 linestyle 0
+    autoscale

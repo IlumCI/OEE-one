@@ -1,0 +1,28 @@
+SHELL = /bin/sh
+
+OS = IRIX64
+
+#IRIX 64 users will need to remove/comment out all #warning lines
+#Use something like:
+# /bin/sh 
+# mkdir tmp
+# cp -p *h *cpp tmp/
+# for f in *h *cpp ; do grep -v '^#warning' tmp/$f > $f ; done
+# rm -rf tmp
+# exit
+
+CCpath =
+CCdefs =
+CC = DCC -O3 -Ddisable_exceptions
+CCc_include_dir  = 
+CCl_lib_dir      = -L/usr/lib
+CCl_tail_options =
+
+code_version = `pwd | awk -F/ '{print $$(NF-1)}' | \
+                awk -F. '{print $$1}' | awk -F_ '{print $$2}'`
+
+#code_version = $(shell pwd | awk -F/ '{print $$(NF-1)}' | \
+#                       awk -F. '{print $$1}' | awk -F_ '{print $$2}')
+
+#code_version :sh = pwd | awk -F/ '{print $(NF-1)}' | \
+#                 awk -F. '{print $1}' | awk -F_ '{print $2}'

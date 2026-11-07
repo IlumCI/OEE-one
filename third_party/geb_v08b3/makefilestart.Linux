@@ -1,0 +1,19 @@
+SHELL = /bin/sh
+
+OS = Linux
+
+#MACHINETYPE = $(shell csh -c 'echo $$MACHTYPE')
+
+CCpath =
+CCdefs = -DgebLinux
+CCc_include_dir  = -I/usr/X11/include -I/usr/X11R6/include
+CCl_lib_dir      = -L/usr/X11/lib -L/usr/X11R6/lib -L/usr/X11R6/lib64
+#Dynamic:
+CCl_tail_options = 
+#Semi-static (may not work on all distributions and releases):
+#CCl_tail_options = -Wl,-lX11,-lm,-lc,-static
+#Static:
+#CCl_tail_options = -static -lX11 -lm -ldl -lpthread
+
+code_version = $(shell pwd | awk -F/ '{print $$(NF-1)}' | \
+                       awk -F. '{print $$1}' | awk -F_ '{print $$2}')

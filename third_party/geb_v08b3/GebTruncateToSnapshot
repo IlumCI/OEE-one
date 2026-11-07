@@ -1,0 +1,45 @@
+#!/bin/bash
+
+if [ -f snapshot.geb ] ; then
+  if [ -f snapshot.geb.bz2 ]                              ; then echo $0 error  1 ; exit  1 ; fi
+  if ! $(cat snapshot.geb | bzip2 > snapshot.geb.bz2.new) ; then echo $0 error  2 ; exit  2 ; fi
+  if ! mv snapshot.geb.bz2.new snapshot.geb.bz2           ; then echo $0 error  3 ; exit  3 ; fi
+  if ! rm snapshot.geb                                    ; then echo $0 error  4 ; exit  4 ; fi
+else
+  if [ ! -f snapshot.geb.bz2 ]                            ; then echo $0 error  5 ; exit  5 ; fi
+fi
+
+if [ -f geb.cont ]                                        ; then echo $0 error  6 ; exit  6 ; fi
+if [ -f geb.cont.bz2 ]                                    ; then echo $0 error  7 ; exit  7 ; fi
+
+if [ ! -f geb.err ] ; then if [ ! -f geb.err.bz2 ] ; then touch geb.err ; fi ; fi
+for f in geb.out geb.err rulestat SHADOWrulestat rulestat.verifier SHADOWrulestat.verifier ; do
+  if [ -f $f.bz2 ] ; then
+    if [ -f $f ]                                          ; then echo $0 error  8 ; exit  8 ; fi
+    if ! $(bunzip2 -k $f.bz2 )                            ; then echo $0 error  9 ; exit  9 ; fi
+    if ! rm $f.bz2                                        ; then echo $0 error 11 ; exit 11 ; fi
+  else
+    if [ ! -f $f ]                                        ; then echo $0 error 12 ; exit 12 ; fi
+  fi
+done
+
+N=`bzcat snapshot.geb.bz2 | head -2 | tail -1 | awk '{print $2}'`
+if [ ! $N ]                                               ; then echo $0 error 13 ; exit 13 ; fi
+
+if ! $(awk -FT 'BEGIN {while (getline && ($2 != '$N')) print; print; while (getline && !match($0,"Autofile: snapshot written to file")) print; print}' geb.out > geb.out.new) ; then
+                                                                 echo $0 error 14 ; exit 14 ; fi
+T=`grep '^time: T' geb.out.new | tail -1 | awk -FT '{print $2}'`
+if [ ! $T ]                                               ; then echo $0 error 15 ; exit 15 ; fi
+if [ $T -ne $N ]                                          ; then echo $0 error 16 ; exit 16 ; fi
+if ! mv -f geb.out.new geb.out                            ; then echo $0 error 17 ; exit 17 ; fi
+
+for f in rulestat SHADOWrulestat rulestat.verifier SHADOWrulestat.verifier ; do
+  if ! $(awk -F: 'BEGIN {while (getline && ($1 != '$N')) print; print}' $f > $f.new) ; then
+                                                                 echo $0 error 18 ; exit 18 ; fi
+  T=`tail -1 $f.new | awk -F: '{print $1}'`
+  if [ ! $T ]                                             ; then echo $0 error 19 ; exit 19 ; fi
+  if [ $T -ne $N ]                                        ; then echo $0 error 20 ; exit 20 ; fi
+  if ! mv -f $f.new $f                                    ; then echo $0 error 21 ; exit 21 ; fi
+done
+
+exit 0

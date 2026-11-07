@@ -1,0 +1,18 @@
+SHELL :sh= which sh
+
+OS = SunOS
+
+CCpath =
+CCdefs =
+CCc_include_dir  = -I${OPENWINHOME}/include
+CCl_lib_dir      =
+CCl_tail_options = -lrt
+
+#note: the two code_version sections must be in this order
+#      or will fail on machines suited to the second:
+
+code_version = $(shell pwd | awk -F/ '{print $$(NF-1)}' | \
+                       awk -F. '{print $$1}' | awk -F_ '{print $$2}')
+
+code_version :sh = pwd | awk -F/ '{print $(NF-1)}' | \
+                 awk -F. '{print $1}' | awk -F_ '{print $2}'

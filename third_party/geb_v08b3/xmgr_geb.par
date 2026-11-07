@@ -1,0 +1,55 @@
+title "Geb Statistics"
+title color 2
+title linewidth 2
+subtitle "running averages"
+print psmonop "lpr"
+#print psmonop "isisprint"
+print to file "gebstats.eps"
+xaxis  label "Time"
+yaxis  label "Number of organisms"
+legend on
+legend box on
+legend x1 0.6
+legend string 0 "mean age"
+legend string 1 "oldest"
+legend string 2 "youngest"
+legend string 3 "number"
+legend string 4 "# reproductions"
+legend string 5 "# black"
+legend string 6 "# blue"
+legend string 7 "# red"
+legend string 8 "# green"
+runavg(s6,100)
+# => s9
+legend string 9 "reproducing"
+s9 color 4
+s9 linestyle 2
+runavg(s7,100)
+# => s10
+legend string 10 "killing"
+s10 color 2
+s10 linestyle 1
+runavg(s5,100)
+# => s11
+legend string 11 "neither"
+s11 color 1
+s11 linestyle 4
+runavg(s3,100)
+# => s12
+legend string 12 "total"
+s12 color 8
+s12 linestyle 1
+s12 linewidth 4
+s0 ignore
+s1 ignore
+s2 ignore
+s3 ignore
+s4 ignore
+s5 ignore
+s6 ignore
+s7 ignore
+s8 ignore
+#
+s11 ignore
+s12 ignore
+autoscale
