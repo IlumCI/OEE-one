@@ -1,0 +1,40 @@
+{
+  "run_dir": "runs/resets_s3",
+  "variant": "resets",
+  "grouping": "pb",
+  "source": "presence",
+  "null_control": true,
+  "snapshots": 961,
+  "last_time": 961000,
+  "a0": 29,
+  "most_negative_normalised_activity": -29,
+  "diversity": {
+    "mean_second_half": 22.665280665280665,
+    "trend": {
+      "slope_second_half": -5.46448087431694e-06,
+      "slope_last_quarter": -5.092592592592592e-05,
+      "mk_z_second_half": -0.8681541052435273
+    }
+  },
+  "normalised_median_activity": {
+    "final": 0.0,
+    "trend": {
+      "slope_second_half": 0.0,
+      "slope_last_quarter": 0.0,
+      "mk_z_second_half": 0.44647925412524264
+    }
+  },
+  "normalised_total_activity": {
+    "final": -13.0,
+    "trend": {
+      "slope_second_half": 0.0,
+      "slope_last_quarter": -0.00010714285714285714,
+      "mk_z_second_half": -0.27284843307653717
+    }
+  },
+  "normalised_new_activity": {
+    "mean_second_half": 0.0,
+    "fraction_snapshots_positive": 0.0
+  },
+  "classification": "1 (no significant new activity)"
+}

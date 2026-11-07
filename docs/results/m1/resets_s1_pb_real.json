@@ -1,0 +1,40 @@
+{
+  "run_dir": "runs/resets_s1",
+  "variant": "resets",
+  "grouping": "pb",
+  "source": "presence",
+  "null_control": false,
+  "snapshots": 1195,
+  "last_time": 1195000,
+  "a0": 26,
+  "most_negative_normalised_activity": -26,
+  "diversity": {
+    "mean_second_half": 42.98327759197324,
+    "trend": {
+      "slope_second_half": 5.882352941176471e-06,
+      "slope_last_quarter": 3.846153846153846e-05,
+      "mk_z_second_half": 0.3564031749049612
+    }
+  },
+  "normalised_median_activity": {
+    "final": 19.0,
+    "trend": {
+      "slope_second_half": 1.7543859649122806e-05,
+      "slope_last_quarter": 1.0638297872340426e-05,
+      "mk_z_second_half": 3.789128491094851
+    }
+  },
+  "normalised_total_activity": {
+    "final": 1719.0,
+    "trend": {
+      "slope_second_half": 0.0015384615384615385,
+      "slope_last_quarter": 0.0020506912442396314,
+      "mk_z_second_half": 3.5077575635383025
+    }
+  },
+  "normalised_new_activity": {
+    "mean_second_half": 0.19773594629719587,
+    "fraction_snapshots_positive": 0.26421404682274247
+  },
+  "classification": "3b (unbounded median activity, bounded D)"
+}
