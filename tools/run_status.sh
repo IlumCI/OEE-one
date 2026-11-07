@@ -2,7 +2,7 @@
 # One-line-per-run status of supervised Geb runs.
 # Usage: tools/run_status.sh <runs_dir>
 runs="${1:-runs}"
-echo "uptime: $(uptime -p)  supervisor: $(pgrep -fc supervise_runs.sh)  sims: $(pgrep -fc 'bin_ckpt/oee_geb')  disk: $(df -h --output=avail "$runs" | tail -1 | tr -d ' ')"
+echo "uptime: $(uptime -p)  supervisor: $(pgrep -fc '^bash tools/supervise_runs.sh')  sims: $(pgrep -fc '^/.*/bin_ckpt/oee_geb')  disk: $(df -h --output=avail "$runs" | tail -1 | tr -d ' ')"
 while read -r name _; do
   [[ -z "$name" || "$name" == \#* ]] && continue
   d="$runs/$name"
