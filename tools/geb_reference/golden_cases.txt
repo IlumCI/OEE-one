@@ -1,0 +1,7 @@
+# name variant seed stopat extra-args
+resets_s1_t5000      resets     1 5000
+resets_s2_t5000      resets     2 5000
+no_resets_s1_t5000   no_resets  1 5000
+no_resets_s2_t5000   no_resets  2 5000
+resets_s3_L12_N12    resets     3 5000 -length 12 -neurons 12
+no_resets_s3_L12_N12 no_resets  3 5000 -length 12 -neurons 12

@@ -1,0 +1,6 @@
+Geb version 08b3. Copyright (C) Alastair Channon.
+
+Could not open display 
+Running without a display
+
+Process Terminated

@@ -1,0 +1,16 @@
+{
+  "version": 6,
+  "configurePresets": [
+    {"name": "release", "binaryDir": "build/rel", "cacheVariables": {"CMAKE_BUILD_TYPE": "Release"}},
+    {"name": "asan", "binaryDir": "build/asan",
+     "cacheVariables": {"CMAKE_BUILD_TYPE": "RelWithDebInfo", "OEE_SANITIZE": "ON"}}
+  ],
+  "buildPresets": [
+    {"name": "release", "configurePreset": "release"},
+    {"name": "asan", "configurePreset": "asan"}
+  ],
+  "testPresets": [
+    {"name": "release", "configurePreset": "release", "output": {"outputOnFailure": true}},
+    {"name": "asan", "configurePreset": "asan", "output": {"outputOnFailure": true}}
+  ]
+}

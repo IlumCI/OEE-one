@@ -1,0 +1,170 @@
+time: T100T	average_age: A17.577778A	oldest: O100O	youngest: Y0Y number: N270N	number of reproductions: R1148R	blacK252K	B18Blue	reD0D	G0Green
+time: S100S	SHADOWstats__num_individuals 270
+time: L100L	mean_genotype_length 4 SHADOWmean_genotype_length 4
+time: T200T	average_age: A11.092500A	oldest: O107O	youngest: Y0Y number: N400N	number of reproductions: R5107R	blacK362K	B38Blue	reD0D	G0Green
+time: S200S	SHADOWstats__num_individuals 400
+time: L200L	mean_genotype_length 7 SHADOWmean_genotype_length 9
+time: T300T	average_age: A12.170000A	oldest: O127O	youngest: Y0Y number: N400N	number of reproductions: R9518R	blacK357K	B43Blue	reD0D	G0Green
+time: S300S	SHADOWstats__num_individuals 400
+time: L300L	mean_genotype_length 11 SHADOWmean_genotype_length 13
+time: T400T	average_age: A14.140000A	oldest: O122O	youngest: Y0Y number: N400N	number of reproductions: R13714R	blacK367K	B33Blue	reD0D	G0Green
+time: S400S	SHADOWstats__num_individuals 400
+time: L400L	mean_genotype_length 13 SHADOWmean_genotype_length 17
+time: T500T	average_age: A15.085000A	oldest: O112O	youngest: Y0Y number: N400N	number of reproductions: R17795R	blacK366K	B34Blue	reD0D	G0Green
+time: S500S	SHADOWstats__num_individuals 400
+time: L500L	mean_genotype_length 14 SHADOWmean_genotype_length 20
+time: T600T	average_age: A13.295000A	oldest: O115O	youngest: Y0Y number: N400N	number of reproductions: R21875R	blacK354K	B46Blue	reD0D	G0Green
+time: S600S	SHADOWstats__num_individuals 400
+time: L600L	mean_genotype_length 15 SHADOWmean_genotype_length 24
+time: T700T	average_age: A13.761421A	oldest: O111O	youngest: Y0Y number: N394N	number of reproductions: R25800R	blacK360K	B33Blue	reD1D	G0Green
+time: S700S	SHADOWstats__num_individuals 394
+time: L700L	mean_genotype_length 16 SHADOWmean_genotype_length 29
+time: T800T	average_age: A15.082915A	oldest: O105O	youngest: Y0Y number: N398N	number of reproductions: R29592R	blacK367K	B31Blue	reD0D	G0Green
+time: S800S	SHADOWstats__num_individuals 398
+time: L800L	mean_genotype_length 17 SHADOWmean_genotype_length 31
+time: T900T	average_age: A14.420655A	oldest: O104O	youngest: Y0Y number: N397N	number of reproductions: R33509R	blacK356K	B40Blue	reD1D	G0Green
+time: S900S	SHADOWstats__num_individuals 397
+time: L900L	mean_genotype_length 18 SHADOWmean_genotype_length 34
+time: T1000T	average_age: A17.324022A	oldest: O129O	youngest: Y0Y number: N358N	number of reproductions: R36951R	blacK322K	B33Blue	reD3D	G0Green
+time: S1000S	SHADOWstats__num_individuals 358
+time: L1000L	mean_genotype_length 19 SHADOWmean_genotype_length 37
+Complexities at time=1000: max_component_count=1 mean_component_count=0.240223 max_sum_component_lengths=21 mean_sum_component_lengths=3.162011
+Complexities of used components at time=1000: max_used_component_count=1 mean_used_component_count=0.223464 max_sum_used_component_lengths=21 mean_sum_used_component_lengths=2.916201
+Complexities at time=1000: SHADOWmax_component_count=3 SHADOWmean_component_count=1.083799 SHADOWmax_sum_component_lengths=38 SHADOWmean_sum_component_lengths=15.407821
+Complexities of used components at time=1000: SHADOWmax_used_component_count=0 SHADOWmean_used_component_count=0.000000 SHADOWmax_sum_used_component_lengths=0 SHADOWmean_sum_used_component_lengths=0.000000
+time: T1100T	average_age: A16.382436A	oldest: O135O	youngest: Y0Y number: N353N	number of reproductions: R40120R	blacK318K	B31Blue	reD4D	G0Green
+time: S1100S	SHADOWstats__num_individuals 353
+time: L1100L	mean_genotype_length 20 SHADOWmean_genotype_length 40
+time: T1200T	average_age: A17.147727A	oldest: O235O	youngest: Y0Y number: N352N	number of reproductions: R43213R	blacK318K	B30Blue	reD4D	G0Green
+time: S1200S	SHADOWstats__num_individuals 352
+time: L1200L	mean_genotype_length 20 SHADOWmean_genotype_length 43
+time: T1300T	average_age: A19.236364A	oldest: O319O	youngest: Y0Y number: N330N	number of reproductions: R46216R	blacK293K	B32Blue	reD5D	G0Green
+time: S1300S	SHADOWstats__num_individuals 330
+time: L1300L	mean_genotype_length 22 SHADOWmean_genotype_length 45
+time: T1400T	average_age: A22.858491A	oldest: O370O	youngest: Y0Y number: N318N	number of reproductions: R48779R	blacK286K	B29Blue	reD3D	G0Green
+time: S1400S	SHADOWstats__num_individuals 318
+time: L1400L	mean_genotype_length 23 SHADOWmean_genotype_length 47
+time: T1500T	average_age: A20.373596A	oldest: O470O	youngest: Y0Y number: N356N	number of reproductions: R51686R	blacK321K	B30Blue	reD5D	G0Green
+time: S1500S	SHADOWstats__num_individuals 356
+time: L1500L	mean_genotype_length 24 SHADOWmean_genotype_length 48
+time: T1600T	average_age: A19.185596A	oldest: O570O	youngest: Y0Y number: N361N	number of reproductions: R54651R	blacK333K	B24Blue	reD4D	G0Green
+time: S1600S	SHADOWstats__num_individuals 361
+time: L1600L	mean_genotype_length 26 SHADOWmean_genotype_length 50
+time: T1700T	average_age: A18.468927A	oldest: O164O	youngest: Y0Y number: N354N	number of reproductions: R58078R	blacK307K	B42Blue	reD5D	G0Green
+time: S1700S	SHADOWstats__num_individuals 354
+time: L1700L	mean_genotype_length 27 SHADOWmean_genotype_length 50
+time: T1800T	average_age: A20.812308A	oldest: O240O	youngest: Y0Y number: N325N	number of reproductions: R61165R	blacK291K	B29Blue	reD5D	G0Green
+time: S1800S	SHADOWstats__num_individuals 325
+time: L1800L	mean_genotype_length 28 SHADOWmean_genotype_length 51
+time: T1900T	average_age: A24.899023A	oldest: O245O	youngest: Y0Y number: N307N	number of reproductions: R63996R	blacK273K	B28Blue	reD6D	G0Green
+time: S1900S	SHADOWstats__num_individuals 307
+time: L1900L	mean_genotype_length 29 SHADOWmean_genotype_length 53
+time: T2000T	average_age: A22.719858A	oldest: O304O	youngest: Y0Y number: N282N	number of reproductions: R66636R	blacK248K	B28Blue	reD6D	G0Green
+time: S2000S	SHADOWstats__num_individuals 282
+time: L2000L	mean_genotype_length 31 SHADOWmean_genotype_length 57
+Complexities at time=2000: max_component_count=2 mean_component_count=0.471631 max_sum_component_lengths=28 mean_sum_component_lengths=7.819149
+Complexities of used components at time=2000: max_used_component_count=2 mean_used_component_count=0.429078 max_sum_used_component_lengths=28 mean_sum_used_component_lengths=7.145390
+Complexities at time=2000: SHADOWmax_component_count=3 SHADOWmean_component_count=1.585106 SHADOWmax_sum_component_lengths=51 SHADOWmean_sum_component_lengths=23.407801
+Complexities of used components at time=2000: SHADOWmax_used_component_count=0 SHADOWmean_used_component_count=0.000000 SHADOWmax_sum_used_component_lengths=0 SHADOWmean_sum_used_component_lengths=0.000000
+time: T2100T	average_age: A22.147541A	oldest: O214O	youngest: Y0Y number: N305N	number of reproductions: R69266R	blacK277K	B22Blue	reD6D	G0Green
+time: S2100S	SHADOWstats__num_individuals 305
+time: L2100L	mean_genotype_length 32 SHADOWmean_genotype_length 61
+time: T2200T	average_age: A20.124567A	oldest: O264O	youngest: Y0Y number: N289N	number of reproductions: R71909R	blacK247K	B34Blue	reD8D	G0Green
+time: S2200S	SHADOWstats__num_individuals 289
+time: L2200L	mean_genotype_length 34 SHADOWmean_genotype_length 61
+time: T2300T	average_age: A19.759740A	oldest: O364O	youngest: Y0Y number: N308N	number of reproductions: R75050R	blacK261K	B40Blue	reD7D	G0Green
+time: S2300S	SHADOWstats__num_individuals 308
+time: L2300L	mean_genotype_length 35 SHADOWmean_genotype_length 63
+time: T2400T	average_age: A18.570978A	oldest: O98O	youngest: Y0Y number: N317N	number of reproductions: R79199R	blacK272K	B39Blue	reD6D	G0Green
+time: S2400S	SHADOWstats__num_individuals 317
+time: L2400L	mean_genotype_length 36 SHADOWmean_genotype_length 65
+time: T2500T	average_age: A21.948529A	oldest: O190O	youngest: Y0Y number: N272N	number of reproductions: R83020R	blacK218K	B40Blue	reD14D	G0Green
+time: S2500S	SHADOWstats__num_individuals 272
+time: L2500L	mean_genotype_length 38 SHADOWmean_genotype_length 68
+time: T2600T	average_age: A15.369863A	oldest: O134O	youngest: Y0Y number: N292N	number of reproductions: R87184R	blacK232K	B49Blue	reD11D	G0Green
+time: S2600S	SHADOWstats__num_individuals 292
+time: L2600L	mean_genotype_length 42 SHADOWmean_genotype_length 71
+time: T2700T	average_age: A15.036789A	oldest: O210O	youngest: Y0Y number: N299N	number of reproductions: R92028R	blacK236K	B51Blue	reD12D	G0Green
+time: S2700S	SHADOWstats__num_individuals 299
+time: L2700L	mean_genotype_length 43 SHADOWmean_genotype_length 76
+time: T2800T	average_age: A15.426573A	oldest: O254O	youngest: Y0Y number: N286N	number of reproductions: R96910R	blacK213K	B53Blue	reD20D	G0Green
+time: S2800S	SHADOWstats__num_individuals 286
+time: L2800L	mean_genotype_length 46 SHADOWmean_genotype_length 81
+time: T2900T	average_age: A13.471831A	oldest: O255O	youngest: Y0Y number: N284N	number of reproductions: R101701R	blacK212K	B54Blue	reD18D	G0Green
+time: S2900S	SHADOWstats__num_individuals 284
+time: L2900L	mean_genotype_length 46 SHADOWmean_genotype_length 83
+time: T3000T	average_age: A16.332192A	oldest: O355O	youngest: Y0Y number: N292N	number of reproductions: R107274R	blacK217K	B57Blue	reD18D	G0Green
+time: S3000S	SHADOWstats__num_individuals 292
+time: L3000L	mean_genotype_length 47 SHADOWmean_genotype_length 85
+Complexities at time=3000: max_component_count=2 mean_component_count=1.130137 max_sum_component_lengths=44 mean_sum_component_lengths=21.869863
+Complexities of used components at time=3000: max_used_component_count=2 mean_used_component_count=0.958904 max_sum_used_component_lengths=40 mean_sum_used_component_lengths=18.438356
+Complexities at time=3000: SHADOWmax_component_count=4 SHADOWmean_component_count=2.147260 SHADOWmax_sum_component_lengths=70 SHADOWmean_sum_component_lengths=34.393836
+Complexities of used components at time=3000: SHADOWmax_used_component_count=0 SHADOWmean_used_component_count=0.000000 SHADOWmax_sum_used_component_lengths=0 SHADOWmean_sum_used_component_lengths=0.000000
+time: T3100T	average_age: A15.467391A	oldest: O192O	youngest: Y0Y number: N276N	number of reproductions: R112634R	blacK203K	B56Blue	reD17D	G0Green
+time: S3100S	SHADOWstats__num_individuals 276
+time: L3100L	mean_genotype_length 51 SHADOWmean_genotype_length 88
+time: T3200T	average_age: A14.125475A	oldest: O88O	youngest: Y0Y number: N263N	number of reproductions: R118079R	blacK189K	B53Blue	reD21D	G0Green
+time: S3200S	SHADOWstats__num_individuals 263
+time: L3200L	mean_genotype_length 53 SHADOWmean_genotype_length 92
+time: T3300T	average_age: A12.455830A	oldest: O122O	youngest: Y0Y number: N283N	number of reproductions: R123938R	blacK192K	B71Blue	reD20D	G0Green
+time: S3300S	SHADOWstats__num_individuals 283
+time: L3300L	mean_genotype_length 55 SHADOWmean_genotype_length 95
+time: T3400T	average_age: A14.223333A	oldest: O222O	youngest: Y0Y number: N300N	number of reproductions: R129910R	blacK212K	B74Blue	reD14D	G0Green
+time: S3400S	SHADOWstats__num_individuals 300
+time: L3400L	mean_genotype_length 56 SHADOWmean_genotype_length 101
+time: T3500T	average_age: A15.418831A	oldest: O322O	youngest: Y0Y number: N308N	number of reproductions: R137009R	blacK221K	B71Blue	reD16D	G0Green
+time: S3500S	SHADOWstats__num_individuals 308
+time: L3500L	mean_genotype_length 59 SHADOWmean_genotype_length 106
+time: T3600T	average_age: A14.179577A	oldest: O303O	youngest: Y0Y number: N284N	number of reproductions: R143581R	blacK206K	B59Blue	reD19D	G0Green
+time: S3600S	SHADOWstats__num_individuals 284
+time: L3600L	mean_genotype_length 62 SHADOWmean_genotype_length 110
+time: T3700T	average_age: A13.483333A	oldest: O315O	youngest: Y0Y number: N300N	number of reproductions: R150471R	blacK218K	B59Blue	reD23D	G0Green
+time: S3700S	SHADOWstats__num_individuals 300
+time: L3700L	mean_genotype_length 63 SHADOWmean_genotype_length 114
+time: T3800T	average_age: A11.473520A	oldest: O182O	youngest: Y0Y number: N321N	number of reproductions: R156662R	blacK228K	B80Blue	reD13D	G0Green
+time: S3800S	SHADOWstats__num_individuals 321
+time: L3800L	mean_genotype_length 65 SHADOWmean_genotype_length 118
+time: T3900T	average_age: A13.391437A	oldest: O282O	youngest: Y0Y number: N327N	number of reproductions: R163598R	blacK225K	B87Blue	reD15D	G0Green
+time: S3900S	SHADOWstats__num_individuals 327
+time: L3900L	mean_genotype_length 68 SHADOWmean_genotype_length 118
+time: T4000T	average_age: A12.054422A	oldest: O164O	youngest: Y0Y number: N294N	number of reproductions: R170802R	blacK202K	B71Blue	reD21D	G0Green
+time: S4000S	SHADOWstats__num_individuals 294
+time: L4000L	mean_genotype_length 67 SHADOWmean_genotype_length 121
+Complexities at time=4000: max_component_count=3 mean_component_count=1.482993 max_sum_component_lengths=61 mean_sum_component_lengths=30.224490
+Complexities of used components at time=4000: max_used_component_count=3 mean_used_component_count=1.187075 max_sum_used_component_lengths=56 mean_sum_used_component_lengths=24.343537
+Complexities at time=4000: SHADOWmax_component_count=5 SHADOWmean_component_count=2.921769 SHADOWmax_sum_component_lengths=89 SHADOWmean_sum_component_lengths=46.159864
+Complexities of used components at time=4000: SHADOWmax_used_component_count=0 SHADOWmean_used_component_count=0.000000 SHADOWmax_sum_used_component_lengths=0 SHADOWmean_sum_used_component_lengths=0.000000
+time: T4100T	average_age: A14.456026A	oldest: O182O	youngest: Y0Y number: N307N	number of reproductions: R177647R	blacK229K	B62Blue	reD16D	G0Green
+time: S4100S	SHADOWstats__num_individuals 307
+time: L4100L	mean_genotype_length 70 SHADOWmean_genotype_length 124
+time: T4200T	average_age: A12.284790A	oldest: O282O	youngest: Y0Y number: N309N	number of reproductions: R184105R	blacK228K	B66Blue	reD15D	G0Green
+time: S4200S	SHADOWstats__num_individuals 309
+time: L4200L	mean_genotype_length 72 SHADOWmean_genotype_length 127
+time: T4300T	average_age: A11.527972A	oldest: O229O	youngest: Y0Y number: N286N	number of reproductions: R191116R	blacK197K	B68Blue	reD21D	G0Green
+time: S4300S	SHADOWstats__num_individuals 286
+time: L4300L	mean_genotype_length 73 SHADOWmean_genotype_length 128
+time: T4400T	average_age: A10.205036A	oldest: O137O	youngest: Y0Y number: N278N	number of reproductions: R197924R	blacK192K	B64Blue	reD22D	G0Green
+time: S4400S	SHADOWstats__num_individuals 278
+time: L4400L	mean_genotype_length 74 SHADOWmean_genotype_length 130
+time: T4500T	average_age: A10.511864A	oldest: O114O	youngest: Y0Y number: N295N	number of reproductions: R204553R	blacK214K	B64Blue	reD17D	G0Green
+time: S4500S	SHADOWstats__num_individuals 295
+time: L4500L	mean_genotype_length 76 SHADOWmean_genotype_length 133
+time: T4600T	average_age: A7.953757A	oldest: O124O	youngest: Y0Y number: N346N	number of reproductions: R212782R	blacK241K	B88Blue	reD17D	G0Green
+time: S4600S	SHADOWstats__num_individuals 346
+time: L4600L	mean_genotype_length 77 SHADOWmean_genotype_length 138
+time: T4700T	average_age: A10.647458A	oldest: O122O	youngest: Y0Y number: N295N	number of reproductions: R220745R	blacK211K	B60Blue	reD24D	G0Green
+time: S4700S	SHADOWstats__num_individuals 295
+time: L4700L	mean_genotype_length 79 SHADOWmean_genotype_length 137
+time: T4800T	average_age: A10.198718A	oldest: O134O	youngest: Y0Y number: N312N	number of reproductions: R227566R	blacK226K	B74Blue	reD12D	G0Green
+time: S4800S	SHADOWstats__num_individuals 312
+time: L4800L	mean_genotype_length 80 SHADOWmean_genotype_length 142
+time: T4900T	average_age: A9.842444A	oldest: O143O	youngest: Y0Y number: N311N	number of reproductions: R235835R	blacK219K	B74Blue	reD18D	G0Green
+time: S4900S	SHADOWstats__num_individuals 311
+time: L4900L	mean_genotype_length 83 SHADOWmean_genotype_length 149
+time: T5000T	average_age: A11.863333A	oldest: O138O	youngest: Y0Y number: N300N	number of reproductions: R243419R	blacK214K	B66Blue	reD20D	G0Green
+time: S5000S	SHADOWstats__num_individuals 300
+time: L5000L	mean_genotype_length 84 SHADOWmean_genotype_length 151
+Complexities at time=5000: max_component_count=4 mean_component_count=1.780000 max_sum_component_lengths=71 mean_sum_component_lengths=34.246667
+Complexities of used components at time=5000: max_used_component_count=4 mean_used_component_count=1.450000 max_sum_used_component_lengths=71 mean_sum_used_component_lengths=28.176667
+Complexities at time=5000: SHADOWmax_component_count=6 SHADOWmean_component_count=3.096667 SHADOWmax_sum_component_lengths=108 SHADOWmean_sum_component_lengths=48.250000
+Complexities of used components at time=5000: SHADOWmax_used_component_count=0 SHADOWmean_used_component_count=0.000000 SHADOWmax_sum_used_component_lengths=0 SHADOWmean_sum_used_component_lengths=0.000000
