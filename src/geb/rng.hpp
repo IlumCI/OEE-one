@@ -5,6 +5,8 @@
 #include <array>
 #include <cstdint>
 
+#include "geb/serial.hpp"
+
 namespace oee::geb {
 
 class Ran1 {
@@ -13,6 +15,14 @@ class Ran1 {
   int seed(int seed);
   // Uniform integer in [0, m-1]; 0 if m == 0.
   int random(int m);
+
+  void save(Writer& w) const {
+    w.put(ix1_); w.put(ix2_); w.put(ix3_); w.put(r_); w.put(iff_);
+  }
+  void load(Reader& r) {
+    ix1_ = r.get<int>(); ix2_ = r.get<int>(); ix3_ = r.get<int>();
+    r_ = r.get<std::array<float, 98>>(); iff_ = r.get<int>();
+  }
 
  private:
   float next();

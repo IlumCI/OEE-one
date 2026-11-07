@@ -1,6 +1,7 @@
 #include "geb/ann.hpp"
 
 #include <algorithm>
+#include <stdexcept>
 
 namespace oee::geb {
 
@@ -350,6 +351,114 @@ void Ann::update_outputs(Ran1& rng, const NetConstants& k) {
     n.excitatory_output = n.new_excitatory_output;
     if (n.net_output) n.net_output->io_value = n.excitatory_output;
   }
+  out_cache_.clear();
+  for (const IoEntry& e : net_outputs_) out_cache_.push_back(OutCache{e.node->packed, e.io_value, e.node});
+}
+
+}  // namespace oee::geb
+
+namespace oee::geb {
+
+namespace {
+// Character spans point into the genotype or into one of the axiom constants.
+void put_span(Writer& w, const GeneSpan& c, const Genotype& g) {
+  std::int32_t kind = 0;
+  if (c.base == nullptr) kind = 0;
+  else if (c.base == g.data()) kind = 1;
+  else if (c.base == kAxiomOutput.genes.data()) kind = 2;
+  else if (c.base == kAxiomHidden.genes.data()) kind = 3;
+  else if (c.base == kAxiomInput.genes.data()) kind = 4;
+  else throw std::runtime_error("unknown character base");
+  w.put(kind); w.put<std::int32_t>(c.first); w.put<std::int32_t>(c.last);
+}
+GeneSpan get_span(Reader& r, const Genotype& g) {
+  const auto kind = r.get<std::int32_t>();
+  GeneSpan c;
+  c.first = r.get<std::int32_t>();
+  c.last = r.get<std::int32_t>();
+  switch (kind) {
+    case 0: c = GeneSpan{}; break;
+    case 1: c.base = g.data(); break;
+    case 2: c.base = kAxiomOutput.genes.data(); break;
+    case 3: c.base = kAxiomHidden.genes.data(); break;
+    case 4: c.base = kAxiomInput.genes.data(); break;
+    default: throw std::runtime_error("bad character kind");
+  }
+  return c;
+}
+}  // namespace
+
+void Ann::save_state(Writer& w) const {
+  std::vector<std::uint8_t> used;
+  for (const Rule& r : rules_) used.push_back(r.used ? 1 : 0);
+  w.put_vec(used);
+  std::vector<const Node*> order;
+  for (const Node& n : nodes_) order.push_back(&n);
+  auto index = [&](const Node* n) {
+    for (std::size_t i = 0; i < order.size(); ++i)
+      if (order[i] == n) return static_cast<std::int32_t>(i);
+    throw std::runtime_error("dangling node");
+  };
+  w.put<std::uint64_t>(order.size());
+  for (const Node* n : order) {
+    put_span(w, n->character, *genotype_);
+    w.put(n->inhibitory_output); w.put(n->excitatory_output);
+    w.put(n->new_inhibitory_output); w.put(n->new_excitatory_output);
+    w.put<std::uint8_t>(n->just_constructed ? 1 : 0);
+    for (const auto* links : {&n->inhibitory_inputs, &n->excitatory_inputs,
+                              &n->inhibitory_outputs, &n->excitatory_outputs}) {
+      std::vector<std::int32_t> idx;
+      for (const Node* x : *links) idx.push_back(index(x));
+      w.put_vec(idx);
+    }
+  }
+  for (const auto* io : {&net_inputs_, &net_outputs_}) {
+    w.put<std::uint64_t>(io->size());
+    for (const IoEntry& e : *io) { w.put(index(e.node)); w.put(e.io_value); }
+  }
+  w.put(num_nodes_); w.put(max_num_nodes_); w.put(morphogenesis_steps_left_);
+}
+
+void Ann::load_state(Reader& r) {
+  const auto used = r.get_vec<std::uint8_t>();
+  if (used.size() != rules_.size()) throw std::runtime_error("rule count mismatch on load");
+  for (std::size_t i = 0; i < used.size(); ++i) rules_[i].used = used[i] != 0;
+  nodes_.clear();
+  net_inputs_.clear();
+  net_outputs_.clear();
+  const auto n = r.get<std::uint64_t>();
+  std::vector<Node*> order;
+  struct Pending { std::vector<std::int32_t> l[4]; };
+  std::vector<Pending> pending(n);
+  for (std::uint64_t i = 0; i < n; ++i) {
+    nodes_.push_back(Node{});
+    Node& nd = nodes_.back();
+    order.push_back(&nd);
+    nd.character = get_span(r, *genotype_);
+    nd.packed = pack_character(nd.character);
+    nd.inhibitory_output = r.get<int>(); nd.excitatory_output = r.get<int>();
+    nd.new_inhibitory_output = r.get<int>(); nd.new_excitatory_output = r.get<int>();
+    nd.just_constructed = r.get<std::uint8_t>() != 0;
+    for (auto& l : pending[i].l) l = r.get_vec<std::int32_t>();
+  }
+  for (std::uint64_t i = 0; i < n; ++i) {
+    Node& nd = *order[i];
+    for (auto x : pending[i].l[0]) nd.inhibitory_inputs.push_back(order.at(x));
+    for (auto x : pending[i].l[1]) nd.excitatory_inputs.push_back(order.at(x));
+    for (auto x : pending[i].l[2]) nd.inhibitory_outputs.push_back(order.at(x));
+    for (auto x : pending[i].l[3]) nd.excitatory_outputs.push_back(order.at(x));
+  }
+  for (int which = 0; which < 2; ++which) {
+    auto& io = which ? net_outputs_ : net_inputs_;
+    const auto m = r.get<std::uint64_t>();
+    for (std::uint64_t i = 0; i < m; ++i) {
+      Node* nd = order.at(r.get<std::int32_t>());
+      const int v = r.get<int>();
+      io.push_back(IoEntry{nd, v});
+      (which ? nd->net_output : nd->net_input) = &io.back();
+    }
+  }
+  num_nodes_ = r.get<int>(); max_num_nodes_ = r.get<int>(); morphogenesis_steps_left_ = r.get<int>();
   out_cache_.clear();
   for (const IoEntry& e : net_outputs_) out_cache_.push_back(OutCache{e.node->packed, e.io_value, e.node});
 }

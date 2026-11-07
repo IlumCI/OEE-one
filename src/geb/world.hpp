@@ -32,6 +32,9 @@ class World;
 class Organism : public Ann {
  public:
   Organism(World& w, Genotype genotype, int at_x_64, int at_y_64);
+  // Restore from a checkpoint (consumes no randomness).
+  struct LoadTag {};
+  Organism(World& w, Genotype genotype, LoadTag);
 
   void copy_net_inputs_from_neighbourhood();
   void actions();
@@ -59,6 +62,10 @@ class World {
  public:
   explicit World(const Params& p);
   ~World();
+
+  // Full state (parameters, RNG streams, agents, shadows, scheduling).
+  void save(Writer& w) const;
+  static std::unique_ptr<World> load(Reader& r);
   World(const World&) = delete;
   World& operator=(const World&) = delete;
 
@@ -90,6 +97,9 @@ class World {
 
  private:
   friend class Organism;
+  struct Empty {};
+  World(const Params& p, Empty);
+  void init_tables();
   int forward1(int from_x_64, int from_y_64, int direction_deg) const;
   // Delete the agent at `cell` and a uniformly random shadow.
   std::unique_ptr<Organism> remove_real(int cell);

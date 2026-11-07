@@ -8,6 +8,7 @@
 
 #include "geb/genes.hpp"
 #include "geb/rng.hpp"
+#include "geb/serial.hpp"
 
 namespace oee::geb {
 
@@ -111,6 +112,11 @@ class Ann {
 
   void morphogenesis_step();
   void update_outputs(Ran1& rng, const NetConstants& k);
+
+  // Network and development state (the genotype is saved by the owner; rules are
+  // regenerated from it on construction, only their `used` flags are stored).
+  void save_state(Writer& w) const;
+  void load_state(Reader& r);
 
  private:
   void create_axiom_net();

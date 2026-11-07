@@ -26,6 +26,9 @@ class RuleStat {
   // plus link bits, GPEM sec. 5). Independent of rulestat naming.
   void set_presence_file(std::FILE* f) { presence_ = f; }
 
+  void save(Writer& w) const;
+  void load(Reader& r);
+
  private:
   struct Component {
     std::vector<Gene> genes;
@@ -41,6 +44,8 @@ class RuleStat {
     int max_used = 0, max_sum_used_len = 0, sum_used = 0, sum_sum_used_len = 0;
   };
 
+  static void save_buckets(Writer& w, const std::vector<Bucket>& b);
+  static void load_buckets(Reader& r, std::vector<Bucket>& b);
   static void grow(std::vector<Bucket>& b, int length, bool reset_markers);
   // Returns index of the component in bucket, appending if absent.
   static int find_or_add(Bucket& bucket, const Rule& rule, bool& added);

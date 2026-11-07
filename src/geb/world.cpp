@@ -1,6 +1,7 @@
 #include "geb/world.hpp"
 
 #include <cmath>
+#include <stdexcept>
 #include <utility>
 
 namespace oee::geb {
@@ -29,6 +30,9 @@ Organism::Organism(World& w, Genotype genotype, int x64, int y64)
   copy_net_inputs_from_neighbourhood();
   for (int rep = 0; rep < kPrimingLevel; ++rep) update_outputs(w.rng_, w.net_);
 }
+
+Organism::Organism(World& w, Genotype genotype, LoadTag)
+    : Ann(std::move(genotype), w.p_.max_num_nodes), id(0), w_(w) {}
 
 void Organism::copy_net_inputs_from_neighbourhood() {
   const int L = w_.length_;
@@ -237,9 +241,7 @@ void Organism::try_to_move_forward(int distance_64) {
 // ---------------------------------------------------------------------------
 // World
 
-World::World(const Params& p) : p_(p) {
-  seed_used_ = rng_.seed(p_.seed);
-  if (p_.second_shadow) rng2_.seed(seed_used_ % 30000 + 1777);
+void World::init_tables() {
   for (int t = 0; t < 360; ++t) {
     cos64_[t] = static_cast<int>(64.0 * std::cos(0.017453293 * t));
     sin64_[t] = static_cast<int>(64.0 * std::sin(0.017453293 * t));
@@ -250,6 +252,14 @@ World::World(const Params& p) : p_(p) {
   np_positions_.resize(size_);
   np_ids_.resize(size_);
   shadow_genotypes_.reserve(size_);
+}
+
+World::World(const Params& p, Empty) : p_(p) { init_tables(); }
+
+World::World(const Params& p) : p_(p) {
+  seed_used_ = rng_.seed(p_.seed);
+  if (p_.second_shadow) rng2_.seed(seed_used_ % 30000 + 1777);
+  init_tables();
   if (p_.min_num_individuals == -1) p_.min_num_individuals = 0;
   if (p_.max_num_individuals == -1 || p_.max_num_individuals > size_)
     p_.max_num_individuals = size_;
@@ -473,6 +483,75 @@ void World::reset_shadow_to_real() {
 void World::terminate() {
   for (int d = 0; d < size_; ++d)
     if (grid_[d]) remove_real(d).reset();
+}
+
+}  // namespace oee::geb
+
+namespace oee::geb {
+
+namespace {
+constexpr std::uint64_t kWorldMagic = 0x4f45453147454257ULL;  // "WBEG1EEO"
+}
+
+void World::save(Writer& w) const {
+  w.put(kWorldMagic);
+  w.put(p_);
+  w.put(seed_used_);
+  rng_.save(w);
+  rng2_.save(w);
+  w.put(ga_time_); w.put(num_reproductions_); w.put(num_individuals_); w.put(next_id_);
+  for (int c = 0; c < size_; ++c) {
+    const Organism* o = grid_[c].get();
+    w.put<std::uint8_t>(o ? 1 : 0);
+    if (!o) continue;
+    w.put_vec(o->genotype());
+    w.put(o->id); w.put(o->pen_colour); w.put(o->at); w.put(o->at_x); w.put(o->at_y);
+    w.put(o->at_x_64); w.put(o->at_y_64); w.put(o->direction_deg); w.put(o->birth_time);
+    w.put(o->age);
+    o->save_state(w);
+  }
+  w.put<std::uint64_t>(shadow_genotypes_.size());
+  for (const Genotype& g : shadow_genotypes_) w.put_vec(g);
+  w.put_vec(shadow_ages_);
+  w.put_vec(shadow_birth_times_);
+  w.put<std::uint64_t>(shadow2_.size());
+  for (const Genotype& g : shadow2_) w.put_vec(g);
+  w.put_vec(pending_shadow2_);
+  w.put_vec(np_positions_);
+  w.put_vec(np_ids_);
+  w.put(num_not_processed_);
+}
+
+std::unique_ptr<World> World::load(Reader& r) {
+  if (r.get<std::uint64_t>() != kWorldMagic) throw std::runtime_error("not a world checkpoint");
+  const Params p = r.get<Params>();
+  std::unique_ptr<World> w(new World(p, Empty{}));
+  w->seed_used_ = r.get<int>();
+  w->rng_.load(r);
+  w->rng2_.load(r);
+  w->ga_time_ = r.get<long>(); w->num_reproductions_ = r.get<long>();
+  w->num_individuals_ = r.get<int>(); w->next_id_ = r.get<std::uint64_t>();
+  for (int c = 0; c < w->size_; ++c) {
+    if (!r.get<std::uint8_t>()) continue;
+    auto o = std::make_unique<Organism>(*w, r.get_vec<Gene>(), Organism::LoadTag{});
+    o->id = r.get<std::uint64_t>(); o->pen_colour = r.get<int>(); o->at = r.get<int>();
+    o->at_x = r.get<int>(); o->at_y = r.get<int>(); o->at_x_64 = r.get<int>();
+    o->at_y_64 = r.get<int>(); o->direction_deg = r.get<int>(); o->birth_time = r.get<long>();
+    o->age = r.get<int>();
+    o->load_state(r);
+    w->grid_[c] = std::move(o);
+  }
+  const auto ns = r.get<std::uint64_t>();
+  for (std::uint64_t k = 0; k < ns; ++k) w->shadow_genotypes_.push_back(r.get_vec<Gene>());
+  w->shadow_ages_ = r.get_vec<int>();
+  w->shadow_birth_times_ = r.get_vec<long>();
+  const auto ns2 = r.get<std::uint64_t>();
+  for (std::uint64_t k = 0; k < ns2; ++k) w->shadow2_.push_back(r.get_vec<Gene>());
+  w->pending_shadow2_ = r.get_vec<Gene>();
+  w->np_positions_ = r.get_vec<int>();
+  w->np_ids_ = r.get_vec<std::uint64_t>();
+  w->num_not_processed_ = r.get<int>();
+  return w;
 }
 
 }  // namespace oee::geb

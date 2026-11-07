@@ -1,6 +1,7 @@
 #include "geb/rulestat.hpp"
 
 #include <algorithm>
+#include <stdexcept>
 #include <utility>
 
 namespace oee::geb {
@@ -299,6 +300,56 @@ void RuleStat::snapshot(World& w) {
 
   if (dict_) std::fflush(dict_);
   if (reset_shadow_) w.reset_shadow_to_real();
+}
+
+}  // namespace oee::geb
+
+namespace oee::geb {
+
+void RuleStat::save_buckets(Writer& w, const std::vector<Bucket>& b) {
+  w.put<std::uint64_t>(b.size());
+  for (const Bucket& bk : b) {
+    w.put(bk.shadow_from);
+    w.put<std::uint64_t>(bk.list.size());
+    for (const Component& c : bk.list) {
+      w.put_vec(c.genes);
+      w.put(c.abundance);
+      w.put(c.shadow_abundance);
+    }
+  }
+}
+
+void RuleStat::load_buckets(Reader& r, std::vector<Bucket>& b) {
+  b.assign(r.get<std::uint64_t>(), Bucket{});
+  for (Bucket& bk : b) {
+    bk.shadow_from = r.get<int>();
+    bk.list.resize(r.get<std::uint64_t>());
+    for (Component& c : bk.list) {
+      c.genes = r.get_vec<Gene>();
+      c.abundance = r.get<int>();
+      c.shadow_abundance = r.get<int>();
+    }
+  }
+}
+
+void RuleStat::save(Writer& w) const {
+  w.put<std::uint8_t>(reset_shadow_ ? 1 : 0);
+  save_buckets(w, buckets_);
+  save_buckets(w, shadow_buckets_);
+  w.put<std::uint64_t>(dict_seen_.size());
+  std::vector<std::string> names(dict_seen_.begin(), dict_seen_.end());
+  std::sort(names.begin(), names.end());
+  for (const auto& n : names) w.put_str(n);
+}
+
+void RuleStat::load(Reader& r) {
+  if ((r.get<std::uint8_t>() != 0) != reset_shadow_)
+    throw std::runtime_error("checkpoint shadow variant differs from this binary/options");
+  load_buckets(r, buckets_);
+  load_buckets(r, shadow_buckets_);
+  dict_seen_.clear();
+  const auto n = r.get<std::uint64_t>();
+  for (std::uint64_t i = 0; i < n; ++i) dict_seen_.insert(r.get_str());
 }
 
 }  // namespace oee::geb
