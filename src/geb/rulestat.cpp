@@ -1,9 +1,31 @@
 #include "geb/rulestat.hpp"
 
+#include <algorithm>
+#include <utility>
+
 namespace oee::geb {
 
 namespace {
 constexpr int kInitialMaxComponentLength = 10;
+
+std::uint64_t fnv(std::uint64_t h, Gene g) {
+  h ^= static_cast<std::uint64_t>(static_cast<unsigned char>(g));
+  return h * 1099511628211ULL;
+}
+constexpr std::uint64_t kFnvOffset = 1469598103934665603ULL;
+
+std::pair<std::uint64_t, std::uint64_t> component_hashes(const Rule& r) {
+  std::uint64_t hr = kFnvOffset;
+  for (int k = 0; k < r.gene_string.length(); ++k) hr = fnv(hr, r.gene_string.at(k));
+  std::uint64_t hp = kFnvOffset;
+  for (int k = 0; k < r.predecessor.length(); ++k) hp = fnv(hp, r.predecessor.at(k));
+  hp = fnv(hp, 2);  // separator
+  const Gene links[6] = {r.reverse_inputs_type_on_new,    r.reverse_outputs_type_on_new,
+                         r.inhibitory_replacement_to_new, r.excitatory_replacement_to_new,
+                         r.inhibitory_new_to_replacement, r.excitatory_new_to_replacement};
+  for (Gene g : links) hp = fnv(hp, g);
+  return {hr, hp};
+}
 constexpr int kIncrement = 10;
 }  // namespace
 
@@ -134,6 +156,20 @@ void RuleStat::emit_dictionary(long t, char pop, const std::string& name,
   std::fputc('\n', dict_);
 }
 
+void RuleStat::write_presence(long t, const char* pop,
+                              const std::vector<const std::vector<Rule>*>& sets) {
+  std::vector<std::pair<std::uint64_t, std::uint64_t>> v;
+  for (const auto* rules : sets)
+    for (const Rule& r : *rules) v.push_back(component_hashes(r));
+  std::sort(v.begin(), v.end());
+  v.erase(std::unique(v.begin(), v.end()), v.end());
+  std::fprintf(presence_, "%ld %s %zu", t, pop, v.size());
+  for (const auto& [a, b] : v)
+    std::fprintf(presence_, " %016llx:%016llx", static_cast<unsigned long long>(a),
+                 static_cast<unsigned long long>(b));
+  std::fputc('\n', presence_);
+}
+
 void RuleStat::snapshot(World& w) {
   const long t = w.time();
   // Strip previous shadow-only components (resets variant).
@@ -185,9 +221,27 @@ void RuleStat::snapshot(World& w) {
       for (Component& c : b.list) c.abundance = 0;
   Stats ss;
   const int n_shadow = w.shadow_count();
+  std::vector<std::vector<Rule>> shadow_rules;
   for (int k = 0; k < n_shadow; ++k) {
     Ann shadow(w.shadow_genotype(k), w.params().max_num_nodes);
     count_individual(shadow.rules(), ss, sb, true);
+    // Copied rules keep spans into the shadow genotype owned by World (unchanged until reset).
+    if (presence_) shadow_rules.push_back(generate_rules(w.shadow_genotype(k), axiom_characters()));
+  }
+  if (presence_) {
+    std::vector<const std::vector<Rule>*> rp, sp, s2p;
+    for (int at = 0; at < w.world_size(); ++at)
+      if (const Organism* o = w.at(at)) rp.push_back(&o->rules());
+    for (const auto& r : shadow_rules) sp.push_back(&r);
+    write_presence(t, "R", rp);
+    write_presence(t, "S", sp);
+    if (w.params().second_shadow) {
+      std::vector<std::vector<Rule>> s2;
+      for (const Genotype& g : w.second_shadow()) s2.push_back(generate_rules(g, axiom_characters()));
+      for (const auto& r : s2) s2p.push_back(&r);
+      write_presence(t, "S2", s2p);
+    }
+    std::fflush(presence_);
   }
   print_complexities(t, ss, static_cast<double>(n_shadow), true);
   std::fprintf(shadow_rulestat_, "%ld:", t);

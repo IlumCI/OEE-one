@@ -15,7 +15,7 @@ Implements:
 Activity unit: one per snapshot of presence (snapshots every 1000 steps).
 
 Usage: geb_activity.py RUN_DIR --variant resets|no_resets [--grouping rule|pb]
-                       [--out OUT_DIR] [--plot]
+                       [--source rulestat|presence] [--null] [--out OUT_DIR] [--plot]
 """
 
 from __future__ import annotations
@@ -122,6 +122,23 @@ def load_presence(run_dir, variant, grouping):
         shadow_sets.append(ss)
     times = np.array([t for t, _ in real[: len(real_sets)]], dtype=np.int64)
     return times, real_sets, shadow_sets
+
+
+def load_presence_file(run_dir, grouping):
+    """Read the hash-based presence record written by oee_geb -presence."""
+    part = 0 if grouping == "rule" else 1
+    by_time = defaultdict(dict)
+    with open(os.path.join(run_dir, "presence"), "r", encoding="ascii") as f:
+        for line in f:
+            fields = line.split()
+            if len(fields) < 3 or len(fields) != 3 + int(fields[2]):
+                continue  # incomplete trailing line
+            t, pop = int(fields[0]), fields[1]
+            by_time[t][pop] = set(x.split(":")[part] for x in fields[3:])
+    times = sorted(t for t, d in by_time.items() if "R" in d and "S" in d)
+    pops = {p: [by_time[t].get(p, set()) for t in times] for p in ("R", "S", "S2")}
+    has_s2 = all("S2" in by_time[t] for t in times)
+    return np.array(times, dtype=np.int64), pops, has_s2
 
 
 # ---------------------------------------------------------------------------
@@ -268,14 +285,26 @@ def classify(D_tr, med_tr, new_mean, new_frac_positive):
 
 # ---------------------------------------------------------------------------
 
-def analyse(run_dir, variant, grouping, block):
-    times, real_sets, shadow_sets = load_presence(run_dir, variant, grouping)
+def analyse(run_dir, variant, grouping, block, source="rulestat", null=False):
+    if source == "presence":
+        times, pops, has_s2 = load_presence_file(run_dir, grouping)
+        real_sets, shadow_sets = pops["R"], pops["S"]
+        if null and not has_s2:
+            raise SystemExit("--null requires a run with -second-shadow")
+    else:
+        if null:
+            raise SystemExit("--null requires --source presence")
+        times, real_sets, shadow_sets = load_presence(run_dir, variant, grouping)
     if len(times) < 8:
         raise SystemExit(f"too few snapshots ({len(times)})")
     real_present = screened(real_sets, real_sets)
-    result = dict(run_dir=run_dir, variant=variant, grouping=grouping,
-                  snapshots=int(len(times)), last_time=int(times[-1]))
+    result = dict(run_dir=run_dir, variant=variant, grouping=grouping, source=source,
+                  null_control=null, snapshots=int(len(times)), last_time=int(times[-1]))
     series = dict(time=times)
+    if null:
+        # Null control: an independent reset shadow takes the place of the real run.
+        # Both shadows start each interval from the real state at k-1.
+        real_present = screened(pops["S2"], real_sets)
     if variant == "resets":
         # Shadow at k was reset to the real state at k-1.
         shadow_present = screened(shadow_sets, real_sets)
@@ -321,7 +350,7 @@ def analyse(run_dir, variant, grouping, block):
 
 def write_outputs(result, series, out_dir, plot):
     os.makedirs(out_dir, exist_ok=True)
-    tag = f"{result['variant']}_{result['grouping']}"
+    tag = f"{result['variant']}_{result['grouping']}_{result['source']}" + ("_null" if result["null_control"] else "")
     with open(os.path.join(out_dir, f"summary_{tag}.json"), "w") as f:
         json.dump(result, f, indent=2)
     keys = list(series)
@@ -356,11 +385,14 @@ def main(argv=None):
     ap.add_argument("run_dir")
     ap.add_argument("--variant", required=True, choices=["resets", "no_resets"])
     ap.add_argument("--grouping", default="rule", choices=["rule", "pb"])
+    ap.add_argument("--source", default="rulestat", choices=["rulestat", "presence"])
+    ap.add_argument("--null", action="store_true",
+                    help="null control: second shadow in place of the real run")
     ap.add_argument("--block", type=int, default=20, help="block size for Mann-Kendall")
     ap.add_argument("--out", default=None)
     ap.add_argument("--plot", action="store_true")
     a = ap.parse_args(argv)
-    result, series = analyse(a.run_dir, a.variant, a.grouping, a.block)
+    result, series = analyse(a.run_dir, a.variant, a.grouping, a.block, a.source, a.null)
     write_outputs(result, series, a.out or os.path.join(a.run_dir, "analysis"), a.plot)
     json.dump(result, sys.stdout, indent=2)
     print()

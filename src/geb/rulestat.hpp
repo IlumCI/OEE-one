@@ -21,6 +21,10 @@ class RuleStat {
 
   void write_headers();
   void snapshot(World& w);
+  // Optional presence record: per snapshot and population (R, S, S2), the set of
+  // components as "<rule-hash>:<pb-hash>" (FNV-1a 64 over genes; pb = predecessor
+  // plus link bits, GPEM sec. 5). Independent of rulestat naming.
+  void set_presence_file(std::FILE* f) { presence_ = f; }
 
  private:
   struct Component {
@@ -50,7 +54,9 @@ class RuleStat {
   std::FILE *rulestat_, *shadow_rulestat_, *verifier_, *shadow_verifier_, *out_, *dict_;
   std::vector<Bucket> buckets_;         // real (and, with resets, shared)
   std::vector<Bucket> shadow_buckets_;  // no-resets variant only
+  void write_presence(long t, const char* pop, const std::vector<const std::vector<Rule>*>& sets);
   std::unordered_set<std::string> dict_seen_;
+  std::FILE* presence_ = nullptr;
 };
 
 }  // namespace oee::geb

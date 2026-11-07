@@ -22,6 +22,9 @@ struct Params {
   // GebR negative control: genetic parents and victims chosen at random among real
   // agents (event timing and placement still from agent behaviour). Not in Geb.
   bool random_selection = false;
+  // Second, independent reset shadow on its own RNG stream (null control for the
+  // normalised activity test). Does not change the real run or the first shadow.
+  bool second_shadow = false;
 };
 
 class World;
@@ -78,6 +81,7 @@ class World {
   const Genotype& shadow_genotype(int k) const { return shadow_genotypes_[k]; }
   // Reset shadow k-th to a copy of the k-th real agent in cell order (resets variant).
   void reset_shadow_to_real();
+  const std::vector<Genotype>& second_shadow() const { return shadow2_; }
 
   Ran1& rng() { return rng_; }
   const NetConstants& net() const { return net_; }
@@ -96,6 +100,7 @@ class World {
   std::unique_ptr<Organism> reproduce(Organism* a, Organism* b, int child_x_64, int child_y_64,
                                       Genotype& shadow_child);
   void add_shadow(Genotype g);
+  Genotype breed_second_shadow();
   void reset_not_processed();
 
   Params p_;
@@ -108,6 +113,9 @@ class World {
   std::vector<Genotype> shadow_genotypes_;
   std::vector<int> shadow_ages_;
   std::vector<long> shadow_birth_times_;
+  Ran1 rng2_;
+  std::vector<Genotype> shadow2_;
+  Genotype pending_shadow2_;
   std::vector<int> occupied_;
   std::vector<int> np_positions_;
   std::vector<std::uint64_t> np_ids_;

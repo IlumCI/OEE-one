@@ -1,6 +1,7 @@
 #include "geb/world.hpp"
 
 #include <cmath>
+#include <utility>
 
 namespace oee::geb {
 
@@ -238,6 +239,7 @@ void Organism::try_to_move_forward(int distance_64) {
 
 World::World(const Params& p) : p_(p) {
   seed_used_ = rng_.seed(p_.seed);
+  if (p_.second_shadow) rng2_.seed(seed_used_ % 30000 + 1777);
   for (int t = 0; t < 360; ++t) {
     cos64_[t] = static_cast<int>(64.0 * std::cos(0.017453293 * t));
     sin64_[t] = static_cast<int>(64.0 * std::sin(0.017453293 * t));
@@ -307,6 +309,11 @@ void World::kill_random_shadow() {
   shadow_genotypes_.pop_back();
   shadow_ages_.pop_back();
   shadow_birth_times_.pop_back();
+  if (p_.second_shadow) {
+    const int d2 = rng2_.random(static_cast<int>(shadow2_.size()));
+    shadow2_[d2] = std::move(shadow2_.back());
+    shadow2_.pop_back();
+  }
 }
 
 std::unique_ptr<Organism> World::remove_real(int cell) {
@@ -316,9 +323,36 @@ std::unique_ptr<Organism> World::remove_real(int cell) {
 }
 
 void World::add_shadow(Genotype g) {
+  if (p_.second_shadow) {
+    shadow2_.push_back(pending_shadow2_.empty() ? g : std::move(pending_shadow2_));
+    pending_shadow2_.clear();
+  }
   shadow_genotypes_.push_back(std::move(g));
   shadow_ages_.push_back(0);
   shadow_birth_times_.push_back(ga_time_);
+}
+
+Genotype World::breed_second_shadow() {
+  Ran1& r = rng2_;
+  const int n = static_cast<int>(shadow2_.size());
+  int a = r.random(n);
+  int b = a;
+  while (b == a) b = r.random(n);
+  if (r.random(2)) std::swap(a, b);
+  const Genotype& p1 = shadow2_[a];
+  const Genotype& p2 = shadow2_[b];
+  const int cp1 = r.random(static_cast<int>(p1.size()) + 1);
+  int cp2 = cp1 + (r.random(2) ? -kGenotypeLengthChangeMax : kGenotypeLengthChangeMax);
+  const int len2 = static_cast<int>(p2.size());
+  if (cp2 < 0) cp2 = 0;
+  if (cp2 >= len2) cp2 = len2 - 1;
+  Genotype child(p1.begin(), p1.begin() + cp1);
+  child.insert(child.end(), p2.begin() + cp2, p2.end());
+  for (int m = 0; m < kNumMutations; ++m) {
+    Gene& gene = child[r.random(static_cast<int>(child.size()))];
+    gene = gene == 0 ? 1 : 0;
+  }
+  return child;
 }
 
 namespace {
@@ -384,6 +418,7 @@ std::unique_ptr<Organism> World::reproduce(Organism* a, Organism* b, int cx64, i
     Gene& gene = shadow_child[rng_.random(static_cast<int>(shadow_child.size()))];
     gene = gene == 0 ? 1 : 0;
   }
+  if (p_.second_shadow) pending_shadow2_ = breed_second_shadow();
   auto o = std::make_unique<Organism>(*this, std::move(child), cx64, cy64);
   ++num_reproductions_;
   return o;
@@ -431,6 +466,7 @@ void World::reset_shadow_to_real() {
     shadow_genotypes_[k] = o->genotype();
     shadow_ages_[k] = o->age;
     shadow_birth_times_[k] = o->birth_time;
+    if (p_.second_shadow) shadow2_[k] = o->genotype();
   }
 }
 

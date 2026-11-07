@@ -6,6 +6,8 @@
 //                   -components FILE            (component dictionary for analysis)
 //                   -outdir DIR                 (where rulestat files are written)
 //                   -random-selection           (GebR negative control)
+//                   -second-shadow              (independent second reset shadow)
+//                   -presence FILE              (hash-based component presence record)
 
 #include <cstdio>
 #include <cstdlib>
@@ -85,7 +87,7 @@ int main(int argc, char** argv) {
   Params p;
   bool stats_on = false, rulestat_on = false, resets = OEE_GEB_DEFAULT_RESETS;
   long stopat = 0;
-  std::string components_path, outdir = ".";
+  std::string components_path, presence_path, outdir = ".";
   for (int a = 1; a < argc;) {
     const char* s = argv[a];
     const bool has = (a + 1) < argc;
@@ -115,6 +117,12 @@ int main(int argc, char** argv) {
     } else if (!std::strcmp(s, "-components") && has) {
       components_path = argv[a + 1];
       a += 2;
+    } else if (!std::strcmp(s, "-second-shadow")) {
+      p.second_shadow = true;
+      ++a;
+    } else if (!std::strcmp(s, "-presence") && has) {
+      presence_path = argv[a + 1];
+      a += 2;
     } else if (!std::strcmp(s, "-random-selection")) {
       p.random_selection = true;
       ++a;
@@ -131,7 +139,7 @@ int main(int argc, char** argv) {
   std::fflush(stderr);
 
   World world(p);
-  File rs, srs, rv, srv, dict;
+  File rs, srs, rv, srv, dict, pres;
   std::unique_ptr<RuleStat> rulestat;
   if (rulestat_on) {
     rs = open_or_die(outdir + "/rulestat");
@@ -142,6 +150,10 @@ int main(int argc, char** argv) {
     rulestat = std::make_unique<RuleStat>(resets, kRulestatEvery, rs.get(), srs.get(), rv.get(),
                                           srv.get(), stdout, dict.get());
     rulestat->write_headers();
+    if (!presence_path.empty()) {
+      pres = open_or_die(presence_path);
+      rulestat->set_presence_file(pres.get());
+    }
   }
 
   bool done = false;
