@@ -38,7 +38,12 @@ def main():
     ]
     for run in runs:
         name = os.path.basename(run.rstrip("/"))
-        has_presence = os.path.exists(os.path.join(run, "presence"))
+        pres = os.path.join(run, "presence")
+        has_presence = False
+        if os.path.exists(pres):
+            with open(pres) as f:
+                head = [next(f, "") for _ in range(3)]
+            has_presence = any(l.split()[1:2] == ["S2"] for l in head if l.strip())
         configs = []
         if has_presence:
             for g in ("pb", "rule"):
