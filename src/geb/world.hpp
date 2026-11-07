@@ -19,6 +19,9 @@ struct Params {
   int start_num_individuals = 50; // -1: world size
   int copy_to_length = 3;         // input neighbourhood radius
   int seed = 0;                   // 0: from clock
+  // GebR negative control: genetic parents and victims chosen at random among real
+  // agents (event timing and placement still from agent behaviour). Not in Geb.
+  bool random_selection = false;
 };
 
 class World;
@@ -87,6 +90,7 @@ class World {
   // Delete the agent at `cell` and a uniformly random shadow.
   std::unique_ptr<Organism> remove_real(int cell);
   void kill_random_shadow();
+  int random_occupied_cell(int exclude);
   // Breed real and shadow children; returns the real child (not yet placed) and
   // the shadow child genotype (not yet appended).
   std::unique_ptr<Organism> reproduce(Organism* a, Organism* b, int child_x_64, int child_y_64,
@@ -104,6 +108,7 @@ class World {
   std::vector<Genotype> shadow_genotypes_;
   std::vector<int> shadow_ages_;
   std::vector<long> shadow_birth_times_;
+  std::vector<int> occupied_;
   std::vector<int> np_positions_;
   std::vector<std::uint64_t> np_ids_;
   int num_not_processed_ = 0;

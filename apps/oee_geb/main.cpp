@@ -5,6 +5,7 @@
 // Extensions:       -variant resets|no_resets   (default set at compile time)
 //                   -components FILE            (component dictionary for analysis)
 //                   -outdir DIR                 (where rulestat files are written)
+//                   -random-selection           (GebR negative control)
 
 #include <cstdio>
 #include <cstdlib>
@@ -114,6 +115,9 @@ int main(int argc, char** argv) {
     } else if (!std::strcmp(s, "-components") && has) {
       components_path = argv[a + 1];
       a += 2;
+    } else if (!std::strcmp(s, "-random-selection")) {
+      p.random_selection = true;
+      ++a;
     } else if (!std::strcmp(s, "-outdir") && has) {
       outdir = argv[a + 1];
       a += 2;

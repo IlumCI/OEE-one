@@ -32,7 +32,30 @@ Organism::Organism(World& w, Genotype genotype, int x64, int y64)
 void Organism::copy_net_inputs_from_neighbourhood() {
   const int L = w_.length_;
   const int c = w_.p_.copy_to_length;
-  for (IoEntry& in : net_inputs()) in.io_value = 0;
+  struct In {
+    IoEntry* entry;
+    Gene side;
+    bool packed;
+    std::uint64_t tbits;
+    int tn;
+    GeneSpan test;
+  };
+  In ins[64];
+  int n_in = 0, n_side[2] = {0, 0};
+  std::vector<In> overflow;
+  for (IoEntry& in : net_inputs()) {
+    in.io_value = 0;
+    const Node* inode = in.node;
+    In x{&in, inode->character.at(1), inode->packed.packed, inode->packed.bits >> 1,
+         inode->packed.nbits - 1,
+         GeneSpan{inode->character.base, inode->character.first + 2, inode->character.last}};
+    ++n_side[x.side];
+    if (n_in < 64)
+      ins[n_in++] = x;
+    else
+      overflow.push_back(x);
+  }
+  if (n_in == 0) return;
   for (int cx = at_x - c; cx <= at_x + c; ++cx)
     for (int cy = at_y - c; cy <= at_y + c; ++cy) {
       const int wx = (cx + L) % L;
@@ -50,26 +73,37 @@ void Organism::copy_net_inputs_from_neighbourhood() {
         dy -= L << 6;
       else if (dy < -(L << (6 - 1)))
         dy += L << 6;
-      const long d = static_cast<long>(std::sqrt(static_cast<double>(dx * dx + dy * dy)));
-      const int scale = static_cast<int>(World::kCopyScale64AtDistance1 / d);
       const int delta_right = static_cast<int>(dx * w_.cos64_[direction_deg] +
                                                dy * w_.sin64_[direction_deg]);
       const Gene right = (delta_right > 0) ? 1 : 0;
-      for (IoEntry& in : net_inputs()) {
-        const GeneSpan& ch = in.node->character;
-        if (ch.at(1) != right) continue;
-        GeneSpan test = ch;
-        test.first += 2;
-        for (const IoEntry& out : other->net_outputs())
-          if (test.is_start_of(out.node->character))
-            in.io_value += ((scale * out.io_value) >> 6);
-      }
+      if (!n_side[right]) continue;
+      // Contributions are (scale*io)>>6; zero-io outputs add nothing, so the distance
+      // and scale are computed only when a non-zero contribution is possible.
+      int scale = -1;
+      auto contribute = [&](const In& x) {
+        for (const Ann::OutCache& out : other->output_cache()) {
+          if (!out.io_value) continue;
+          const PackedChar& oc = out.packed;
+          const bool match = (x.packed && oc.packed) ? packed_is_prefix(x.tbits, x.tn, oc)
+                                                     : x.test.is_start_of(out.node->character);
+          if (!match) continue;
+          if (scale < 0) {
+            const long d = static_cast<long>(std::sqrt(static_cast<double>(dx * dx + dy * dy)));
+            scale = static_cast<int>(World::kCopyScale64AtDistance1 / d);
+          }
+          x.entry->io_value += ((scale * out.io_value) >> 6);
+        }
+      };
+      for (int k = 0; k < n_in; ++k)
+        if (ins[k].side == right) contribute(ins[k]);
+      for (const In& x : overflow)
+        if (x.side == right) contribute(x);
     }
 }
 
 int Organism::action_output(const GeneSpan& prefix) {
   long sum = -1;
-  for (const IoEntry& out : net_outputs())
+  for (const Ann::OutCache& out : output_cache())
     if (prefix.is_start_of(out.node->character)) {
       if (sum == -1) sum = 0;
       sum += out.io_value;
@@ -121,8 +155,24 @@ void Organism::try_to_reproduce_with_organism_in_front() {
     cx64 = ((child_at % w.length_) << 6) + 32;
     cy64 = ((child_at / w.length_) << 6) + 32;
   }
+  Organism* pa = this;
+  Organism* pb = other;
+  if (w.p_.random_selection) {
+    // GebR control (GPEM sec. 10): genetic parents are random real agents, and a
+    // replacement birth kills a random real agent (other than the actor).
+    const int a = w.random_occupied_cell(-1);
+    int b = a;
+    while (b == a) b = w.random_occupied_cell(-1);
+    pa = w.grid_[a].get();
+    pb = w.grid_[b].get();
+    if (replace) {
+      child_at = w.random_occupied_cell(at);
+      cx64 = w.grid_[child_at]->at_x_64;
+      cy64 = w.grid_[child_at]->at_y_64;
+    }
+  }
   Genotype shadow_child;
-  std::unique_ptr<Organism> child = w.reproduce(this, other, cx64, cy64, shadow_child);
+  std::unique_ptr<Organism> child = w.reproduce(pa, pb, cx64, cy64, shadow_child);
   if (replace) {
     std::unique_ptr<Organism> old = std::move(w.grid_[child_at]);
     w.grid_[child_at] = std::move(child);
@@ -137,8 +187,9 @@ void Organism::try_to_reproduce_with_organism_in_front() {
 void Organism::try_to_kill_organism_in_front() {
   World& w = w_;
   if (w.num_individuals_ == w.p_.min_num_individuals) return;
-  const int other_at = w.forward1(at_x_64, at_y_64, direction_deg);
+  int other_at = w.forward1(at_x_64, at_y_64, direction_deg);
   if (w.grid_[other_at]) {
+    if (w.p_.random_selection) other_at = w.random_occupied_cell(at);
     w.remove_real(other_at).reset();
     --w.num_individuals_;
   }
@@ -238,6 +289,13 @@ int World::forward1(int from_x_64, int from_y_64, int dir) const {
     y = y_64 >> 6;
   }
   return x + y * length_;
+}
+
+int World::random_occupied_cell(int exclude) {
+  occupied_.clear();
+  for (int c = 0; c < size_; ++c)
+    if (grid_[c] && c != exclude) occupied_.push_back(c);
+  return occupied_[rng_.random(static_cast<int>(occupied_.size()))];
 }
 
 void World::kill_random_shadow() {

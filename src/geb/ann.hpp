@@ -32,8 +32,36 @@ struct IoEntry {
   int io_value = 0;
 };
 
+// Information bits of a paired-form character, packed LSB-first (bit k = info bit k).
+// Valid when `packed`; characters with more than 64 information bits use the span.
+struct PackedChar {
+  std::uint64_t bits = 0;
+  int nbits = 0;
+  bool packed = false;
+};
+
+inline PackedChar pack_character(const GeneSpan& c) {
+  PackedChar p;
+  const int len = c.length();
+  if (len < 0 || len > 128) return p;
+  p.nbits = len / 2;
+  for (int k = 0; k < p.nbits; ++k)
+    if (c.at(2 * k + 1)) p.bits |= std::uint64_t{1} << k;
+  p.packed = true;
+  return p;
+}
+
+// Equivalent to GeneSpan::is_start_of for paired-form characters (even genes are 0).
+inline bool packed_is_prefix(std::uint64_t pbits, int pn, const PackedChar& c) {
+  if (pn > c.nbits) return false;
+  if (pn == 0) return true;
+  const std::uint64_t mask = pn >= 64 ? ~std::uint64_t{0} : ((std::uint64_t{1} << pn) - 1);
+  return ((pbits ^ c.bits) & mask) == 0;
+}
+
 struct Node {
   GeneSpan character;
+  PackedChar packed;
   // Links are a multiset of neighbour pointers (duplicates count separately).
   std::vector<Node*> inhibitory_inputs, excitatory_inputs;
   std::vector<Node*> inhibitory_outputs, excitatory_outputs;
@@ -72,6 +100,15 @@ class Ann {
   const std::list<IoEntry>& net_outputs() const { return net_outputs_; }
   int num_nodes() const { return num_nodes_; }
 
+  // Contiguous copy of the network outputs (order preserved), valid after
+  // update_outputs(); read by other agents and by action selection.
+  struct OutCache {
+    PackedChar packed;
+    int io_value;
+    const Node* node;
+  };
+  const std::vector<OutCache>& output_cache() const { return out_cache_; }
+
   void morphogenesis_step();
   void update_outputs(Ran1& rng, const NetConstants& k);
 
@@ -88,6 +125,7 @@ class Ann {
   std::vector<Rule> rules_;
   std::list<Node> nodes_;
   std::list<IoEntry> net_inputs_, net_outputs_;
+  std::vector<OutCache> out_cache_;
   int num_nodes_ = 0;
   int max_num_nodes_;
   int morphogenesis_steps_left_ = kMaxMorphogenesisSteps;

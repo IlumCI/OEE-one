@@ -185,12 +185,15 @@ void Ann::create_axiom_net() {
   nodes_.push_back(Node{});
   Node* o = &nodes_.back();
   o->character = kAxiomOutput.span();
+  o->packed = pack_character(o->character);
   nodes_.push_back(Node{});
   Node* h = &nodes_.back();
   h->character = kAxiomHidden.span();
+  h->packed = pack_character(h->character);
   nodes_.push_back(Node{});
   Node* i = &nodes_.back();
   i->character = kAxiomInput.span();
+  i->packed = pack_character(i->character);
   add_link(i, h, true);
   add_link(h, o, true);
   net_inputs_.push_back(IoEntry{i, 0});
@@ -256,6 +259,7 @@ void Ann::run_rule(Rule& rule, std::list<Node>::iterator node_it) {
     newnode = &*nodes_.insert(std::next(node_it), Node{});
     ++num_nodes_;
     newnode->character = rule.successor_new;
+    newnode->packed = pack_character(newnode->character);
     const bool has_repl = !rule.successor_replacement.null();
     if (!has_repl ||
         (!rule.inhibitory_replacement_to_new && !rule.excitatory_replacement_to_new)) {
@@ -278,6 +282,7 @@ void Ann::run_rule(Rule& rule, std::list<Node>::iterator node_it) {
   const bool was_output = node->net_output != nullptr;
   if (!rule.successor_replacement.null()) {
     node->character = rule.successor_replacement;
+    node->packed = pack_character(node->character);
     if (newnode) {
       if (rule.inhibitory_replacement_to_new) add_link(node, newnode, false);
       if (rule.excitatory_replacement_to_new) add_link(node, newnode, true);
@@ -345,6 +350,8 @@ void Ann::update_outputs(Ran1& rng, const NetConstants& k) {
     n.excitatory_output = n.new_excitatory_output;
     if (n.net_output) n.net_output->io_value = n.excitatory_output;
   }
+  out_cache_.clear();
+  for (const IoEntry& e : net_outputs_) out_cache_.push_back(OutCache{e.node->packed, e.io_value, e.node});
 }
 
 }  // namespace oee::geb

@@ -243,6 +243,7 @@ void RuleStat::snapshot(World& w) {
   std::fprintf(shadow_verifier_, " %ld %ld %ld %ld\n", s0, s1, s2, s3);
   std::fflush(shadow_verifier_);
 
+  if (dict_) std::fflush(dict_);
   if (reset_shadow_) w.reset_shadow_to_real();
 }
 
