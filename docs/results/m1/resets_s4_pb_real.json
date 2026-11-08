@@ -1,0 +1,41 @@
+{
+  "run_dir": "runs/resets_s4",
+  "variant": "resets",
+  "grouping": "pb",
+  "source": "presence",
+  "null_control": false,
+  "snapshots": 6497,
+  "last_time": 6497000,
+  "truncated_at": 6497300,
+  "a0": 80,
+  "most_negative_normalised_activity": -80,
+  "diversity": {
+    "mean_second_half": 26.29455216989843,
+    "trend": {
+      "slope_second_half": -1.953125e-06,
+      "slope_last_quarter": 3.3140016570008283e-06,
+      "mk_z_second_half": -4.57093297168173
+    }
+  },
+  "normalised_median_activity": {
+    "final": 18.0,
+    "trend": {
+      "slope_second_half": -1.440922190201729e-06,
+      "slope_last_quarter": -3.9948453608247424e-05,
+      "mk_z_second_half": 0.5807807736515759
+    }
+  },
+  "normalised_total_activity": {
+    "final": 5503.0,
+    "trend": {
+      "slope_second_half": 0.00023991797676008202,
+      "slope_last_quarter": 0.0005625984291025251,
+      "mk_z_second_half": 3.080600263234169
+    }
+  },
+  "normalised_new_activity": {
+    "mean_second_half": 0.21224618019295743,
+    "fraction_snapshots_positive": 0.06463527239150507
+  },
+  "classification": "2 (bounded)"
+}

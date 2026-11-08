@@ -4,37 +4,38 @@
   "grouping": "pb",
   "source": "presence",
   "null_control": false,
-  "snapshots": 961,
-  "last_time": 961000,
-  "a0": 24,
-  "most_negative_normalised_activity": -24,
+  "snapshots": 8000,
+  "last_time": 8000000,
+  "truncated_at": null,
+  "a0": 108,
+  "most_negative_normalised_activity": -108,
   "diversity": {
-    "mean_second_half": 43.434511434511435,
+    "mean_second_half": 24.063,
     "trend": {
       "slope_second_half": 0.0,
-      "slope_last_quarter": -6.713913653210457e-05,
-      "mk_z_second_half": 0.0
+      "slope_last_quarter": 4.145936981757877e-06,
+      "mk_z_second_half": -0.2842624435184616
     }
   },
   "normalised_median_activity": {
-    "final": 16.0,
+    "final": 159.0,
     "trend": {
-      "slope_second_half": 1.729106628242075e-05,
-      "slope_last_quarter": 2e-05,
-      "mk_z_second_half": 4.737640974328963
+      "slope_second_half": 6.727937035978204e-06,
+      "slope_last_quarter": -3.849443969204448e-06,
+      "mk_z_second_half": 7.855788123108711
     }
   },
   "normalised_total_activity": {
-    "final": 1722.0,
+    "final": 6965.0,
     "trend": {
-      "slope_second_half": 0.0016615384615384615,
-      "slope_last_quarter": 0.0008976975405546834,
-      "mk_z_second_half": 3.7454648540506463
+      "slope_second_half": 0.000865765297034808,
+      "slope_last_quarter": 0.0015623287465561637,
+      "mk_z_second_half": 13.02640572956162
     }
   },
   "normalised_new_activity": {
-    "mean_second_half": 0.15920064299667538,
-    "fraction_snapshots_positive": 0.24740124740124741
+    "mean_second_half": 0.27450104834124933,
+    "fraction_snapshots_positive": 0.05575
   },
-  "classification": "3b (unbounded median activity, bounded D)"
+  "classification": "2 (bounded)"
 }

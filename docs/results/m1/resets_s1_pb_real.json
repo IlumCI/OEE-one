@@ -4,37 +4,38 @@
   "grouping": "pb",
   "source": "presence",
   "null_control": false,
-  "snapshots": 1195,
-  "last_time": 1195000,
-  "a0": 26,
-  "most_negative_normalised_activity": -26,
+  "snapshots": 2799,
+  "last_time": 2799000,
+  "truncated_at": 2799900,
+  "a0": 29,
+  "most_negative_normalised_activity": -29,
   "diversity": {
-    "mean_second_half": 42.98327759197324,
+    "mean_second_half": 40.815,
     "trend": {
-      "slope_second_half": 5.882352941176471e-06,
-      "slope_last_quarter": 3.846153846153846e-05,
-      "mk_z_second_half": 0.3564031749049612
+      "slope_second_half": -5.571030640668524e-06,
+      "slope_last_quarter": 3.4482758620689654e-06,
+      "mk_z_second_half": -3.1279791539414017
     }
   },
   "normalised_median_activity": {
-    "final": 19.0,
+    "final": 32.0,
     "trend": {
-      "slope_second_half": 1.7543859649122806e-05,
-      "slope_last_quarter": 1.0638297872340426e-05,
-      "mk_z_second_half": 3.789128491094851
+      "slope_second_half": 1.383399209486166e-05,
+      "slope_last_quarter": 4.5454545454545455e-06,
+      "mk_z_second_half": 7.09752158106639
     }
   },
   "normalised_total_activity": {
-    "final": 1719.0,
+    "final": 2249.0,
     "trend": {
-      "slope_second_half": 0.0015384615384615385,
-      "slope_last_quarter": 0.0020506912442396314,
-      "mk_z_second_half": 3.5077575635383025
+      "slope_second_half": 0.00040752887877356465,
+      "slope_last_quarter": -0.0019809855802546505,
+      "mk_z_second_half": 3.3713227510065353
     }
   },
   "normalised_new_activity": {
-    "mean_second_half": 0.19773594629719587,
-    "fraction_snapshots_positive": 0.26421404682274247
+    "mean_second_half": 0.20409060162432927,
+    "fraction_snapshots_positive": 0.23714285714285716
   },
   "classification": "3b (unbounded median activity, bounded D)"
 }
