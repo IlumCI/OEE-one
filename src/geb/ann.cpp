@@ -165,16 +165,18 @@ std::vector<Rule> generate_rules(const Genotype& g, const std::vector<GeneSpan>&
   else
 #endif
     pack_scalar(g, sc.pk);
-  const std::vector<std::uint64_t>& B = sc.pk.b;
-  const std::size_t nwords = B.size();
-  // Word w of (B >> s): bit k = gene (64w + k + s).
-  auto sh = [&](int s, std::size_t w) -> std::uint64_t {
+  // Zero padding so shifted reads never leave the array: shifts are at most
+  // 3 + 2*(m-1) <= n + 1 bits for any queried character (its length is bounded by
+  // the genotype length), i.e. under n/64 + 2 words past the data.
+  std::vector<std::uint64_t>& B = sc.pk.b;
+  B.resize(B.size() + static_cast<std::size_t>(n) / 64 + 4, 0);
+  const std::uint64_t* Bp = B.data();
+  // Word w of (B >> s): bit k = gene (64w + k + s). Branch-free: (x << 1) << (63 - r)
+  // equals x << (64 - r) for r in 1..63 and 0 for r = 0.
+  auto sh = [Bp](int s, std::size_t w) -> std::uint64_t {
     const std::size_t q = w + (static_cast<std::size_t>(s) >> 6);
     const int r = s & 63;
-    if (q >= nwords) return 0;
-    std::uint64_t lo = B[q] >> r;
-    if (r && q + 1 < nwords) lo |= B[q + 1] << (64 - r);
-    return lo;
+    return (Bp[q] >> r) | ((Bp[q + 1] << 1) << (63 - r));
   };
   // Rule starts i <= last - 10 with genes i, i+1 = 1.
   const int imax = last - 10;

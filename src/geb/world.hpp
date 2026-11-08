@@ -100,6 +100,7 @@ class World {
   struct Empty {};
   World(const Params& p, Empty);
   void init_tables();
+  void init_wrap();
   int forward1(int from_x_64, int from_y_64, int direction_deg) const;
   // Delete the agent at `cell` and a uniformly random shadow.
   std::unique_ptr<Organism> remove_real(int cell);
@@ -127,6 +128,7 @@ class World {
   std::vector<Genotype> shadow2_;
   Genotype pending_shadow2_;
   std::vector<int> occupied_;
+  std::vector<int> wrap_;
   std::vector<int> np_positions_;
   std::vector<std::uint64_t> np_ids_;
   int num_not_processed_ = 0;

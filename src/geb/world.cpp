@@ -61,10 +61,12 @@ void Organism::copy_net_inputs_from_neighbourhood() {
       overflow.push_back(x);
   }
   if (n_in == 0) return;
+  // wrap_[v + c] == (v + L) % L for v in [-c, L - 1 + c] (precomputed).
+  const int* wrap = w_.wrap_.data() + c;
   for (int cx = at_x - c; cx <= at_x + c; ++cx)
     for (int cy = at_y - c; cy <= at_y + c; ++cy) {
-      const int wx = (cx + L) % L;
-      const int wy = (cy + L) % L;
+      const int wx = wrap[cx];
+      const int wy = wrap[cy];
       if (wx == at_x && wy == at_y) continue;
       const Organism* other = w_.grid_[wx + wy * L].get();
       if (!other) continue;
@@ -254,7 +256,16 @@ void World::init_tables() {
   shadow_genotypes_.reserve(size_);
 }
 
-World::World(const Params& p, Empty) : p_(p) { init_tables(); }
+World::World(const Params& p, Empty) : p_(p) {
+  init_tables();
+  init_wrap();  // p_ already holds the adjusted copy_to_length when loaded
+}
+
+void World::init_wrap() {
+  const int c = p_.copy_to_length;
+  wrap_.resize(length_ + 2 * c);
+  for (int v = -c; v < length_ + c; ++v) wrap_[v + c] = (v + length_) % length_;
+}
 
 World::World(const Params& p) : p_(p) {
   seed_used_ = rng_.seed(p_.seed);
@@ -266,6 +277,7 @@ World::World(const Params& p) : p_(p) {
   if (p_.start_num_individuals == -1 || p_.start_num_individuals > p_.max_num_individuals)
     p_.start_num_individuals = p_.max_num_individuals;
   if (2 * p_.copy_to_length + 1 > length_) p_.copy_to_length = (length_ - 1) / 2;
+  init_wrap();
   ga_time_ = -1;
   for (int at = 0; at < p_.start_num_individuals; ++at) {
     grid_[at] = std::make_unique<Organism>(*this, Genotype{0}, ((at % length_) << 6) + 32,
