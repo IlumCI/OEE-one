@@ -43,3 +43,5 @@ add_test(NAME golden_equivalence
 add_test(NAME activity_analyser COMMAND python3 -I ${CMAKE_SOURCE_DIR}/tests/test_activity.py)
 add_test(NAME checkpoint_resume
   COMMAND ${CMAKE_SOURCE_DIR}/tests/check_resume.sh ${CMAKE_BINARY_DIR}/oee_geb ${CMAKE_BINARY_DIR}/resume_runs)
+add_executable(bench_generate_rules tests/bench/bench_generate_rules.cpp)
+target_link_libraries(bench_generate_rules PRIVATE oee_geb_core)
