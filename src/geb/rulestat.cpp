@@ -71,25 +71,19 @@ void RuleStat::grow(std::vector<Bucket>& b, int length, bool reset_markers) {
 int RuleStat::find_or_add(Bucket& bucket, const Rule& rule, bool& added) {
   const GeneSpan& gs = rule.gene_string;
   const int n = gs.length();
-  for (int i = 0; i < static_cast<int>(bucket.list.size()); ++i) {
-    const auto& g = bucket.list[i].genes;
-    bool eq = true;
-    for (int k = 0; k < n; ++k)
-      if (g[k] != gs.at(k)) {
-        eq = false;
-        break;
-      }
-    if (eq) {
-      added = false;
-      return i;
-    }
+  std::string key(n, '\0');
+  for (int k = 0; k < n; ++k) key[k] = static_cast<char>(gs.at(k));
+  auto [it, inserted] = bucket.index.try_emplace(std::move(key), static_cast<int>(bucket.list.size()));
+  if (!inserted) {
+    added = false;
+    return it->second;
   }
   Component c;
   c.genes.resize(n);
   for (int k = 0; k < n; ++k) c.genes[k] = gs.at(k);
   bucket.list.push_back(std::move(c));
   added = true;
-  return static_cast<int>(bucket.list.size()) - 1;
+  return it->second;
 }
 
 void RuleStat::count_individual(const std::vector<Rule>& rules, Stats& s,
@@ -149,6 +143,12 @@ void RuleStat::print_complexities(long t, const Stats& s, double n, bool shadow)
                s.sum_sum_used_len / n);
 }
 
+void RuleStat::emit_plain(long t, char pop, const char* prefix, int len, int idx, Component& c) {
+  if (c.plain_name_emitted) return;  // name already in dict_seen_
+  emit_dictionary(t, pop, prefix + std::to_string(len) + "." + std::to_string(idx), c.genes);
+  c.plain_name_emitted = true;
+}
+
 void RuleStat::emit_dictionary(long t, char pop, const std::string& name,
                                const std::vector<Gene>& g) {
   if (!dict_ || !dict_seen_.insert(name).second) return;
@@ -177,6 +177,10 @@ void RuleStat::snapshot(World& w) {
   if (reset_shadow_)
     for (Bucket& b : buckets_)
       if (b.shadow_from != -1) {
+        for (std::size_t i = b.shadow_from; i < b.list.size(); ++i) {
+          const auto& g = b.list[i].genes;
+          b.index.erase(std::string(g.begin(), g.end()));
+        }
         b.list.resize(b.shadow_from);
         b.shadow_from = -1;
       }
@@ -206,8 +210,7 @@ void RuleStat::snapshot(World& w) {
         v1 += i + 1;
         ++v2;
         v3 += b.list[i].abundance;
-        if (dict_) emit_dictionary(t, 'R', std::to_string(len) + "." + std::to_string(i + 1),
-                                   b.list[i].genes);
+        if (dict_) emit_plain(t, 'R', "", len, i + 1, buckets_[len].list[i]);
       }
   }
   std::fprintf(rulestat_, "\n");
@@ -259,9 +262,7 @@ void RuleStat::snapshot(World& w) {
           s1 += i + 1;
           ++s2;
           s3 += b.list[i].abundance;
-          if (dict_)
-            emit_dictionary(t, 'S', "S" + std::to_string(len) + "." + std::to_string(i + 1),
-                            b.list[i].genes);
+          if (dict_) emit_plain(t, 'S', "S", len, i + 1, sb[len].list[i]);
         }
       continue;
     }
@@ -274,8 +275,7 @@ void RuleStat::snapshot(World& w) {
         s1 += i + 1;
         ++s2;
         s3 += b.list[i].shadow_abundance;
-        if (dict_) emit_dictionary(t, 'S', std::to_string(len) + "." + std::to_string(i + 1),
-                                   b.list[i].genes);
+        if (dict_) emit_plain(t, 'S', "", len, i + 1, sb[len].list[i]);
       }
     if (b.shadow_from != -1)
       for (int i = b.shadow_from, num = 1; i < static_cast<int>(b.list.size()); ++i, ++num)
@@ -329,6 +329,9 @@ void RuleStat::load_buckets(Reader& r, std::vector<Bucket>& b) {
       c.abundance = r.get<int>();
       c.shadow_abundance = r.get<int>();
     }
+    bk.index.clear();
+    for (int i = 0; i < static_cast<int>(bk.list.size()); ++i)
+      bk.index.emplace(std::string(bk.list[i].genes.begin(), bk.list[i].genes.end()), i);
   }
 }
 

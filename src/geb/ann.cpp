@@ -3,7 +3,9 @@
 #include <algorithm>
 #include <cstdint>
 #include <cstdlib>
+#include <deque>
 #include <stdexcept>
+#include <unordered_map>
 
 #if defined(__x86_64__)
 #include <immintrin.h>
@@ -120,34 +122,17 @@ bool use_avx2() {
 #endif
 }
 
-// First set bit at index >= j in stream st (limited to `limit` bits); -1 if none.
-inline int next_one(const std::vector<std::uint64_t>& st, int j, int limit) {
-  if (j >= limit) return -1;
-  std::size_t w = static_cast<std::size_t>(j) >> 6;
-  std::uint64_t x = st[w] & (~std::uint64_t{0} << (j & 63));
-  const std::size_t wl = (static_cast<std::size_t>(limit) + 63) >> 6;
-  while (!x) {
-    if (++w >= wl) return -1;
-    x = st[w];
-  }
-  const int r = static_cast<int>((w << 6) + static_cast<std::size_t>(__builtin_ctzll(x)));
-  return r < limit ? r : -1;
-}
-
-struct Cand {
-  int pred_first;  // predecessor start (rule start + 2)
-  int pred_len;    // in genes
-  int rule = -1;   // index into rules, -1 unread
-  int next_kept = -1;
-  bool tried = false;
-  bool kept = false;
-  bool checked = false;
-};
-
 struct Scratch {
   Packed pk;
-  std::vector<Cand> cand;
-  std::vector<int> order, bucket_start;
+  std::vector<std::pair<std::uint32_t, std::uint64_t>> mlist;  // rule-start words
+  std::deque<std::vector<std::pair<std::uint32_t, std::uint64_t>>> pool;  // stable slots
+  std::size_t pool_used = 0;
+  // key -> (m, (prefix bits, pool slot)); key collisions are rejected by the full check.
+  std::unordered_map<std::uint64_t, std::pair<int, std::pair<std::uint64_t, std::size_t>>> memo;
+  std::vector<std::uint32_t> stamp;  // per position: epoch of rule_at entry
+  std::vector<int> rule_at;          // per position: -2 unread, -1 unreadable, >=0 rule index
+  std::vector<std::uint8_t> kept_at;
+  std::uint32_t epoch = 0;
   std::vector<Rule> rules;
 };
 
@@ -160,120 +145,166 @@ const std::vector<GeneSpan>& axiom_characters() {
   return chars;
 }
 
+// Equivalent to the original generate_rules (max-optimised filtering variant), see
+// docs/GEB_SPEC.md 3.2. Candidates whose predecessor is a prefix of a queried
+// character are found by bit-parallel pattern matching instead of enumerating every
+// rule start: a rule start i with predecessor of m information bits c_0..c_{m-1} has
+// genes i,i+1 = 1,1; gene i+2+2k = 0 and gene i+3+2k = c_k for k < m; and a
+// terminating 1 at i+2+2m. The original's requirement pred.last + 9 <= last implies
+// i + 2m + 10 <= last, so the terminator always lies before the last gene. Within a
+// length, candidates are taken in ascending position: the original's search order.
 std::vector<Rule> generate_rules(const Genotype& g, const std::vector<GeneSpan>& node_chars) {
   thread_local Scratch sc;
   std::vector<Rule> result;
   const int n = static_cast<int>(g.size());
   const int last = n - 1;
-  if (last - 0 <= 9) return result;
+  if (last <= 9) return result;
 #if defined(__x86_64__)
   if (use_avx2())
     pack_avx2(g, sc.pk);
   else
 #endif
     pack_scalar(g, sc.pk);
-  const auto& B = sc.pk.b;
-  auto& cand = sc.cand;
-  cand.clear();
-  sc.rules.clear();
-  // Rule starts i in [0, last-10] with g[i] && g[i+1].
+  const std::vector<std::uint64_t>& B = sc.pk.b;
+  const std::size_t nwords = B.size();
+  // Word w of (B >> s): bit k = gene (64w + k + s).
+  auto sh = [&](int s, std::size_t w) -> std::uint64_t {
+    const std::size_t q = w + (static_cast<std::size_t>(s) >> 6);
+    const int r = s & 63;
+    if (q >= nwords) return 0;
+    std::uint64_t lo = B[q] >> r;
+    if (r && q + 1 < nwords) lo |= B[q + 1] << (64 - r);
+    return lo;
+  };
+  // Rule starts i <= last - 10 with genes i, i+1 = 1.
   const int imax = last - 10;
-  const std::size_t nw = (static_cast<std::size_t>(imax) >> 6) + 1;
-  for (std::size_t w = 0; w < nw; ++w) {
-    std::uint64_t x = B[w] & ((B[w] >> 1) | (B[w + 1] << 63));
-    while (x) {
-      const int i = static_cast<int>((w << 6) + static_cast<std::size_t>(__builtin_ctzll(x)));
-      x &= x - 1;
-      if (i > imax) break;
-      const int p = i + 2;
-      const int par = p & 1;
-      const auto& st = par ? sc.pk.s1 : sc.pk.s0;
-      // Same-parity positions >= p with gene 1 and position < last.
-      const int jlimit = (last - par + 1) >> 1;  // stream indices j with 2j+par < last
-      const int jj = next_one(st, p >> 1, jlimit);
-      int cur;
-      if (jj >= 0) {
-        cur = 2 * jj + par;
-      } else {
-        cur = p >= last ? p : p + 2 * ((last - p + 1) >> 1);
-      }
-      const int pred_last = cur - 1;
-      if (pred_last + 9 <= last) cand.push_back(Cand{p, cur - p});
+  sc.mlist.clear();
+  for (std::size_t w = 0; w <= static_cast<std::size_t>(imax) >> 6; ++w) {
+    std::uint64_t x = B[w] & sh(1, w);
+    if (w == (static_cast<std::size_t>(imax) >> 6)) {
+      const int top = imax & 63;
+      x &= top == 63 ? ~std::uint64_t{0} : ((std::uint64_t{1} << (top + 1)) - 1);
     }
+    if (x) sc.mlist.emplace_back(static_cast<std::uint32_t>(w), x);
   }
-  if (cand.empty()) return result;
-
-  // Bucket candidates by predecessor length (stable: genotype order within a length).
-  int max_len = 0;
-  for (const Cand& c : cand) max_len = std::max(max_len, c.pred_len);
-  auto& bs = sc.bucket_start;
-  bs.assign(max_len + 2, 0);
-  for (const Cand& c : cand) ++bs[c.pred_len + 1];
-  for (int l = 0; l <= max_len; ++l) bs[l + 1] += bs[l];
-  auto& order = sc.order;
-  order.resize(cand.size());
-  {
-    std::vector<int> fill(bs.begin(), bs.end() - 1);
-    for (int i = 0; i < static_cast<int>(cand.size()); ++i) order[fill[cand[i].pred_len]++] = i;
+  if (sc.mlist.empty()) return result;
+  if (sc.stamp.size() < static_cast<std::size_t>(n)) {
+    sc.stamp.assign(n, 0);
+    sc.rule_at.assign(n, -2);
+    sc.kept_at.assign(n, 0);
   }
-
-  int first_kept = -1;
-  auto rule_of = [&](int idx) -> const Rule& { return sc.rules[cand[idx].rule]; };
-  auto overlaps_kept = [&](int idx) {
-    const Rule& r = rule_of(idx);
-    for (int c = first_kept; c != -1; c = cand[c].next_kept) {
-      if (c == idx) continue;
-      const Rule& o = rule_of(c);
+  if (++sc.epoch == 0) {
+    std::fill(sc.stamp.begin(), sc.stamp.end(), 0);
+    sc.epoch = 1;
+  }
+  sc.rules.clear();
+  auto touch = [&](int i) {
+    if (sc.stamp[i] != sc.epoch) {
+      sc.stamp[i] = sc.epoch;
+      sc.rule_at[i] = -2;
+      sc.kept_at[i] = 0;
+    }
+  };
+  // Kept rules ordered by predecessor start (= rule start + 2): rule-start positions.
+  std::vector<int> kept;
+  std::vector<std::uint8_t> checked;
+  auto overlaps_kept = [&](int i) {
+    const Rule& r = sc.rules[sc.rule_at[i]];
+    for (int k : kept) {
+      if (k == i) continue;
+      const Rule& o = sc.rules[sc.rule_at[k]];
       if (o.gene_string.first <= r.gene_string.last && o.gene_string.last >= r.gene_string.first)
         return true;
     }
     return false;
   };
-  auto pred_is_prefix = [&](const Cand& c, const GeneSpan& ch) {
-    if (c.pred_len > ch.length()) return false;
-    for (int k = 0; k < c.pred_len; ++k)
-      if (g[c.pred_first + k] != ch.at(k)) return false;
-    return true;
+  // Prefix levels memoised per call: level for information-bit prefix (m, bits) is the
+  // set of rule starts whose predecessor begins with that prefix (before the terminator
+  // test). Prefixes longer than 62 bits are not memoised.
+  using Level = std::vector<std::pair<std::uint32_t, std::uint64_t>>;
+  sc.memo.clear();
+  sc.pool_used = 0;
+  auto new_level = [&]() -> Level& {
+    if (sc.pool_used == sc.pool.size()) sc.pool.emplace_back();
+    Level& l = sc.pool[sc.pool_used++];
+    l.clear();
+    return l;
   };
+  std::vector<const Level*> lvp;
   auto find_best = [&](const GeneSpan& ch) -> int {
-    int len = std::min(ch.length(), max_len);
-    for (; len >= 0; --len) {
-      for (int o = bs[len]; o < bs[len + 1]; ++o) {
-        const int idx = order[o];
-        Cand& c = cand[idx];
-        if (!pred_is_prefix(c, ch)) continue;
-        if (c.rule < 0 && !c.tried) {
-          c.tried = true;
-          ReadRule rr = try_to_read_rule(g, c.pred_first - 2);
-          if (rr.ok) {
-            c.rule = static_cast<int>(sc.rules.size());
-            sc.rules.push_back(rr.rule);
-          }
+    const int clen = ch.length();
+    if (clen < 0) return -1;
+    const int mm = clen / 2;
+    lvp.assign(1, &sc.mlist);
+    std::uint64_t bits = 0;
+    int top = 0;
+    for (int m = 1; m <= mm; ++m) {
+      const int k = m - 1;
+      const bool ck = ch.at(2 * k + 1) != 0;
+      if (ck && k < 62) bits |= std::uint64_t{1} << k;
+      const Level* lev = nullptr;
+      std::uint64_t key = 0;
+      if (m <= 62) {
+        key = (static_cast<std::uint64_t>(m) << 58) ^ bits ^ (static_cast<std::uint64_t>(m) * 0x9E3779B97F4A7C15ULL);
+        auto it = sc.memo.find(key);
+        if (it != sc.memo.end() && it->second.first == m && it->second.second.first == bits)
+          lev = &sc.pool[it->second.second.second];
+      }
+      if (!lev) {
+        Level& next = new_level();
+        const std::size_t slot = sc.pool_used - 1;
+        for (const auto& [w, x0] : *lvp.back()) {
+          const std::uint64_t info = sh(3 + 2 * k, w);
+          const std::uint64_t x = x0 & ~sh(2 + 2 * k, w) & (ck ? info : ~info);
+          if (x) next.emplace_back(w, x);
         }
-        if (c.rule >= 0 && !overlaps_kept(idx)) return idx;
+        if (m <= 62) sc.memo[key] = {m, {bits, slot}};
+        lev = &sc.pool[slot];
+      }
+      if (lev->empty()) break;
+      lvp.push_back(lev);
+      top = m;
+    }
+    for (int m = top; m >= 0; --m) {
+      const int ilimit = last - 10 - 2 * m;  // i + 2m + 10 <= last
+      if (ilimit < 0) continue;
+      for (const auto& [w, x0] : *lvp[m]) {
+        if (static_cast<int>(w) * 64 > ilimit) break;
+        std::uint64_t x = x0 & sh(2 + 2 * m, w);
+        while (x) {
+          const int i = static_cast<int>(w) * 64 + __builtin_ctzll(x);
+          x &= x - 1;
+          if (i > ilimit) break;
+          touch(i);
+          if (sc.rule_at[i] == -2) {
+            ReadRule rr = try_to_read_rule(g, i);
+            if (rr.ok) {
+              sc.rule_at[i] = static_cast<int>(sc.rules.size());
+              sc.rules.push_back(rr.rule);
+            } else {
+              sc.rule_at[i] = -1;
+            }
+          }
+          if (sc.rule_at[i] >= 0 && !overlaps_kept(i)) return i;
+        }
       }
     }
     return -1;
   };
-  auto insert_kept = [&](int idx) {
-    const int start = cand[idx].pred_first;
-    if (first_kept != -1 && cand[first_kept].pred_first < start) {
-      int prev = first_kept;
-      while (cand[prev].next_kept != -1 && cand[cand[prev].next_kept].pred_first < start)
-        prev = cand[prev].next_kept;
-      cand[idx].next_kept = cand[prev].next_kept;
-      cand[prev].next_kept = idx;
-    } else {
-      cand[idx].next_kept = first_kept;
-      first_kept = idx;
-    }
+  // Insert into the ordered kept list; returns the insertion index.
+  auto insert_kept = [&](int i) {
+    auto it = std::lower_bound(kept.begin(), kept.end(), i);
+    const auto pos = static_cast<std::size_t>(it - kept.begin());
+    kept.insert(it, i);
+    checked.insert(checked.begin() + static_cast<std::ptrdiff_t>(pos), 0);
+    return pos;
   };
 
   int num_kept = 0;
   for (const GeneSpan& ch : node_chars) {
     const int best = find_best(ch);
-    if (best != -1 && !cand[best].kept) {
-      cand[best].kept = true;
+    if (best != -1 && !sc.kept_at[best]) {
+      sc.kept_at[best] = 1;
       ++num_kept;
       insert_kept(best);
     }
@@ -281,23 +312,25 @@ std::vector<Rule> generate_rules(const Genotype& g, const std::vector<GeneSpan>&
   int previous = 0;
   while (num_kept != previous) {
     previous = num_kept;
-    for (int k = first_kept; k != -1; k = cand[k].next_kept) {
-      if (cand[k].checked) continue;
-      cand[k].checked = true;
+    // Walk the ordered list; entries inserted after the current one are visited in
+    // this pass, entries inserted before it are not (as in the original linked list).
+    for (std::size_t k = 0; k < kept.size(); ++k) {
+      if (checked[k]) continue;
+      checked[k] = 1;
+      const int self = kept[k];
       for (int s = 0; s < 2; ++s) {
-        const GeneSpan ch = s ? rule_of(k).successor_new : rule_of(k).successor_replacement;
+        const Rule& rk = sc.rules[sc.rule_at[self]];
+        const GeneSpan ch = s ? rk.successor_new : rk.successor_replacement;
         const int keep = find_best(ch);
-        if (keep != -1 && !cand[keep].kept) {
-          cand[keep].kept = true;
+        if (keep != -1 && !sc.kept_at[keep]) {
+          sc.kept_at[keep] = 1;
           ++num_kept;
-          insert_kept(keep);
+          if (insert_kept(keep) <= k) ++k;
         }
       }
     }
   }
-  // Kept rules in genotype order of their predecessors (= candidate order).
-  for (const Cand& c : cand)
-    if (c.rule >= 0 && c.kept) result.push_back(sc.rules[c.rule]);
+  for (int i : kept) result.push_back(sc.rules[sc.rule_at[i]]);
   return result;
 }
 

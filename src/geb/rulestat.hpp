@@ -4,6 +4,7 @@
 
 #include <cstdio>
 #include <string>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
@@ -34,10 +35,15 @@ class RuleStat {
     std::vector<Gene> genes;
     int abundance = 0;
     int shadow_abundance = 0;
+    // Cache: this component's plain name is already in dict_seen_ (never serialised;
+    // dict_seen_ remains the authority).
+    bool plain_name_emitted = false;
   };
   struct Bucket {
     std::vector<Component> list;
     int shadow_from = -1;  // index of first shadow-only component (resets variant)
+    // Gene string -> list index (exact index of the list; rebuilt on load/strip).
+    std::unordered_map<std::string, int> index;
   };
   struct Stats {
     int max_count = 0, max_sum_len = 0, sum_count = 0, sum_sum_len = 0;
@@ -53,6 +59,7 @@ class RuleStat {
                         bool shadow_pass);
   void print_complexities(long t, const Stats& s, double n, bool shadow);
   void emit_dictionary(long t, char pop, const std::string& name, const std::vector<Gene>& g);
+  void emit_plain(long t, char pop, const char* prefix, int len, int idx, Component& c);
 
   bool reset_shadow_;
   int every_;
