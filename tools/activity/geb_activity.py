@@ -285,7 +285,30 @@ def classify(D_tr, med_tr, new_mean, new_frac_positive):
 
 # ---------------------------------------------------------------------------
 
-def analyse(run_dir, variant, grouping, block, source="rulestat", null=False):
+def stagnation_time(run_dir, window=100000):
+    """Last step at which births occurred, if births then stop for >= window steps
+    (the run has frozen, GPEM sec. 10 'stagnated'); None if the run is not frozen."""
+    path = os.path.join(run_dir, "log.txt")
+    if not os.path.exists(path):
+        return None
+    last_change_t, last_r, t = None, None, None
+    with open(path) as f:
+        for line in f:
+            if not line.startswith("time: T"):
+                continue
+            try:
+                t = int(line.split("T")[1])
+                r = int(line.split("reproductions: R")[1].split("R")[0])
+            except (IndexError, ValueError):
+                continue
+            if r != last_r:
+                last_r, last_change_t = r, t
+    if t is not None and last_change_t is not None and t - last_change_t >= window:
+        return last_change_t
+    return None
+
+
+def analyse(run_dir, variant, grouping, block, source="rulestat", null=False, max_time=None):
     if source == "presence":
         times, pops, has_s2 = load_presence_file(run_dir, grouping)
         real_sets, shadow_sets = pops["R"], pops["S"]
@@ -295,11 +318,17 @@ def analyse(run_dir, variant, grouping, block, source="rulestat", null=False):
         if null:
             raise SystemExit("--null requires --source presence")
         times, real_sets, shadow_sets = load_presence(run_dir, variant, grouping)
+    if max_time is not None:
+        keep = int(np.searchsorted(times, max_time, side="right"))
+        times, real_sets, shadow_sets = times[:keep], real_sets[:keep], shadow_sets[:keep]
+        if source == "presence":
+            pops = {k: v[:keep] for k, v in pops.items()}
     if len(times) < 8:
         raise SystemExit(f"too few snapshots ({len(times)})")
     real_present = screened(real_sets, real_sets)
     result = dict(run_dir=run_dir, variant=variant, grouping=grouping, source=source,
-                  null_control=null, snapshots=int(len(times)), last_time=int(times[-1]))
+                  null_control=null, snapshots=int(len(times)), last_time=int(times[-1]),
+                  truncated_at=max_time)
     series = dict(time=times)
     if null:
         # Null control: an independent reset shadow takes the place of the real run.

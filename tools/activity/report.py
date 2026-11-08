@@ -52,13 +52,16 @@ def main():
         else:
             for g in ("pb", "rule"):
                 configs.append(dict(variant="no_resets", grouping=g, source="rulestat", null=False))
+        stag = ga.stagnation_time(run)
+        if stag is not None:
+            name = f"{name} (stagnated; truncated at {stag})"
         for c in configs:
             try:
-                r, s = ga.analyse(run, c["variant"], c["grouping"], 20, c["source"], c["null"])
+                r, s = ga.analyse(run, c["variant"], c["grouping"], 20, c["source"], c["null"], stag)
             except SystemExit as e:
                 lines.append(f"| {name} | {c['grouping']} | - | - | - | - | - | - | - | - | {e} |")
                 continue
-            ga.write_outputs(r, s, os.path.join(out, name), plot=True)
+            ga.write_outputs(r, s, os.path.join(out, os.path.basename(run.rstrip("/"))), plot=True)
             lines.append(row(name, r))
     with open(os.path.join(out, "summary.md"), "w") as f:
         f.write("\n".join(lines) + "\n")
