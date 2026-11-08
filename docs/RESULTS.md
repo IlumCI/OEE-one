@@ -7,13 +7,13 @@ component class: production-rule predecessor plus link bits. Each run also carri
 null control: an independent second reset shadow, analysed as if it were the real run.
 
 1. In every run, normalised median activity grew while the run was evolving:
-   - from about 17-19 at 1M steps to 89 and 106 at 8M steps (seeds 2, 3);
-   - to 69 at 6M steps (seed 5).
+   - from about 17-19 at 1M steps to 89, 106 and 99 at 8M steps (seeds 2, 3, 5).
 
    Diversity stayed bounded (about 20-40 components after the initial transient).
    Normalised new activity stayed positive throughout.
-2. Every null control stayed flat. Its normalised median was between -5 and +2 at every
-   milestone, and it had no adaptive new activity.
+2. Every null control stayed near zero. Its normalised median was between -5 and +4 at
+   every milestone, and it had essentially no adaptive new activity (at most 0.075% of
+   snapshots).
 3. Two of five seeds stagnated:
    - seed 1 at 2.80M steps;
    - seed 4 at 6.50M steps.
@@ -21,8 +21,9 @@ null control: an independent second reset shadow, analysed as if it were the rea
    In each, a single killing population stopped reproducing. Channon reports the same
    outcome in some of his runs (GPEM sections 6.4 and 10). These runs are analysed up to
    their last birth.
-4. Under the strict Table I classification rule defined below, results depend on run
-   length (details below). The smoothed trajectories are the more reliable evidence.
+4. The strict Table I classification rule defined below gives results that depend on
+   run length. It also gives one false positive: the seed-5 null at 8M (details
+   below). Effect sizes and smoothed trajectories are the more reliable evidence.
 
 This reproduces, qualitatively, Channon's class 3b result (unbounded evolutionary
 activity with bounded diversity) and adds an independent null control. "Unbounded"
@@ -58,11 +59,11 @@ Normalised median activity, averaged over +/-50 snapshots around each milestone.
 | 3 | null | 0 | -2 | 0 | 1 | -2 | 0.00 | |
 | 4 | real | 17 | 30 | 45 | 20 | - | 0.06 | 6,497,300 |
 | 4 | null | 1 | 1 | 1 | 0 | - | 0.00 | |
-| 5 | real | 19 | 32 | 57 | 69 | (run at 6.9M) | 0.08 | - |
-| 5 | null | 1 | 0 | 1 | 2 | - | 0.00 | |
+| 5 | real | 19 | 32 | 57 | 69 | 99 | 0.07 | - |
+| 5 | null | 1 | 0 | 1 | 2 | 4 | 0.00075 | |
 
 Seed 4's decline from 45 to 20 precedes its stagnation: the population collapsed
-before freezing. Seed 5 was still running when this was written.
+before freezing. Seeds 2, 3 and 5 completed 8M steps with live populations.
 
 ![seed 3 real](results/m1/resets_s3_pb_real.png)
 ![seed 3 null](results/m1/resets_s3_pb_null.png)
@@ -81,15 +82,22 @@ Class 3b also requires positive new activity and bounded diversity.
 | 2 | 2 | 3b | 3b | 2 | 3b (8M) |
 | 3 | 3b | 2 | 3b | 3b | 2 (8M) |
 | 4 | | 3b | 3b | 3b | 2 (to 6.5M) |
-| 5 | | 3b | 3b | 3b | 3a (6.9M) |
-| nulls | 1-2 | 1-2 | 1-2 | 1-2 | 1-2 (rule grouping: 3a in two nulls) |
+| 5 | | 3b | 3b | 3b | 3b (8M) |
+| nulls | 1-2 | 1-2 | 1-2 | 1-2 | 1-2, except seed-5 null: 3b (8M); rule grouping: 3a in two nulls |
 
 The changes between checks have three causes:
 - **Seeds 2 and 3.** The last-quarter slope criterion responds to multi-million-step
   plateaus that are later followed by renewed growth: for both seeds, the median went
   from 58 to 89 and from 72 to 106 between 6M and 8M.
-- **Seed 5's "3a".** This comes from a small upward drift in diversity, which stays
-  at about 30.
+- **Seed 5 at 6.9M ("3a").** This came from a small upward drift in diversity, which
+  stays at about 30. At 8M it is 3b.
+- **Seed-5 null at 8M (false positive).** Its median drifted from 1 to 4 over 8M steps
+  (Mann-Kendall z 3.83, slope 0.34 per 1e6 steps), and it had positive new activity in
+  3 of about 4000 second-half snapshots. The rule has no minimum effect size, so a
+  slow drift in a null can pass it. For comparison, the seed-5 real run has slope 15.3
+  per 1e6 steps and new activity in 7% of snapshots. A next version of the test should
+  compare real and null directly: effect size, or a paired test against the
+  null-control distribution.
 - **Seed 4.** It reflects its pre-stagnation decline.
 
 The rule is reported as fixed rather than adjusted after seeing the data. Full table,
@@ -114,6 +122,8 @@ including the whole-rule grouping: [results/m1/summary_final.md](results/m1/summ
    Shorter-lived components are invisible to the test.
 
 ## Next
-- Finish seed 5. Run more seeds and the independent-shadow variant on further seeds.
+- Replace the per-run trend rule with a real-versus-null comparison (effect size, or a
+  test calibrated on many null controls).
+- Run more seeds, and the independent-shadow variant on further seeds.
 - Channon 2019 joint-scaling test (`-length`, `-neurons`).
 - Larger populations, to reduce stagnation (requires the L0/L3 work in DESIGN.md).

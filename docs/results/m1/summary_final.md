@@ -16,9 +16,9 @@
 | resets_s4 (stagnated; truncated at 6497300) | pb | null | 6497000 | 14.4 | 0 | -3.93 | 0.0 | 56 | 0.00 | 1 (no significant new activity) |
 | resets_s4 (stagnated; truncated at 6497300) | rule | real | 6497000 | 22.2 | 1 | -1.30 | -3.7 | 2061 | 0.18 | 2 (bounded) |
 | resets_s4 (stagnated; truncated at 6497300) | rule | null | 6497000 | 10.8 | 0 | -4.54 | -0.6 | 25 | 0.00 | 3a (unbounded D) |
-| resets_s5 | pb | real | 6889000 | 24.0 | 63 | 4.51 | -7.1 | 7760 | 0.08 | 3a (unbounded D) |
-| resets_s5 | pb | null | 6889000 | 11.2 | 2 | 3.82 | 0.0 | 131 | 0.00 | 2 (bounded) |
-| resets_s5 | rule | real | 6889000 | 20.2 | 2 | -1.44 | -0.9 | 2332 | 0.19 | 3a (unbounded D) |
-| resets_s5 | rule | null | 6890000 | 7.5 | 1 | -2.63 | 0.0 | 5 | 0.00 | 2 (bounded) |
+| resets_s5 | pb | real | 8000000 | 23.9 | 116 | 6.16 | 15.3 | 6570 | 0.07 | 3b (unbounded median activity, bounded D) |
+| resets_s5 | pb | null | 8000000 | 11.2 | 4 | 3.83 | 0.7 | 66 | 0.00 | 3b (unbounded median activity, bounded D) |
+| resets_s5 | rule | real | 8000000 | 20.4 | 9 | 0.92 | 0.7 | 2258 | 0.18 | 2 (bounded) |
+| resets_s5 | rule | null | 8000000 | 7.8 | 1 | 0.26 | 0.0 | 19 | 0.00 | 1 (no significant new activity) |
 | no_resets_s1 (stagnated; truncated at 2799900) | pb | real | 2799000 | 40.8 | -26 | 0.48 | -61.0 | 7161 | 0.41 | 2 (bounded) |
 | no_resets_s1 (stagnated; truncated at 2799900) | rule | real | 2799000 | 27.7 | -2 | 0.90 | -4.3 | 5079 | 0.07 | 2 (bounded) |
