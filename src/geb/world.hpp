@@ -66,6 +66,9 @@ class World {
   // Full state (parameters, RNG streams, agents, shadows, scheduling).
   void save(Writer& w) const;
   static std::unique_ptr<World> load(Reader& r);
+  // Restart the random streams (both shadows' streams) from seed s: the run continues
+  // on a different stochastic branch from the current state.
+  void reseed(int s);
   World(const World&) = delete;
   World& operator=(const World&) = delete;
 

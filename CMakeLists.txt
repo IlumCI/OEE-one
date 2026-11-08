@@ -45,3 +45,7 @@ add_test(NAME checkpoint_resume
   COMMAND ${CMAKE_SOURCE_DIR}/tests/check_resume.sh ${CMAKE_BINARY_DIR}/oee_geb ${CMAKE_BINARY_DIR}/resume_runs)
 add_executable(bench_generate_rules tests/bench/bench_generate_rules.cpp)
 target_link_libraries(bench_generate_rules PRIVATE oee_geb_core)
+add_executable(inspect_checkpoint tools/inspect_checkpoint/main.cpp)
+target_link_libraries(inspect_checkpoint PRIVATE oee_geb_core)
+add_test(NAME rescue_rollback_reseed
+  COMMAND ${CMAKE_SOURCE_DIR}/tests/check_rescue.sh ${CMAKE_BINARY_DIR} ${CMAKE_BINARY_DIR}/rescue_runs)

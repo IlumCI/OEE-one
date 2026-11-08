@@ -479,6 +479,11 @@ void World::step() {
   }
 }
 
+void World::reseed(int s) {
+  rng_.seed(s);
+  if (p_.second_shadow) rng2_.seed(s % 30000 + 1777);
+}
+
 void World::reset_shadow_to_real() {
   int k = -1;
   for (int at = 0; at < size_; ++at) {

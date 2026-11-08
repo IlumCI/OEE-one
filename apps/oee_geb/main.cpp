@@ -12,6 +12,12 @@
 //                   -save FILE -save-every N    (checkpoint every N steps, at cycle end)
 //                   -resume FILE                (continue from a checkpoint; output files are
 //                                                truncated to their checkpointed lengths)
+//                   -archive-every N            (also keep a copy of the checkpoint every N
+//                                                steps as FILE.archive.<step>)
+//                   -freeze-exit N              (exit with code 109 if no birth occurs for N
+//                                                steps; prints the last birth step)
+//                   -reseed S                   (with -resume: continue on a new random
+//                                                stream seeded with S; used to branch a run)
 
 #include <unistd.h>
 
@@ -167,7 +173,8 @@ int main(int argc, char** argv) {
   bool stats_on = false, rulestat_on = false, resets = OEE_GEB_DEFAULT_RESETS;
   long stopat = 0;
   std::string components_path, presence_path, outdir = ".", log_path, save_path, resume_path;
-  long save_every = 0;
+  long save_every = 0, archive_every = 0, freeze_exit = 0;
+  int reseed = 0;
   bool neurons_msg = false;
   for (int a = 1; a < argc;) {
     const char* s = argv[a];
@@ -217,6 +224,15 @@ int main(int argc, char** argv) {
       a += 2;
     } else if (!std::strcmp(s, "-resume") && has) {
       resume_path = argv[a + 1];
+      a += 2;
+    } else if (!std::strcmp(s, "-archive-every") && has && std::atol(argv[a + 1]) > 0) {
+      archive_every = std::atol(argv[a + 1]);
+      a += 2;
+    } else if (!std::strcmp(s, "-freeze-exit") && has && std::atol(argv[a + 1]) > 0) {
+      freeze_exit = std::atol(argv[a + 1]);
+      a += 2;
+    } else if (!std::strcmp(s, "-reseed") && has && std::atol(argv[a + 1])) {
+      reseed = static_cast<int>(std::atol(argv[a + 1]));
       a += 2;
     } else if (!std::strcmp(s, "-outdir") && has) {
       outdir = argv[a + 1];
@@ -342,6 +358,16 @@ int main(int argc, char** argv) {
   for (std::size_t i = 0; i < paths.size(); ++i) outs.files.emplace_back(paths[i], handles[i]->get());
   if (resuming)
     std::fprintf(stderr, "Resumed from %s at time %ld\n", resume_path.c_str(), world.time());
+  if (reseed) {
+    if (!resuming) {
+      std::fprintf(stderr, "-reseed requires -resume\n");
+      return 2;
+    }
+    world.reseed(reseed);
+    std::fprintf(stderr, "Reseeded with %d at time %ld\n", reseed, world.time());
+  }
+  long last_birth_time = world.time();
+  long last_births = world.num_reproductions();
 
   bool done = false;
   while (!done) {
@@ -353,6 +379,20 @@ int main(int argc, char** argv) {
       if (rulestat && !(t % kRulestatEvery)) rulestat->snapshot(world);
       if (!save_path.empty() && save_every && !(t % save_every))
         save_checkpoint(save_path, world, rulestat.get(), outs, config);
+      if (!save_path.empty() && archive_every && !(t % archive_every))
+        save_checkpoint(save_path + ".archive." + std::to_string(t), world, rulestat.get(), outs,
+                        config);
+      if (world.num_reproductions() != last_births) {
+        last_births = world.num_reproductions();
+        last_birth_time = t;
+      }
+      if (freeze_exit && t - last_birth_time >= freeze_exit) {
+        std::fflush(out);
+        std::fprintf(stderr, "Frozen: last birth at %ld, no birth for %ld steps\n",
+                     last_birth_time, t - last_birth_time);
+        std::fflush(stderr);
+        return 109;
+      }
       if (stopat && t >= stopat) done = true;
     }
   }
