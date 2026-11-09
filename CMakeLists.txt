@@ -51,3 +51,4 @@ add_test(NAME rescue_rollback_reseed
   COMMAND ${CMAKE_SOURCE_DIR}/tests/check_rescue.sh ${CMAKE_BINARY_DIR} ${CMAKE_BINARY_DIR}/rescue_runs)
 add_executable(replay tools/replay/main.cpp)
 target_link_libraries(replay PRIVATE oee_geb_core)
+add_test(NAME mspd_sanity COMMAND python3 -I ${CMAKE_SOURCE_DIR}/tests/test_mspd.py)

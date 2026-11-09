@@ -1,0 +1,170 @@
+{
+ "params": {
+  "out": "build/mspd/unevolved.json",
+  "replay": "build/rel/replay",
+  "checkpoints": [
+   "build/mspd/unevolved/ck_s31",
+   "build/mspd/unevolved/ck_s32",
+   "build/mspd/unevolved/ck_s33",
+   "build/mspd/unevolved/ck_s34",
+   "build/mspd/unevolved/ck_s35"
+  ],
+  "cycles": 2048,
+  "window": 64,
+  "step": 16,
+  "taus": [
+   1,
+   4
+  ],
+  "scales": 5,
+  "shuffles": 1,
+  "states": "full"
+ },
+ "rows": [
+  {
+   "per_tau": {
+    "1": {
+     "mspd": 0.0016935771651917222,
+     "shuffled_mean": 0.0020822510169228752,
+     "shuffled_sd": 0.0,
+     "p_shuffle": 1.0,
+     "mean_h": 0.1965349913923676,
+     "mean_H": 0.7033478809084278,
+     "mean_H0": 0.497001351194288
+    },
+    "4": {
+     "mspd": 0.001131213385099737,
+     "shuffled_mean": 0.003278669519323166,
+     "shuffled_sd": 0.0,
+     "p_shuffle": 1.0,
+     "mean_h": 0.20040740004782234,
+     "mean_H": 0.7885451746093903,
+     "mean_H0": 0.578172915415674
+    }
+   },
+   "occupancy": 0.69078125,
+   "mspd": 0.0014123952751457297,
+   "shuffled": 0.0026804602681230207,
+   "mean_h": 0.19847119572009497,
+   "checkpoint": "build/mspd/unevolved/ck_s31",
+   "time": null,
+   "sites": 400
+  },
+  {
+   "per_tau": {
+    "1": {
+     "mspd": 0.001515889797693919,
+     "shuffled_mean": 0.002147029969226396,
+     "shuffled_sd": 0.0,
+     "p_shuffle": 1.0,
+     "mean_h": 0.20626587381522066,
+     "mean_H": 0.706508201896373,
+     "mean_H0": 0.4905955701531608
+    },
+    "4": {
+     "mspd": 0.0010451301890327287,
+     "shuffled_mean": 0.003376654443721004,
+     "shuffled_sd": 0.0,
+     "p_shuffle": 1.0,
+     "mean_h": 0.21413482079186777,
+     "mean_H": 0.792562909875209,
+     "mean_H0": 0.5687136974042478
+    }
+   },
+   "occupancy": 0.767191162109375,
+   "mspd": 0.0012805099933633239,
+   "shuffled": 0.0027618422064737,
+   "mean_h": 0.2102003473035442,
+   "checkpoint": "build/mspd/unevolved/ck_s32",
+   "time": null,
+   "sites": 400
+  },
+  {
+   "per_tau": {
+    "1": {
+     "mspd": 0.0015883262654533756,
+     "shuffled_mean": 0.0028503049690145822,
+     "shuffled_sd": 0.0,
+     "p_shuffle": 1.0,
+     "mean_h": 0.20413571189036278,
+     "mean_H": 0.7192938345248492,
+     "mean_H0": 0.5058027967619982
+    },
+    "4": {
+     "mspd": 0.0008103719190960629,
+     "shuffled_mean": 0.0024813427794544603,
+     "shuffled_sd": 0.0,
+     "p_shuffle": 1.0,
+     "mean_h": 0.2017136098568258,
+     "mean_H": 0.8029596714512243,
+     "mean_H0": 0.591305145927193
+    }
+   },
+   "occupancy": 0.76607421875,
+   "mspd": 0.0011993490922747193,
+   "shuffled": 0.002665823874234521,
+   "mean_h": 0.2029246608735943,
+   "checkpoint": "build/mspd/unevolved/ck_s33",
+   "time": null,
+   "sites": 400
+  },
+  {
+   "per_tau": {
+    "1": {
+     "mspd": 0.0014696882363810495,
+     "shuffled_mean": 0.0029760638311048136,
+     "shuffled_sd": 0.0,
+     "p_shuffle": 1.0,
+     "mean_h": 0.17339534080798844,
+     "mean_H": 0.7102336923656397,
+     "mean_H0": 0.5277382961388257
+    },
+    "4": {
+     "mspd": 0.0006294362004505721,
+     "shuffled_mean": 0.002282205718175826,
+     "shuffled_sd": 0.0,
+     "p_shuffle": 1.0,
+     "mean_h": 0.17541858089158738,
+     "mean_H": 0.8051564554861197,
+     "mean_H0": 0.6200559164584459
+    }
+   },
+   "occupancy": 0.747994384765625,
+   "mspd": 0.0010495622184158108,
+   "shuffled": 0.0026291347746403198,
+   "mean_h": 0.1744069608497879,
+   "checkpoint": "build/mspd/unevolved/ck_s34",
+   "time": null,
+   "sites": 400
+  },
+  {
+   "per_tau": {
+    "1": {
+     "mspd": 0.0017004095971321753,
+     "shuffled_mean": 0.0029294671891171567,
+     "shuffled_sd": 0.0,
+     "p_shuffle": 1.0,
+     "mean_h": 0.18902005616703646,
+     "mean_H": 0.7178839472979168,
+     "mean_H0": 0.5190504043435166
+    },
+    "4": {
+     "mspd": 0.001269880860944844,
+     "shuffled_mean": 0.004132654795428513,
+     "shuffled_sd": 0.0,
+     "p_shuffle": 1.0,
+     "mean_h": 0.1884572501935137,
+     "mean_H": 0.8065544142153689,
+     "mean_H0": 0.6079469421313987
+    }
+   },
+   "occupancy": 0.754322509765625,
+   "mspd": 0.0014851452290385097,
+   "shuffled": 0.003531060992272835,
+   "mean_h": 0.18873865318027508,
+   "checkpoint": "build/mspd/unevolved/ck_s35",
+   "time": null,
+   "sites": 400
+  }
+ ]
+}

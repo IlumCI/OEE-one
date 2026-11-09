@@ -1,0 +1,170 @@
+{
+ "params": {
+  "out": "build/mspd/evolved.json",
+  "replay": "build/rel/replay",
+  "checkpoints": [
+   "runs/resets_s2/ck",
+   "runs/resets_s3/ck",
+   "runs/resets_s5/ck",
+   "runs2/rescue_s1/ck",
+   "runs2/scale_L20_N40_s11/ck"
+  ],
+  "cycles": 2048,
+  "window": 64,
+  "step": 16,
+  "taus": [
+   1,
+   4
+  ],
+  "scales": 5,
+  "shuffles": 1,
+  "states": "full"
+ },
+ "rows": [
+  {
+   "per_tau": {
+    "1": {
+     "mspd": 0.05373763796066465,
+     "shuffled_mean": 0.05519299957129452,
+     "shuffled_sd": 0.0,
+     "p_shuffle": 1.0,
+     "mean_h": 0.008197727407414347,
+     "mean_H": 0.6503533017549893,
+     "mean_H0": 0.6339833214582925
+    },
+    "4": {
+     "mspd": 0.013091161568144032,
+     "shuffled_mean": 0.014165168105874117,
+     "shuffled_sd": 0.0,
+     "p_shuffle": 1.0,
+     "mean_h": 0.024708464343050674,
+     "mean_H": 0.7174669143340195,
+     "mean_H0": 0.6835399646733691
+    }
+   },
+   "occupancy": 0.5925146484375,
+   "mspd": 0.03341439976440434,
+   "shuffled": 0.03467908383858432,
+   "mean_h": 0.016453095875232512,
+   "checkpoint": "runs/resets_s2/ck",
+   "time": null,
+   "sites": 400
+  },
+  {
+   "per_tau": {
+    "1": {
+     "mspd": 0.05668549544271891,
+     "shuffled_mean": 0.04968235737446117,
+     "shuffled_sd": 0.0,
+     "p_shuffle": 0.5,
+     "mean_h": 0.006592895319289002,
+     "mean_H": 0.6492103517224975,
+     "mean_H0": 0.6346828728559634
+    },
+    "4": {
+     "mspd": 0.016191226626779444,
+     "shuffled_mean": 0.018713727532974535,
+     "shuffled_sd": 0.0,
+     "p_shuffle": 1.0,
+     "mean_h": 0.01863401033911008,
+     "mean_H": 0.6949433689521185,
+     "mean_H0": 0.6668883803287664
+    }
+   },
+   "occupancy": 0.561898193359375,
+   "mspd": 0.03643836103474918,
+   "shuffled": 0.03419804245371785,
+   "mean_h": 0.012613452829199541,
+   "checkpoint": "runs/resets_s3/ck",
+   "time": null,
+   "sites": 400
+  },
+  {
+   "per_tau": {
+    "1": {
+     "mspd": 0.039287875248955814,
+     "shuffled_mean": 0.060855605005595656,
+     "shuffled_sd": 0.0,
+     "p_shuffle": 1.0,
+     "mean_h": 0.012442020520126544,
+     "mean_H": 0.6476412524521286,
+     "mean_H0": 0.6266462159548175
+    },
+    "4": {
+     "mspd": 0.01348577900304818,
+     "shuffled_mean": 0.0165339389030208,
+     "shuffled_sd": 0.0,
+     "p_shuffle": 1.0,
+     "mean_h": 0.02823216813906966,
+     "mean_H": 0.7143152256144633,
+     "mean_H0": 0.6769774816519235
+    }
+   },
+   "occupancy": 0.58411865234375,
+   "mspd": 0.026386827126001995,
+   "shuffled": 0.038694771954308226,
+   "mean_h": 0.020337094329598102,
+   "checkpoint": "runs/resets_s5/ck",
+   "time": null,
+   "sites": 400
+  },
+  {
+   "per_tau": {
+    "1": {
+     "mspd": 0.03306519702937662,
+     "shuffled_mean": 0.03916133454500984,
+     "shuffled_sd": 0.0,
+     "p_shuffle": 1.0,
+     "mean_h": 0.0028104156799177503,
+     "mean_H": 0.43329458060783616,
+     "mean_H0": 0.42231548292161825
+    },
+    "4": {
+     "mspd": 0.02131964097610347,
+     "shuffled_mean": 0.02542634149596614,
+     "shuffled_sd": 0.0,
+     "p_shuffle": 1.0,
+     "mean_h": 0.01644887284816366,
+     "mean_H": 0.45746139274033065,
+     "mean_H0": 0.4299465387880043
+    }
+   },
+   "occupancy": 0.2171044921875,
+   "mspd": 0.027192419002740043,
+   "shuffled": 0.03229383802048799,
+   "mean_h": 0.009629644264040706,
+   "checkpoint": "runs2/rescue_s1/ck",
+   "time": null,
+   "sites": 400
+  },
+  {
+   "per_tau": {
+    "1": {
+     "mspd": 0.011834763482142083,
+     "shuffled_mean": 0.014181150305704847,
+     "shuffled_sd": 0.0,
+     "p_shuffle": 1.0,
+     "mean_h": 0.032709100020984525,
+     "mean_H": 0.6911099881432035,
+     "mean_H0": 0.6498118208272669
+    },
+    "4": {
+     "mspd": 0.00523974734516634,
+     "shuffled_mean": 0.005792770699282255,
+     "shuffled_sd": 0.0,
+     "p_shuffle": 1.0,
+     "mean_h": 0.04157231669650343,
+     "mean_H": 0.7958597315874124,
+     "mean_H0": 0.7473713586817003
+    }
+   },
+   "occupancy": 0.795438232421875,
+   "mspd": 0.008537255413654212,
+   "shuffled": 0.009986960502493552,
+   "mean_h": 0.037140708358743973,
+   "checkpoint": "runs2/scale_L20_N40_s11/ck",
+   "time": null,
+   "sites": 400
+  }
+ ]
+}

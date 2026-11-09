@@ -123,8 +123,7 @@ including the whole-rule grouping: [results/m1/summary_final.md](results/m1/summ
    Shorter-lived components are invisible to the test.
 
 ## Next
-- Replace the per-run trend rule with a real-versus-null comparison (effect size, or a
-  test calibrated on many null controls).
+- Real-versus-null comparison calibrated on the null controls: done, see [M2.md](M2.md).
 - Run more seeds, and the independent-shadow variant on further seeds.
 - Channon 2019 joint-scaling test: done, see [SCALING.md](SCALING.md). Joint scaling
   keeps increasing; neurons-only scaling plateaus.

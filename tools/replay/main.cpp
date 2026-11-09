@@ -1,5 +1,8 @@
 // Record agent positions from a checkpoint for visualisation.
-// Usage: replay CHECKPOINT STEPS EVERY > frames.json
+// Usage: replay CHECKPOINT STEPS EVERY [grid] > out
+// Default output is JSON (below). With "grid", output is raw bytes: per recorded cycle,
+// L*L cell states in row-major order: 0 = empty, else 1 + (heading quadrant) + 4 * (pen + 1)
+// (pen: -1 none, 1 reproduce, 2 kill attempted this cycle), i.e. states 1..16.
 // Output: {"L":..,"t0":..,"every":..,"frames":[[[id,x64,y64,dir,pen,nodes,sprite],...],...],"births":[..]}
 // sprite: 15-bit MinHash signature of the agent's production rules. A mutation that
 // changes one rule changes only the bits whose minimum came from that rule, so
@@ -7,6 +10,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <algorithm>
+#include <string>
 #include <vector>
 
 #include "geb/serial.hpp"
@@ -51,6 +55,21 @@ int main(int argc, char** argv) {
   r.get_str();
   auto w = World::load(r);
   const long steps = std::atol(argv[2]), every = std::atol(argv[3]);
+  if (argc > 4 && std::string(argv[4]) == "grid") {
+    std::vector<unsigned char> row(w->world_size());
+    const long end = w->time() + steps;
+    while (w->time() < end) {
+      const long before = w->time();
+      w->step();
+      if (w->time() == before || w->time() % every) continue;
+      for (int c = 0; c < w->world_size(); ++c) {
+        const Organism* o = w->at(c);
+        row[c] = o ? static_cast<unsigned char>(1 + ((o->direction_deg % 360) / 90) + 4 * (o->pen_colour + 1)) : 0;
+      }
+      std::fwrite(row.data(), 1, row.size(), stdout);
+    }
+    return 0;
+  }
   std::printf("{\"L\":%d,\"t0\":%ld,\"every\":%ld,\"frames\":[", w->world_length(), w->time(), every);
   const long t_end = w->time() + steps;
   bool first = true;
