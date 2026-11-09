@@ -43,6 +43,9 @@ struct Params {
   std::uint64_t seed = 0;
   std::uint32_t mutation_prob = 1u << 18;  // out of 2^30 per byte per interaction
   int threads = 1;
+  // Spatial variant (paper section 2.2; cubff make_2d_pattern.py): programs on a bounded
+  // grid_w x grid_h grid, interacting only within a (2*radius+1)^2 box. 0 = well mixed.
+  int grid_w = 0, grid_h = 0, radius = 2;
 };
 
 struct Metrics {
@@ -73,10 +76,15 @@ class Soup {
  private:
   std::uint64_t seed(std::uint64_t x) const { return splitmix64(splitmix64(p_.seed) ^ splitmix64(x)); }
   void run_pairs(std::size_t begin, std::size_t end, std::uint64_t epoch_seed, std::uint64_t* ops);
+  void build_neighbours();
+  void spatial_pairs();
 
   Params p_;
   std::vector<std::uint8_t> soup_;
   std::vector<std::uint32_t> order_;
+  std::vector<std::vector<std::uint32_t>> neigh_;  // spatial variant only
+  std::vector<char> used_;
+  std::size_t active_pairs_ = 0;
   std::size_t epoch_ = 0;
   double last_ops_per_run_ = 0;
 };

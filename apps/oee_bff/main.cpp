@@ -1,7 +1,7 @@
 // BFF primordial soup driver. Log format matches cubff's --log output
 // (epoch,brotli_size,soup_size,higher_entropy), followed by extra columns.
 //
-// Usage: oee_bff [-seed S] [-programs N] [-mutation P (out of 2^30)] [-epochs E]
+// Usage: oee_bff [-seed S] [-programs N] [-grid W H (spatial variant, sets N = W*H)] [-mutation P (out of 2^30)] [-epochs E]
 //                [-interval K] [-threads T] [-log FILE] [-cubff-log]
 //                [-save CK] [-save-every K] [-resume CK] [-dump-every K -dump-from E -dump-programs N -dump-dir D]
 //                [-stop-entropy X -stop-after K]
@@ -37,6 +37,7 @@ int main(int argc, char** argv) {
     else if (s == "-epochs") epochs = std::strtoull(next(), nullptr, 10);
     else if (s == "-interval") interval = std::strtoull(next(), nullptr, 10);
     else if (s == "-threads") p.threads = std::atoi(next());
+    else if (s == "-grid") { p.grid_w = std::atoi(next()); p.grid_h = std::atoi(next()); p.num_programs = std::size_t(p.grid_w) * p.grid_h; }
     else if (s == "-log") log_path = next();
     else if (s == "-cubff-log") cubff_log = true;
     else if (s == "-save") save_path = next();
