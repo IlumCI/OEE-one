@@ -1,14 +1,40 @@
 // Record agent positions from a checkpoint for visualisation.
 // Usage: replay CHECKPOINT STEPS EVERY > frames.json
-// Output: {"L":..,"t0":..,"every":..,"frames":[[[id,x64,y64,dir,pen,nodes],...],...],"births":[..]}
+// Output: {"L":..,"t0":..,"every":..,"frames":[[[id,x64,y64,dir,pen,nodes,sprite],...],...],"births":[..]}
+// sprite: 15-bit MinHash signature of the agent's production rules. A mutation that
+// changes one rule changes only the bits whose minimum came from that rule, so
+// related genotypes have similar signatures.
 #include <cstdio>
 #include <cstdlib>
+#include <algorithm>
 #include <vector>
 
 #include "geb/serial.hpp"
 #include "geb/world.hpp"
 
 using namespace oee::geb;
+
+namespace {
+std::uint64_t mix(std::uint64_t x) {
+  x ^= x >> 33; x *= 0xff51afd7ed558ccdULL; x ^= x >> 33; x *= 0xc4ceb9fe1a85ec53ULL; x ^= x >> 33;
+  return x;
+}
+int sprite(const Organism& o) {
+  std::vector<std::uint64_t> hs;
+  for (const Rule& r : o.rules()) {
+    std::uint64_t h = 1469598103934665603ULL;
+    for (int k = 0; k < r.gene_string.length(); ++k) h = (h ^ static_cast<std::uint8_t>(r.gene_string.at(k))) * 1099511628211ULL;
+    hs.push_back(h);
+  }
+  int bits = 0;
+  for (int j = 0; j < 15; ++j) {
+    std::uint64_t best = ~0ULL;
+    for (std::uint64_t h : hs) best = std::min(best, mix(h ^ (0x9e3779b97f4a7c15ULL * (j + 1))));
+    if (!hs.empty() && (best >> 7 & 1)) bits |= 1 << j;
+  }
+  return bits;
+}
+}  // namespace
 
 int main(int argc, char** argv) {
   if (argc < 4) return 2;
@@ -41,8 +67,8 @@ int main(int argc, char** argv) {
     for (int c = 0; c < w->world_size(); ++c) {
       const Organism* o = w->at(c);
       if (!o) continue;
-      std::printf("%s[%llu,%d,%d,%d,%d,%d]", f2 ? "" : ",", (unsigned long long)o->id, o->at_x_64,
-                  o->at_y_64, o->direction_deg, o->pen_colour, o->num_nodes());
+      std::printf("%s[%llu,%d,%d,%d,%d,%d,%d]", f2 ? "" : ",", (unsigned long long)o->id, o->at_x_64,
+                  o->at_y_64, o->direction_deg, o->pen_colour, o->num_nodes(), sprite(*o));
       f2 = false;
     }
     std::printf("]");
