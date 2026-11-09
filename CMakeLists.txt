@@ -65,3 +65,8 @@ add_test(NAME bff_cubff_equivalence
   COMMAND sh -c "$<TARGET_FILE:oee_bff> -seed 10248 -epochs 256 -interval 64 -threads 2 -cubff-log -log bff_eq.txt && diff -u ${CMAKE_SOURCE_DIR}/tests/golden/bff/cubff_bff_noheads_seed10248.txt bff_eq.txt")
 add_test(NAME bff_resume
   COMMAND sh -c "B=$<TARGET_FILE:oee_bff>; $B -seed 7 -programs 4096 -epochs 200 -interval 50 -save r_a.ck -log /dev/null && $B -seed 7 -programs 4096 -epochs 100 -interval 50 -save r_b.ck -log /dev/null && $B -seed 7 -programs 4096 -epochs 200 -interval 50 -resume r_b.ck -save r_b.ck -log /dev/null && cmp r_a.ck r_b.ck")
+add_executable(bff_inspect apps/oee_bff/inspect.cpp)
+target_link_libraries(bff_inspect PRIVATE oee_bff_core)
+add_executable(test_bff_selfrep tests/bff/test_selfrep.cpp)
+target_link_libraries(test_bff_selfrep PRIVATE oee_bff_core)
+add_test(NAME bff_selfrep_controls COMMAND test_bff_selfrep)

@@ -2,6 +2,7 @@
 
 #include <brotli/encode.h>
 
+#include <algorithm>
 #include <cmath>
 #include <cstdio>
 #include <cstring>
@@ -81,6 +82,48 @@ std::size_t evaluate(std::uint8_t* tape, std::size_t max_steps) {
     if (++pc >= kPair) { ++i; break; }
   }
   return i - skipped;
+}
+
+std::size_t selfrep_score(const std::uint8_t* program, std::uint64_t seed, std::size_t num_programs,
+                          std::size_t index) {
+  constexpr std::size_t kIters = 13, kExtraGens = 4;
+  std::uint8_t tapes[kIters][kPair] = {};
+  const std::uint64_t local = splitmix64(num_programs * seed + index);
+  for (std::size_t i = 0; i < kIters; ++i) {
+    std::uint8_t noise[kTape];
+    for (int j = 0; j < kTape; ++j) noise[j] = splitmix64(local ^ splitmix64((i + 1) * kTape + j)) % 256;
+    std::uint8_t* t = tapes[i];
+    std::memcpy(t, program, kTape);
+    std::memcpy(t + kTape, noise, kTape);
+    evaluate(t);
+    for (std::size_t g = 0; g < kExtraGens; ++g) {
+      std::memcpy(t, t + kTape, kTape);
+      std::memcpy(t + kTape, noise, kTape);
+      evaluate(t);
+    }
+  }
+  std::size_t res[2] = {};
+  for (int i = 0; i < kPair; ++i)
+    for (std::size_t a = 0; a < kIters; ++a) {
+      std::size_t count = 1;
+      if (i < kTape && tapes[a][i] != program[i]) continue;
+      for (std::size_t b = a + 1; b < kIters; ++b)
+        if (tapes[a][i] == tapes[b][i]) ++count;
+      if (count > kIters / 4) {
+        ++res[i / kTape];
+        break;
+      }
+    }
+  return std::min(res[0], res[1]);
+}
+
+std::string to_text(const std::uint8_t* program, std::size_t n) {
+  std::string s;
+  for (std::size_t i = 0; i < n; ++i) {
+    const Op o = kOps.t[program[i]];
+    s += o == kNull ? '0' : o == kNoop ? '_' : static_cast<char>(program[i]);
+  }
+  return s;
 }
 
 Soup::Soup(const Params& p) : p_(p), soup_(p.num_programs * kTape), order_(p.num_programs) {

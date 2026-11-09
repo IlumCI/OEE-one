@@ -27,6 +27,17 @@ inline std::uint64_t splitmix64(std::uint64_t x) {
 // Run one interaction tape in place; returns the number of non-no-op instructions.
 std::size_t evaluate(std::uint8_t* tape, std::size_t max_steps = kMaxSteps);
 
+// cubff CheckSelfRep: pair the program with 13 random noise tapes, run 5 generations
+// (each generation copies the right half to the left and refills the right with the
+// same noise), and count positions reproduced consistently. Returns min(left, right)
+// count; cubff treats >= kSelfrepThreshold as a self-replicator.
+constexpr std::size_t kSelfrepThreshold = 5;
+std::size_t selfrep_score(const std::uint8_t* program, std::uint64_t seed, std::size_t num_programs,
+                          std::size_t index);
+// Printable form (cubff convention): commands as themselves, 0 as '0', others as '.'-free
+// placeholders ('_').
+std::string to_text(const std::uint8_t* program, std::size_t n = kTape);
+
 struct Params {
   std::size_t num_programs = 128 * 1024;
   std::uint64_t seed = 0;
@@ -53,6 +64,8 @@ class Soup {
   const std::vector<std::uint8_t>& data() const { return soup_; }
   std::vector<std::uint8_t>& data() { return soup_; }
   const Params& params() const { return p_; }
+  // Seed cubff passes to CheckSelfRep after the epoch with index e.
+  std::uint64_t epoch_seed(std::uint64_t e) const { return seed(e); }
 
   void save(const std::string& path) const;
   static Soup load(const std::string& path, int threads);
