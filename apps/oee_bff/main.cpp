@@ -3,7 +3,7 @@
 //
 // Usage: oee_bff [-seed S] [-programs N] [-mutation P (out of 2^30)] [-epochs E]
 //                [-interval K] [-threads T] [-log FILE] [-cubff-log]
-//                [-save CK] [-save-every K] [-resume CK] [-dump-every K -dump-dir D]
+//                [-save CK] [-save-every K] [-resume CK] [-dump-every K -dump-from E -dump-dir D]
 //                [-stop-entropy X -stop-after K]
 // -stop-entropy: stop K epochs after high-order entropy first reaches X (the paper's
 // transition criterion is X = 1). Exit code 0 when stopped by -epochs, 10 when stopped
@@ -19,7 +19,7 @@ using namespace oee::bff;
 
 int main(int argc, char** argv) {
   Params p;
-  std::size_t epochs = 16384, interval = 64, save_every = 0, dump_every = 0;
+  std::size_t epochs = 16384, interval = 64, save_every = 0, dump_every = 0, dump_from = 0;
   std::string log_path, save_path, resume_path, dump_dir;
   bool cubff_log = false;
   double stop_entropy = -1;
@@ -43,6 +43,7 @@ int main(int argc, char** argv) {
     else if (s == "-resume") resume_path = next();
     else if (s == "-dump-every") dump_every = std::strtoull(next(), nullptr, 10);
     else if (s == "-dump-dir") dump_dir = next();
+    else if (s == "-dump-from") dump_from = std::strtoull(next(), nullptr, 10);
     else if (s == "-stop-entropy") stop_entropy = std::atof(next());
     else if (s == "-stop-after") stop_after = std::strtoull(next(), nullptr, 10);
     else { std::fprintf(stderr, "unknown option %s\n", s.c_str()); return 2; }
@@ -75,7 +76,7 @@ int main(int argc, char** argv) {
       }
     }
     if (!save_path.empty() && save_every && soup.epochs_done() % save_every == 0) soup.save(save_path);
-    if (dump_every && !dump_dir.empty() && soup.epochs_done() % dump_every == 0) {
+    if (dump_every && !dump_dir.empty() && soup.epochs_done() >= dump_from && soup.epochs_done() % dump_every == 0) {
       char name[64];
       std::snprintf(name, sizeof name, "/soup_%010zu.bin", soup.epochs_done());
       std::FILE* f = std::fopen((dump_dir + name).c_str(), "wb");
