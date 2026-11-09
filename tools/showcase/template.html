@@ -1,0 +1,225 @@
+<title>OEE·ONE</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&display=swap">
+<style>
+/* Layout: the whole screen is the automaton's lattice; two pixel labels sit on it. */
+:root {
+  color-scheme: dark;
+  --void: #08090b;
+  --lattice: #1b1e24;
+  --bone: #ecebe4;
+  --signal: #f5d76e;   /* construction arm */
+  --strike: #ff2e4d;   /* kill */
+  --mate: #f5d76e;     /* reproduction attempt */
+  --sp1: #4aa3c8; --sp2: #e0a040; --sp3: #ecebe4;   /* simple, mid, complex networks */
+  --f-pixel: "Silkscreen", ui-monospace, "Courier New", monospace;
+}
+html, body { height: 100%; margin: 0; overflow: hidden; background: var(--void); color: var(--bone); }
+canvas#field { position: fixed; inset: 0; width: 100vw; height: 100vh; image-rendering: pixelated; image-rendering: crisp-edges; display: block; }
+.tag { position: fixed; z-index: 2; font-family: var(--f-pixel); text-transform: uppercase; color: var(--bone);
+  background: var(--void); line-height: 1; padding: .7em .85em .6em; box-shadow: 0 0 0 2px var(--lattice); }
+.mark { top: calc(env(safe-area-inset-top, 0px) + 16px); left: max(16px, env(safe-area-inset-left, 0px));
+  font-size: clamp(11px, 0.85vmax, 20px); font-weight: 700; letter-spacing: .18em; }
+h1 { margin: 0; bottom: calc(env(safe-area-inset-bottom, 0px) + 7vh); left: 50%; transform: translateX(-50%);
+  max-width: calc(100vw - 32px); font-weight: 400; font-size: clamp(11px, 1.45vmax, 30px); letter-spacing: .14em;
+  text-align: center; text-wrap: balance; }
+</style>
+
+<canvas id="field" aria-label="Evolved agents shown as pixel machines: moving, attacking, building offspring and mutating"></canvas>
+<div class="tag mark">OEE·ONE</div>
+<h1 class="tag">Self-evolving agent civilizations</h1>
+
+<script id="footage" type="application/octet-stream">__FRAMES__</script>
+<script>
+(() => {
+  const META = __META__;
+  const raw = atob(document.getElementById('footage').textContent.trim());
+  const buf = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) buf[i] = raw.charCodeAt(i);
+  const dv = new DataView(buf.buffer);
+  const REC = 10, SLOTS = 512, W = META.L * 64;
+  const F = [];
+  for (let o = 0; o < buf.length;) {
+    const n = dv.getUint16(o, true); o += 2;
+    const fr = { list: [], x: new Float32Array(SLOTS), y: new Float32Array(SLOTS), d: new Float32Array(SLOTS),
+                 pen: new Int8Array(SLOTS), nn: new Uint8Array(SLOTS), sp: new Uint16Array(SLOTS), has: new Uint8Array(SLOTS) };
+    for (let j = 0; j < n; j++, o += REC) {
+      const s = dv.getUint16(o, true), v = dv.getUint16(o + 6, true);
+      fr.x[s] = dv.getUint16(o + 2, true); fr.y[s] = dv.getUint16(o + 4, true);
+      fr.d[s] = v & 511; fr.pen[s] = ((v >> 9) & 3) - 1; fr.nn[s] = v >> 11; fr.sp[s] = dv.getUint16(o + 8, true);
+      fr.has[s] = 1; fr.list.push(s);
+    }
+    F.push(fr);
+  }
+  const NF = F.length;
+
+  const css = getComputedStyle(document.documentElement);
+  const C = n => css.getPropertyValue(n).trim();
+  const VOID = C('--void'), LATTICE = C('--lattice'), BONE = C('--bone'), SIGNAL = C('--signal'),
+        STRIKE = C('--strike'), MATE = C('--mate');
+  const SPECIES = [C('--sp1'), C('--sp2'), C('--sp3')];
+  const species = n => n <= 5 ? 0 : n <= 12 ? 1 : 2;
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Art grid: 1 art pixel = P screen pixels. One world cell = 9 art pixels.
+  const CELL = 9, TILE = META.L * CELL;
+  const cv = document.getElementById('field'), g = cv.getContext('2d');
+  let P = 4, aw = 0, ah = 0;
+  function size() {
+    P = Math.max(3, Math.round(Math.max(innerWidth, innerHeight) / 240));
+    aw = Math.ceil(innerWidth / P); ah = Math.ceil(innerHeight / P);
+    cv.width = aw; cv.height = ah;
+    g.imageSmoothingEnabled = false;
+    g.fillStyle = VOID; g.fillRect(0, 0, aw, ah);
+  }
+  addEventListener('resize', size); size();
+
+  // 5x5 left-right symmetric body from a 15-bit genome signature (3 columns x 5 rows).
+  const bodyCells = sp => {
+    const out = [];
+    for (let r = 0; r < 5; r++) for (let c = 0; c < 3; c++)
+      if (sp >> (r * 3 + c) & 1) { out.push([c - 2, r - 2]); if (c < 2) out.push([2 - c, r - 2]); }
+    if (!out.length) out.push([0, 0]);
+    return out;
+  };
+  const cache = new Map();
+  const body = sp => { let b = cache.get(sp); if (!b) { b = bodyCells(sp); cache.set(sp, b); } return b; };
+  const bitsOf = sp => { const s = new Set(); for (const [x, y] of body(sp)) s.add(x + ',' + y); return s; };
+
+  const wrapd = d => d > W / 2 ? d - W : d < -W / 2 ? d + W : d;
+  const toArt = v => v / 64 * CELL;
+  let panX = 0, panY = 0;
+  function px(ax, ay, color) {  // plot one art pixel at world-art coords on every tile copy
+    const ox = Math.floor(panX), oy = Math.floor(panY);
+    for (let ty = -TILE; ty < ah + TILE; ty += TILE) for (let tx = -TILE; tx < aw + TILE; tx += TILE) {
+      const sx = ((Math.round(ax) + ox) % TILE + TILE) % TILE + tx, sy = ((Math.round(ay) + oy) % TILE + TILE) % TILE + ty;
+      if (sx >= 0 && sx < aw && sy >= 0 && sy < ah) { g.fillStyle = color; g.fillRect(sx, sy, 1, 1); }
+    }
+  }
+  function line(x0, y0, x1, y1, color, frac = 1, step = 1) {
+    const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)) | 0, m = Math.round(n * frac);
+    for (let i = 0; i <= m; i += step) px(x0 + (x1 - x0) * i / (n || 1), y0 + (y1 - y0) * i / (n || 1), color);
+  }
+
+  const events = [];   // {kind, t0, ...}
+  const born = new Map(); // slot -> {t0, mut:Set}
+
+  const BASE = reduce ? 0.8 : 2;
+  let rate = BASE, target = BASE, simT = 0, last = performance.now(), lastK = -1;
+  const hold = on => { target = on ? BASE * 0.15 : BASE; };
+  addEventListener('pointerdown', () => hold(true));
+  addEventListener('pointerup', () => hold(false));
+  addEventListener('pointercancel', () => hold(false));
+  addEventListener('keydown', e => { if (e.code === 'Space') { hold(true); e.preventDefault(); } });
+  addEventListener('keyup', e => { if (e.code === 'Space') hold(false); });
+
+  const near = (fr, s, x, y, max, pred) => {
+    const out = [];
+    for (const q of fr.list) {
+      if (q === s || (pred && !pred(q))) continue;
+      const dx = wrapd(fr.x[q] - x), dy = wrapd(fr.y[q] - y), dd = dx * dx + dy * dy;
+      if (dd <= max * max) out.push([dd, q]);
+    }
+    return out.sort((a, b) => a[0] - b[0]).map(e => e[1]);
+  };
+
+  function transition(a, b, now) {
+    const A = F[a], B = F[b];
+    const newborn = new Set();
+    for (const s of B.list) if (!A.has[s]) newborn.add(s);
+    // Births: builder is the nearest agent that was trying to reproduce; mutation = body
+    // pixels inherited from neither of the two nearest candidates.
+    for (const s of newborn) {
+      const x = B.x[s], y = B.y[s];
+      const cand = near(A, -1, x, y, 64 * 2.5);
+      const builder = near(A, -1, x, y, 64 * 1.6, q => A.pen[q] === 1)[0] ?? cand[0];
+      const mine = bitsOf(B.sp[s]), mut = new Set(mine);
+      for (const q of cand.slice(0, 2)) for (const k of bitsOf(A.sp[q])) mut.delete(k);
+      if (cand.length < 2) mut.clear();
+      born.set(s, { t0: now, mut });
+      if (builder !== undefined)
+        events.push({ kind: 'build', t0: now, x0: A.x[builder], y0: A.y[builder],
+                      x1: A.x[builder] + wrapd(x - A.x[builder]), y1: A.y[builder] + wrapd(y - A.y[builder]) });
+    }
+    // Deaths: overwritten by a newborn in the same cell, or struck by an attacker.
+    for (const s of A.list) {
+      if (B.has[s]) continue;
+      const x = A.x[s], y = A.y[s];
+      let overwritten = false;
+      for (const q of newborn) if (Math.abs(wrapd(B.x[q] - x)) < 33 && Math.abs(wrapd(B.y[q] - y)) < 33) overwritten = true;
+      const killer = overwritten ? undefined : near(A, s, x, y, 64 * 1.6, q => A.pen[q] === 2)[0];
+      events.push({ kind: overwritten ? 'overwrite' : 'kill', t0: now, x, y, sp: A.sp[s], nn: A.nn[s],
+                    kx: killer !== undefined ? A.x[killer] : null, ky: killer !== undefined ? A.y[killer] : null, seed: s * 7919 });
+    }
+  }
+
+  function frame(now) {
+    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    rate += (target - rate) * Math.min(1, dt * 4);
+    simT += dt * rate;
+    if (simT >= NF - 1) { simT = 0; lastK = -1; born.clear(); }
+    if (!reduce) { panX += dt * 2.2; panY += dt * 1.1; }
+    const k = Math.floor(simT), u = simT - k;
+    if (k !== lastK) { if (lastK >= 0 && k === lastK + 1) transition(lastK, k, now); lastK = k; }
+    const A = F[k], B = F[k + 1];
+
+    // Decay: older pixels fall back toward the void.
+    g.globalAlpha = reduce ? 1 : 0.55; g.fillStyle = VOID; g.fillRect(0, 0, aw, ah); g.globalAlpha = 1;
+
+    // Lattice: one dot per world cell corner.
+    for (let cy = 0; cy < META.L; cy++) for (let cx = 0; cx < META.L; cx++) px(cx * CELL, cy * CELL, LATTICE);
+
+    // Events beneath agents.
+    for (let i = events.length - 1; i >= 0; i--) {
+      const e = events[i], age = (now - e.t0) / 1000;
+      if (e.kind === 'build') {
+        if (age > 0.5) { events.splice(i, 1); continue; }
+        line(toArt(e.x0), toArt(e.y0), toArt(e.x1), toArt(e.y1), SIGNAL, Math.min(1, age / 0.25), 2);
+      } else if (e.kind === 'kill') {
+        if (age > 1.1) { events.splice(i, 1); continue; }
+        if (e.kx !== null && age < 0.3) line(toArt(e.kx), toArt(e.ky), toArt(e.kx + wrapd(e.x - e.kx)), toArt(e.ky + wrapd(e.y - e.ky)), STRIKE);
+        // Debris: the body's pixels fly apart.
+        let r = e.seed;
+        for (const [bx, by] of body(e.sp)) {
+          r = (r * 1103515245 + 12345) & 0x7fffffff;
+          const vx = bx * 3 + ((r >> 8) % 5 - 2), vy = by * 3 + ((r >> 12) % 5 - 2);
+          px(toArt(e.x) + bx + vx * age * 2.2, toArt(e.y) + by + vy * age * 2.2, age < 0.25 ? STRIKE : SPECIES[species(e.nn)]);
+        }
+      } else {
+        if (age > 0.6) { events.splice(i, 1); continue; }
+        let r = e.seed;
+        for (const [bx, by] of body(e.sp)) {
+          r = (r * 1103515245 + 12345) & 0x7fffffff;
+          if ((r >> 10) % 100 / 100 > age / 0.6) px(toArt(e.x) + bx, toArt(e.y) + by, LATTICE);
+        }
+      }
+    }
+    if (events.length > 800) events.splice(0, events.length - 800);
+
+    // Agents.
+    for (const s of A.list) {
+      let x = A.x[s], y = A.y[s], d = A.d[s];
+      if (B.has[s]) {
+        x += wrapd(B.x[s] - x) * u; y += wrapd(B.y[s] - y) * u;
+        let dd = B.d[s] - d; if (dd > 180) dd -= 360; if (dd < -180) dd += 360; d += dd * u;
+      }
+      const ax = Math.round(toArt(x)), ay = Math.round(toArt(y)), col = SPECIES[species(A.nn[s])];
+      const b = born.get(s), age = b ? (now - b.t0) / 1000 : 9;
+      const rows = age < 0.5 ? Math.floor(age / 0.1) : 5;   // printed row by row
+      for (const [bx, by] of body(A.sp[s])) {
+        if (by + 2 >= rows) continue;
+        const isMut = b && age < 1.4 && b.mut.has(bx + ',' + by);
+        px(ax + bx, ay + by, isMut ? (Math.floor(now / 120) % 2 ? BONE : SIGNAL) : col);
+      }
+      // Arm: the direction it faces. Red while attacking, pink while mating.
+      const pen = A.pen[s], len = pen === 2 ? 5 : pen === 1 ? 4 : 3;
+      const rad = d * Math.PI / 180, sx = Math.sin(rad), sy = -Math.cos(rad);
+      const armCol = pen === 2 ? STRIKE : pen === 1 ? MATE : col;
+      for (let i = 3; i <= len; i++) px(ax + sx * i, ay + sy * i, armCol);
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(t => { last = t; frame(t); });
+})();
+</script>
