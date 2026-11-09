@@ -44,5 +44,5 @@ int main(int argc, char** argv) {
   for (int i = 0; i < top && i < (int)v.size(); ++i)
     std::printf("%s{\"count\": %zu, \"selfrep\": %zu, \"program\": \"%s\"}", i ? ", " : "", v[i].first,
                 freq[v[i].second].second, v[i].second.c_str());
-  std::printf("]}\\n");
+  std::printf("]}\n");
 }
