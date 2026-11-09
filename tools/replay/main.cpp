@@ -1,6 +1,6 @@
 // Record agent positions from a checkpoint for visualisation.
 // Usage: replay CHECKPOINT STEPS EVERY > frames.json
-// Output: {"L":..,"t0":..,"every":..,"frames":[[[id,x64,y64,dir,pen],...],...],"births":[..]}
+// Output: {"L":..,"t0":..,"every":..,"frames":[[[id,x64,y64,dir,pen,nodes],...],...],"births":[..]}
 #include <cstdio>
 #include <cstdlib>
 #include <vector>
@@ -41,8 +41,8 @@ int main(int argc, char** argv) {
     for (int c = 0; c < w->world_size(); ++c) {
       const Organism* o = w->at(c);
       if (!o) continue;
-      std::printf("%s[%llu,%d,%d,%d,%d]", f2 ? "" : ",", (unsigned long long)o->id, o->at_x_64,
-                  o->at_y_64, o->direction_deg, o->pen_colour);
+      std::printf("%s[%llu,%d,%d,%d,%d,%d]", f2 ? "" : ",", (unsigned long long)o->id, o->at_x_64,
+                  o->at_y_64, o->direction_deg, o->pen_colour, o->num_nodes());
       f2 = false;
     }
     std::printf("]");
