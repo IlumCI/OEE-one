@@ -20,7 +20,8 @@ null control: an independent second reset shadow, analysed as if it were the rea
 
    In each, a single killing population stopped reproducing. Channon reports the same
    outcome in some of his runs (GPEM sections 6.4 and 10). These runs are analysed up to
-   their last birth.
+   their last birth. Rollback and reseed now rescues frozen runs; rescued seed 1 reached
+   4M steps and classifies 3b ([SCALING.md](SCALING.md), section 1).
 4. The strict Table I classification rule defined below gives results that depend on
    run length. It also gives one false positive: the seed-5 null at 8M (details
    below). Effect sizes and smoothed trajectories are the more reliable evidence.
@@ -125,5 +126,6 @@ including the whole-rule grouping: [results/m1/summary_final.md](results/m1/summ
 - Replace the per-run trend rule with a real-versus-null comparison (effect size, or a
   test calibrated on many null controls).
 - Run more seeds, and the independent-shadow variant on further seeds.
-- Channon 2019 joint-scaling test (`-length`, `-neurons`).
+- Channon 2019 joint-scaling test: done, see [SCALING.md](SCALING.md). Joint scaling
+  keeps increasing; neurons-only scaling plateaus.
 - Larger populations, to reduce stagnation (requires the L0/L3 work in DESIGN.md).

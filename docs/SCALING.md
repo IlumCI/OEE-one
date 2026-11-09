@@ -85,7 +85,7 @@ when L or N is scaled alone, and whether it keeps increasing when both are scale
 together.
 
 ### Results
-Interim: 35 of 36 runs complete (one (40, 80) run pending).
+All 40 runs (36 new, plus the five (20, 20) M1 runs), window 0.5M-1M steps.
 
 | L | N | runs | max individual complexity (mean) | 95% CI | Channon 2019 joint fit |
 |---|---|---|---|---|---|
@@ -96,16 +96,41 @@ Interim: 35 of 36 runs complete (one (40, 80) run pending).
 | 20 | 20 | 5 | 10.97 | ±0.46 |  |
 | 20 | 40 | 5 | 11.64 | ±1.15 | 12.03 |
 | 40 | 20 | 5 | 12.31 | ±0.96 |  |
-| 40 | 80 | 4 | 14.43 | ±0.90 | 13.90 |
+| 40 | 80 | 5 | 14.62 | ±0.81 | 13.90 |
 
-Joint scaling fit (N = 2L): complexity = 9.23 + 2.56 log2(L/10), slope SE 0.22, R² 0.918, n 14 runs. Channon 2019: 10.17 + 1.87 log2(scale).
-softmin model (all runs): complexity = 4.31 + 3.05 softmin(ln L, ln N), R² 0.695, n 39 runs.
-
+Joint scaling fit (N = 2L): complexity = 9.19 + 2.66 log2(L/10), slope SE 0.22, R² 0.920, n 15 runs. Channon 2019: 10.17 + 1.87 log2(scale).
+softmin model (all runs): complexity = 3.99 + 3.20 softmin(ln L, ln N), R² 0.733, n 40 runs.
 
 ![scaling](results/scaling/scaling.png)
 
 ### Interpretation
-Pending the final run.
+1. **Joint scaling (N = 2L): complexity keeps increasing.**
+   - Fit: 9.19 + 2.66·log2(L/10). Slope SE 0.22; R² 0.92 over 15 runs and three scales.
+   - Channon reports 10.17 + 1.87·log2(scale). The trend has the same form, roughly
+     logarithmic growth with no sign of a plateau.
+   - The slope here is steeper, about 3.6 standard errors above Channon's, and the
+     intercept is lower. Likely cause: the short 1M-step window, in which smaller
+     settings may not yet have reached their asymptote. This is not established.
+2. **Neurons only (L = 10): plateau.**
+   - Complexity rises from 9.30 (N = 20) to 11.64 (N = 40), then stays flat:
+     11.34 at both N = 80 and N = 160.
+   - The bottleneck moves to world size, as Channon reports.
+3. **World only (N = 20): no plateau yet at L = 40.**
+   - Complexity: 9.30 → 10.97 → 12.31 for L = 10, 20, 40.
+   - This does not contradict the plateau prediction:
+     - The softmin model (complexity = a + b·softmin(ln L, ln N)) still predicts growth
+       at these settings, because softmin(ln 40, ln 20) = ln 13.3 lies well below ln 20.
+     - A plateau should appear only for L ≫ N.
+     - Fitted over all 40 runs: 3.99 + 3.20·softmin(ln L, ln N), R² 0.73.
+   - Testing the world-only plateau directly needs L ≥ 80 at N = 20.
+
+Summary: Channon's main 2019 result is reproduced qualitatively — complexity keeps
+increasing when world size and neuron limit are scaled together, and saturates when the
+neuron limit is scaled alone. The world-only plateau was outside the range tested.
+
+Conditioning: one scaling run (L10_N80_s15) was rescued once, at 788,611 steps,
+rolled back to 500,000 (the start of the measurement window). The other 35 new runs
+never froze within 1M steps.
 
 ## Reproduce
 ```
