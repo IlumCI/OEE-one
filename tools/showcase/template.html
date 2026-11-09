@@ -14,7 +14,8 @@
   --strike: #ff2e4d;   /* kill */
   --mate: #f5d76e;     /* reproduction attempt */
   --sp1: #4aa3c8; --sp2: #e0a040; --sp3: #ecebe4;   /* simple, mid, complex networks */
-  --noise1: #14161b; --noise2: #1c1f26;              /* inert bytes in the soup */
+  --noise1: #14161b; --noise2: #1c1f26; --code: #3a3f4b;   /* soup: inert bytes, lone code */
+  --fam1: #f5d76e; --fam2: #4aa3c8; --fam3: #e0a040; --fam4: #ecebe4; --fam5: #ff2e4d; --fam6: #7fd1a8;
   --f-pixel: "Silkscreen", ui-monospace, "Courier New", monospace;
 }
 html, body { height: 100%; margin: 0; overflow: hidden; background: var(--void); color: var(--bone); }
@@ -242,9 +243,12 @@ h1 { margin: 0; bottom: calc(env(safe-area-inset-bottom, 0px) + 7vh); left: 50%;
   const css = getComputedStyle(root);
   const C = n => css.getPropertyValue(n).trim();
   const hex = c => { const v = parseInt(c.slice(1), 16); return [v >> 16 & 255, v >> 8 & 255, v & 255]; };
-  // 0 zero, 1-2 no-op, 3 '[', 4 ']', 5 '+', 6 '-', 7 '.', 8 ',', 9 '<', 10 '>', 11 '{', 12 '}'
-  const PAL = ['--void', '--noise1', '--noise2', '--signal', '--signal', '--strike', '--strike', '--bone', '--bone',
-               '--sp1', '--sp1', '--sp2', '--sp2'].map(n => hex(C(n)));
+  // Byte classes: 0 zero, 1-2 no-op, 3-12 commands. Lone programs: commands grey on static.
+  // Programs with many identical copies (replicator families) take their family colour:
+  // commands bright, other bytes at 30%.
+  const NOISE = [hex(C('--void')), hex(C('--noise1')), hex(C('--noise2'))], CODE = hex(C('--code'));
+  const FAM = [1, 2, 3, 4, 5, 6].map(i => hex(C('--fam' + i)));
+  const dimc = (c, f) => c.map(v => Math.round(v * f));
   const LAT = hex(C('--lattice'));
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const pinned = location.hash === '#origin' ? 'origin' : location.hash === '#agents' ? 'agents' : null;
@@ -252,12 +256,12 @@ h1 { margin: 0; bottom: calc(env(safe-area-inset-bottom, 0px) + 7vh); left: 50%;
   setScene(pinned || 'origin');
 
   const meta = JSON.parse(document.getElementById('soupdata').textContent);
-  const P = meta.programs, NF = meta.epochs.length, FB = P * 32;
+  const P = meta.programs, NF = meta.epochs.length, FB = P * 33;
   const cv = document.getElementById('soup'), g = cv.getContext('2d');
   let frames = null, cols = 48, rows = 27, img = null;
   function layout() {
-    const portrait = innerHeight > innerWidth;
-    cols = portrait ? 27 : 48; rows = portrait ? 48 : 27;
+    cols = Math.max(1, Math.round(Math.sqrt(P * innerWidth / innerHeight)));
+    rows = Math.max(1, Math.floor(P / cols));
     cv.width = cols * 9 - 1; cv.height = rows * 9 - 1;
     const s = Math.min(innerWidth / cv.width, innerHeight / cv.height);
     cv.style.width = Math.floor(cv.width * s) + 'px'; cv.style.height = Math.floor(cv.height * s) + 'px';
@@ -273,9 +277,11 @@ h1 { margin: 0; bottom: calc(env(safe-area-inset-bottom, 0px) + 7vh); left: 50%;
     const base = k * FB, d = img.data, W = cv.width;
     for (let p = 0; p < cols * rows && p < P; p++) {
       const ox = (p % cols) * 9, oy = Math.floor(p / cols) * 9;
+      const fam = frames[base + p * 33], fc = fam ? FAM[fam - 1] : null, fd = fc ? dimc(fc, 0.3) : null;
       for (let b = 0; b < 64; b++) {
-        const byte = frames[base + p * 32 + (b >> 1)], cls = b & 1 ? byte & 15 : byte >> 4;
-        const c = PAL[cls] || PAL[1], o = ((oy + (b >> 3)) * W + ox + (b & 7)) * 4;
+        const byte = frames[base + p * 33 + 1 + (b >> 1)], cls = b & 1 ? byte & 15 : byte >> 4;
+        const c = fc ? (cls >= 3 ? fc : fd) : (cls >= 3 ? CODE : NOISE[cls] || NOISE[1]);
+        const o = ((oy + (b >> 3)) * W + ox + (b & 7)) * 4;
         d[o] = c[0]; d[o + 1] = c[1]; d[o + 2] = c[2];
       }
     }

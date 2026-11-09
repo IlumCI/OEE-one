@@ -4,8 +4,9 @@ const [,, W, H, FPS, SECS, OUT] = process.argv;
   const b = await chromium.launch();
   const p = await b.newPage({ viewport: { width: +W, height: +H }, deviceScaleFactor: 1 });
   await p.clock.install({ time: 0 });
-  await p.goto('file://' + __dirname + '/wrap.html');
+  await p.goto('file://' + __dirname + '/wrap.html' + (process.env.HASH || ''));
   await p.evaluate(() => document.fonts.ready);
+  await p.waitForTimeout(800);              // footage decompression is asynchronous
   await p.clock.runFor(1500);               // let trails settle
   const n = Math.round(FPS * SECS), step = 1000 / FPS;
   for (let i = 0; i < n; i++) {
