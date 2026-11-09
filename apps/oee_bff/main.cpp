@@ -3,11 +3,12 @@
 //
 // Usage: oee_bff [-seed S] [-programs N] [-mutation P (out of 2^30)] [-epochs E]
 //                [-interval K] [-threads T] [-log FILE] [-cubff-log]
-//                [-save CK] [-save-every K] [-resume CK] [-dump-every K -dump-from E -dump-dir D]
+//                [-save CK] [-save-every K] [-resume CK] [-dump-every K -dump-from E -dump-programs N -dump-dir D]
 //                [-stop-entropy X -stop-after K]
 // -stop-entropy: stop K epochs after high-order entropy first reaches X (the paper's
 // transition criterion is X = 1). Exit code 0 when stopped by -epochs, 10 when stopped
 // after a transition.
+#include <algorithm>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -19,7 +20,7 @@ using namespace oee::bff;
 
 int main(int argc, char** argv) {
   Params p;
-  std::size_t epochs = 16384, interval = 64, save_every = 0, dump_every = 0, dump_from = 0;
+  std::size_t epochs = 16384, interval = 64, save_every = 0, dump_every = 0, dump_from = 0, dump_programs = 0;
   std::string log_path, save_path, resume_path, dump_dir;
   bool cubff_log = false;
   double stop_entropy = -1;
@@ -44,6 +45,7 @@ int main(int argc, char** argv) {
     else if (s == "-dump-every") dump_every = std::strtoull(next(), nullptr, 10);
     else if (s == "-dump-dir") dump_dir = next();
     else if (s == "-dump-from") dump_from = std::strtoull(next(), nullptr, 10);
+    else if (s == "-dump-programs") dump_programs = std::strtoull(next(), nullptr, 10);
     else if (s == "-stop-entropy") stop_entropy = std::atof(next());
     else if (s == "-stop-after") stop_after = std::strtoull(next(), nullptr, 10);
     else { std::fprintf(stderr, "unknown option %s\n", s.c_str()); return 2; }
@@ -80,7 +82,11 @@ int main(int argc, char** argv) {
       char name[64];
       std::snprintf(name, sizeof name, "/soup_%010zu.bin", soup.epochs_done());
       std::FILE* f = std::fopen((dump_dir + name).c_str(), "wb");
-      if (f) { std::fwrite(soup.data().data(), 1, soup.data().size(), f); std::fclose(f); }
+      if (f) {
+        const std::size_t n = dump_programs ? std::min(dump_programs * kTape, soup.data().size()) : soup.data().size();
+        std::fwrite(soup.data().data(), 1, n, f);
+        std::fclose(f);
+      }
     }
   }
   if (!save_path.empty()) soup.save(save_path);
