@@ -52,3 +52,16 @@ add_test(NAME rescue_rollback_reseed
 add_executable(replay tools/replay/main.cpp)
 target_link_libraries(replay PRIVATE oee_geb_core)
 add_test(NAME mspd_sanity COMMAND python3 -I ${CMAKE_SOURCE_DIR}/tests/test_mspd.py)
+
+# M3: BFF primordial soup (arXiv:2406.19108), bit-exact with cubff bff_noheads.
+find_library(BROTLIENC brotlienc REQUIRED)
+find_package(Threads REQUIRED)
+add_library(oee_bff_core src/bff/soup.cpp)
+target_include_directories(oee_bff_core PUBLIC src)
+target_link_libraries(oee_bff_core PUBLIC ${BROTLIENC} Threads::Threads)
+add_executable(oee_bff apps/oee_bff/main.cpp)
+target_link_libraries(oee_bff PRIVATE oee_bff_core)
+add_test(NAME bff_cubff_equivalence
+  COMMAND sh -c "$<TARGET_FILE:oee_bff> -seed 10248 -epochs 256 -interval 64 -threads 2 -cubff-log -log bff_eq.txt && diff -u ${CMAKE_SOURCE_DIR}/tests/golden/bff/cubff_bff_noheads_seed10248.txt bff_eq.txt")
+add_test(NAME bff_resume
+  COMMAND sh -c "B=$<TARGET_FILE:oee_bff>; $B -seed 7 -programs 4096 -epochs 200 -interval 50 -save r_a.ck -log /dev/null && $B -seed 7 -programs 4096 -epochs 100 -interval 50 -save r_b.ck -log /dev/null && $B -seed 7 -programs 4096 -epochs 200 -interval 50 -resume r_b.ck -save r_b.ck -log /dev/null && cmp r_a.ck r_b.ck")
