@@ -10,7 +10,7 @@ mkdir -p "$out"
 for s in $(seq "$first" "$last"); do
   d="$out/seed_$s"; mkdir -p "$d"
   [ -f "$d/done" ] && continue
-  args=(-seed "$s" ${EXTRA:-} -epochs 16384 -interval 64 -threads "$threads" -log "$d/log.csv"
+  args=(-seed "$s" ${EXTRA:-} -epochs ${EPOCHS:-16384} -interval 64 -threads "$threads" -log "$d/log.csv"
         -save "$d/ck" -save-every 512 -stop-entropy 1 -stop-after 2048)
   if [ -f "$d/ck" ]; then
     ep=$(od -An -t u8 -j 32 -N 8 "$d/ck" | tr -d ' ')
