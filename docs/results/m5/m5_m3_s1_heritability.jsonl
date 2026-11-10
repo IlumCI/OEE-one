@@ -1,0 +1,28 @@
+{"time": 80000, "agents": 377, "mean_inherited_bytes": 9.94, "copier_fraction": 0.000}
+{"time": 100000, "agents": 384, "mean_inherited_bytes": 9.78, "copier_fraction": 0.000}
+{"time": 160000, "agents": 370, "mean_inherited_bytes": 7.98, "copier_fraction": 0.000}
+{"time": 240000, "agents": 183, "mean_inherited_bytes": 8.00, "copier_fraction": 0.000, "nonzero_byte_fraction": 1.000}
+{"time": 340000, "agents": 200, "mean_inherited_bytes": 8.00, "copier_fraction": 0.000, "nonzero_byte_fraction": 1.000}
+{"time": 460000, "agents": 217, "mean_inherited_bytes": 8.00, "copier_fraction": 0.000, "nonzero_byte_fraction": 1.000}
+{"time": 520000, "agents": 187, "mean_inherited_bytes": 7.94, "copier_fraction": 0.000, "nonzero_byte_fraction": 1.000}
+{"time": 620000, "agents": 193, "mean_inherited_bytes": 7.97, "copier_fraction": 0.000, "nonzero_byte_fraction": 1.000}
+{"time": 660000, "agents": 269, "mean_inherited_bytes": 7.95, "copier_fraction": 0.000, "nonzero_byte_fraction": 1.000}
+{"time": 760000, "agents": 212, "mean_inherited_bytes": 7.97, "copier_fraction": 0.000, "nonzero_byte_fraction": 1.000}
+{"time": 800000, "agents": 255, "mean_inherited_bytes": 7.97, "copier_fraction": 0.000, "nonzero_byte_fraction": 1.000}
+{"time": 900000, "agents": 254, "mean_inherited_bytes": 5.98, "copier_fraction": 0.000, "nonzero_byte_fraction": 1.000}
+{"time": 940000, "agents": 211, "mean_inherited_bytes": 5.98, "copier_fraction": 0.000, "nonzero_byte_fraction": 1.000}
+{"time": 1020000, "agents": 225, "mean_inherited_bytes": 5.98, "copier_fraction": 0.000, "nonzero_byte_fraction": 1.000}
+{"time": 1080000, "agents": 200, "mean_inherited_bytes": 5.97, "copier_fraction": 0.000, "nonzero_byte_fraction": 1.000}
+{"time": 1160000, "agents": 193, "mean_inherited_bytes": 5.99, "copier_fraction": 0.000, "nonzero_byte_fraction": 1.000}
+{"time": 1220000, "agents": 175, "mean_inherited_bytes": 5.95, "copier_fraction": 0.000, "nonzero_byte_fraction": 1.000}
+{"time": 1300000, "agents": 273, "mean_inherited_bytes": 6.00, "copier_fraction": 0.000, "nonzero_byte_fraction": 1.000}
+{"time": 1340000, "agents": 220, "mean_inherited_bytes": 6.00, "copier_fraction": 0.000, "nonzero_byte_fraction": 1.000}
+{"time": 1420000, "agents": 221, "mean_inherited_bytes": 5.98, "copier_fraction": 0.000, "nonzero_byte_fraction": 1.000}
+{"time": 1460000, "agents": 214, "mean_inherited_bytes": 6.00, "copier_fraction": 0.000, "nonzero_byte_fraction": 1.000}
+{"time": 1520000, "agents": 255, "mean_inherited_bytes": 5.98, "copier_fraction": 0.000, "nonzero_byte_fraction": 1.000}
+{"time": 1560000, "agents": 228, "mean_inherited_bytes": 6.00, "copier_fraction": 0.000, "nonzero_byte_fraction": 1.000}
+{"time": 1680000, "agents": 154, "mean_inherited_bytes": 5.97, "copier_fraction": 0.000, "nonzero_byte_fraction": 1.000}
+{"time": 1740000, "agents": 239, "mean_inherited_bytes": 5.98, "copier_fraction": 0.000, "nonzero_byte_fraction": 1.000}
+{"time": 1860000, "agents": 187, "mean_inherited_bytes": 6.44, "copier_fraction": 0.000, "nonzero_byte_fraction": 1.000}
+{"time": 1920000, "agents": 185, "mean_inherited_bytes": 6.00, "copier_fraction": 0.000, "nonzero_byte_fraction": 1.000}
+{"time": 2000000, "agents": 169, "mean_inherited_bytes": 7.34, "copier_fraction": 0.000, "nonzero_byte_fraction": 1.000}
