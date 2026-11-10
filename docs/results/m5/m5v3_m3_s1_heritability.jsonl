@@ -21,3 +21,9 @@
 {"time": 460000, "agents": 169, "mean_inherited_bytes": 16.00, "copier_fraction": 1.000, "nonzero_byte_fraction": 1.000}
 {"time": 500000, "agents": 184, "mean_inherited_bytes": 16.01, "copier_fraction": 1.000, "nonzero_byte_fraction": 1.000}
 {"time": 560000, "agents": 178, "mean_inherited_bytes": 16.00, "copier_fraction": 1.000, "nonzero_byte_fraction": 1.000}
+{"time": 600000, "agents": 173, "mean_inherited_bytes": 16.00, "copier_fraction": 1.000, "nonzero_byte_fraction": 1.000}
+{"time": 680000, "agents": 174, "mean_inherited_bytes": 16.00, "copier_fraction": 1.000, "nonzero_byte_fraction": 1.000}
+{"time": 740000, "agents": 173, "mean_inherited_bytes": 16.00, "copier_fraction": 1.000, "nonzero_byte_fraction": 1.000}
+{"time": 800000, "agents": 202, "mean_inherited_bytes": 17.57, "copier_fraction": 1.000, "nonzero_byte_fraction": 1.000}
+{"time": 840000, "agents": 177, "mean_inherited_bytes": 16.00, "copier_fraction": 1.000, "nonzero_byte_fraction": 1.000}
+{"time": 900000, "agents": 188, "mean_inherited_bytes": 16.67, "copier_fraction": 1.000, "nonzero_byte_fraction": 1.000}
