@@ -219,7 +219,7 @@ int main(int argc, char** argv) {
       ++a;
     } else if (!std::strcmp(s, "-heredity") && has) {
       // M5 (docs/M5.md): "bff" = heredity by executing parents' genomes as BFF code.
-      p.heredity = !std::strcmp(argv[a + 1], "bff") ? 1 : 0;
+      p.heredity = !std::strcmp(argv[a + 1], "bff") ? 1 : !std::strcmp(argv[a + 1], "bff0") ? 2 : !std::strcmp(argv[a + 1], "bffv") ? 3 : 0;
       a += 2;
     } else if (!std::strcmp(s, "-founders") && has) {
       founders_path = argv[a + 1];  // one genome per line, hex bytes; or "random:N"

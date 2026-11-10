@@ -27,7 +27,8 @@ struct Params {
   bool second_shadow = false;
   // M5 coupling (docs/M5.md). 0: Geb's built-in crossover + mutation. 1: heredity by
   // executing a parent's genome as BFF code; the child receives what the code writes
-  // into a buffer. Not in Geb. Fits in padding: sizeof(Params) stays 32.
+  // into a random buffer. 2: same with a zero buffer (v2). 3: v1 plus viability (a child
+  // is born only if its own code copies >= 16 informative bytes of itself). Not in Geb. Fits in padding: sizeof(Params) stays 32.
   std::uint8_t heredity = 0;
 };
 
@@ -125,7 +126,10 @@ class World {
   void add_shadow(Genotype g);
   Genotype breed_second_shadow();
   // M5: child genotype = buffer after executing [g1 | random buffer] as BFF code.
-  static Genotype bff_breed(Ran1& r, const Genotype& g1, const Genotype& g2);
+  static Genotype bff_breed(Ran1& r, const Genotype& g1, const Genotype& g2, int heredity);
+  // M5 v3: does g's own code pass on at least 16 informative bytes of itself?
+  static bool bff_viable(Ran1& r, const Genotype& g);
+  static Genotype bff_breed_viable(Ran1& r, const std::vector<const Genotype*>& pool);
   void reset_not_processed();
 
   Params p_;

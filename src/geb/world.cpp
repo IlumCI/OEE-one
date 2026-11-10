@@ -184,6 +184,10 @@ void Organism::try_to_reproduce_with_organism_in_front() {
   }
   Genotype shadow_child;
   std::unique_ptr<Organism> child = w.reproduce(pa, pb, cx64, cy64, shadow_child);
+  if (!child) {  // M5 v3: child without a working copier is not born
+    if (!replace) --w.num_individuals_;
+    return;
+  }
   if (replace) {
     std::unique_ptr<Organism> old = std::move(w.grid_[child_at]);
     w.grid_[child_at] = std::move(child);
@@ -367,7 +371,7 @@ std::vector<std::uint8_t> to_bytes(const Genotype& g) {
 }
 }  // namespace
 
-Genotype World::bff_breed(Ran1& r, const Genotype& g1, const Genotype& /*g2*/) {
+Genotype World::bff_breed(Ran1& r, const Genotype& g1, const Genotype& /*g2*/, int heredity) {
   // M5 v1 (docs/M5.md): asexual, fixed length. Tape = [g1 | random buffer of the same
   // length]; g1's code runs on it as BFF; the child is the buffer. The mate triggers the
   // birth (Geb's reproduce action) but contributes no genes. Background mutation: each
@@ -375,7 +379,10 @@ Genotype World::bff_breed(Ran1& r, const Genotype& g1, const Genotype& /*g2*/) {
   const std::vector<std::uint8_t> b1 = to_bytes(g1);
   const int l1 = static_cast<int>(b1.size());
   std::vector<std::uint8_t> tape(b1);
-  for (int i = 0; i < l1; ++i) tape.push_back(static_cast<std::uint8_t>(r.random(256)));
+  // v1 (heredity 1): random buffer. v2 (heredity 2): zero buffer, so a child receives only
+  // what the parent's code writes (no free genetic material for non-copiers). v3
+  // (heredity 3): random buffer as v1, plus a viability rule applied by the caller.
+  for (int i = 0; i < l1; ++i) tape.push_back(heredity == 2 ? 0 : static_cast<std::uint8_t>(r.random(256)));
   for (auto& byte : tape)
     if (r.random(4096) == 0) byte = static_cast<std::uint8_t>(r.random(256));
   const int n = static_cast<int>(tape.size());
@@ -385,13 +392,45 @@ Genotype World::bff_breed(Ran1& r, const Genotype& g1, const Genotype& /*g2*/) {
   return child;
 }
 
+bool World::bff_viable(Ran1& r, const Genotype& g) {
+  // v3 viability: the genome's own code, run on [g | random buffer], passes on at least
+  // kViableBytes informative (non-zero) bytes of g (best alignment within +-8).
+  constexpr int kViableBytes = 16;
+  const std::vector<std::uint8_t> b = to_bytes(g);
+  const int l = static_cast<int>(b.size());
+  std::vector<std::uint8_t> tape(b);
+  for (int i = 0; i < l; ++i) tape.push_back(static_cast<std::uint8_t>(r.random(256)));
+  const int n = static_cast<int>(tape.size());
+  bff::evaluate_n(tape.data(), n, std::size_t(bff::kMaxSteps) * std::max(1, n / bff::kPair));
+  for (int sh = -8; sh <= 8; ++sh) {
+    int m = 0;
+    for (int k = 0; k < l; ++k) {
+      const int j = k + sh;
+      if (j >= 0 && j < l) m += b[k] != 0 && b[k] == tape[l + j];
+    }
+    if (m >= kViableBytes) return true;
+  }
+  return false;
+}
+
+Genotype World::bff_breed_viable(Ran1& r, const std::vector<const Genotype*>& pool) {
+  // Shadow populations under v3: redraw parents until the child is viable (at most 64
+  // draws), so the null applies the same viability rule as the real population.
+  for (int t = 0; t < 64; ++t) {
+    const Genotype& g = *pool[r.random(static_cast<int>(pool.size()))];
+    Genotype c = bff_breed(r, g, g, 3);
+    if (bff_viable(r, c)) return c;
+  }
+  return *pool[r.random(static_cast<int>(pool.size()))];
+}
+
 void World::seed_genomes(const std::vector<Genotype>& pool) {
   if (pool.empty()) return;
   // Under BFF heredity, each initial agent is a child of a founder (one application of
   // the founder's own copy code), so uncopied bytes are randomised as at any later birth.
   auto pick = [&](std::size_t k, Ran1& r) {
     const Genotype& g = pool[k % pool.size()];
-    return p_.heredity ? bff_breed(r, g, g) : g;
+    return p_.heredity ? bff_breed(r, g, g, p_.heredity) : g;
   };
   std::size_t k = 0;
   for (int at = 0; at < size_; ++at)
@@ -413,7 +452,12 @@ Genotype World::breed_second_shadow() {
   if (r.random(2)) std::swap(a, b);
   const Genotype& p1 = shadow2_[a];
   const Genotype& p2 = shadow2_[b];
-  if (p_.heredity) return bff_breed(r, p1, p2);
+  if (p_.heredity == 3) {
+    std::vector<const Genotype*> pool;
+    for (const Genotype& g : shadow2_) pool.push_back(&g);
+    return bff_breed_viable(r, pool);
+  }
+  if (p_.heredity) return bff_breed(r, p1, p2, p_.heredity);
   const int cp1 = r.random(static_cast<int>(p1.size()) + 1);
   int cp2 = cp1 + (r.random(2) ? -kGenotypeLengthChangeMax : kGenotypeLengthChangeMax);
   const int len2 = static_cast<int>(p2.size());
@@ -458,9 +502,20 @@ std::unique_ptr<Organism> World::reproduce(Organism* a, Organism* b, int cx64, i
   const Genotype& sp2 = shadow_genotypes_[s2];
   const Genotype& g1 = p1->genotype();
   const Genotype& g2 = p2->genotype();
+  if (p_.heredity == 3) {
+    Genotype child = bff_breed(rng_, g1, g2, 3);
+    if (!bff_viable(rng_, child)) return nullptr;  // no working copier: no birth
+    std::vector<const Genotype*> pool;
+    for (const Genotype& g : shadow_genotypes_) pool.push_back(&g);
+    shadow_child = bff_breed_viable(rng_, pool);
+    if (p_.second_shadow) pending_shadow2_ = breed_second_shadow();
+    auto o = std::make_unique<Organism>(*this, std::move(child), cx64, cy64);
+    ++num_reproductions_;
+    return o;
+  }
   if (p_.heredity) {
-    Genotype child = bff_breed(rng_, g1, g2);
-    shadow_child = bff_breed(rng_, sp1, sp2);
+    Genotype child = bff_breed(rng_, g1, g2, p_.heredity);
+    shadow_child = bff_breed(rng_, sp1, sp2, p_.heredity);
     if (p_.second_shadow) pending_shadow2_ = breed_second_shadow();
     auto o = std::make_unique<Organism>(*this, std::move(child), cx64, cy64);
     ++num_reproductions_;
