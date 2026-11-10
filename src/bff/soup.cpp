@@ -169,6 +169,57 @@ void Soup::spatial_pairs() {
   active_pairs_ = k;
 }
 
+std::size_t evaluate_n(std::uint8_t* tape, int n, std::size_t max_steps) {
+  if (n <= 0) return 0;
+  auto wrap = [n](int h) { h %= n; return h < 0 ? h + n : h; };
+  int pc = 0, h0 = 0, h1 = 0;
+  std::size_t skipped = 0, i = 0;
+  for (; i < max_steps; ++i) {
+    h0 = wrap(h0);
+    h1 = wrap(h1);
+    switch (kOps.t[tape[pc]]) {
+      case kDec0: --h0; break;
+      case kInc0: ++h0; break;
+      case kDec1: --h1; break;
+      case kInc1: ++h1; break;
+      case kPlus: ++tape[h0]; break;
+      case kMinus: --tape[h0]; break;
+      case kCopy01: tape[h1] = tape[h0]; break;
+      case kCopy10: tape[h0] = tape[h1]; break;
+      case kLoopStart:
+        if (tape[h0] == 0) {
+          int depth = 1;
+          ++pc;
+          for (; pc < n && depth > 0; ++pc) {
+            const Op o = kOps.t[tape[pc]];
+            if (o == kLoopEnd) --depth;
+            if (o == kLoopStart) ++depth;
+          }
+          --pc;
+          if (depth != 0) pc = n;
+        }
+        break;
+      case kLoopEnd:
+        if (tape[h0] != 0) {
+          int depth = 1;
+          --pc;
+          for (; pc >= 0 && depth > 0; --pc) {
+            const Op o = kOps.t[tape[pc]];
+            if (o == kLoopEnd) ++depth;
+            if (o == kLoopStart) --depth;
+          }
+          ++pc;
+          if (depth != 0) pc = -1;
+        }
+        break;
+      default: ++skipped; break;
+    }
+    if (pc < 0) { ++i; break; }
+    if (++pc >= n) { ++i; break; }
+  }
+  return i - skipped;
+}
+
 Soup::Soup(const Params& p) : p_(p), soup_(p.num_programs * kTape), order_(p.num_programs) {
   if (p_.grid_w) {
     if (std::size_t(p_.grid_w) * p_.grid_h != p_.num_programs)
@@ -189,14 +240,23 @@ void Soup::run_pairs(std::size_t begin, std::size_t end, std::uint64_t epoch_see
   for (std::size_t index = begin; index < end; ++index) {
     const std::uint32_t a = order_[2 * index], b = order_[2 * index + 1];
     std::memcpy(tape, &soup_[std::size_t(a) * kTape], kTape);
-    std::memcpy(tape + kTape, &soup_[std::size_t(b) * kTape], kTape);
+    if (p_.m5_protocol) {
+      for (int i = 0; i < kTape; ++i)
+        tape[kTape + i] = static_cast<std::uint8_t>(splitmix64(~((n * epoch_seed + index) * kPair + i)) & 0xFF);
+    } else {
+      std::memcpy(tape + kTape, &soup_[std::size_t(b) * kTape], kTape);
+    }
     for (std::uint64_t i = 0; i < kPair; ++i) {
       const std::uint64_t r = splitmix64((n * epoch_seed + index) * kPair + i);
       if (((r >> 8) & ((1ULL << 30) - 1)) < p_.mutation_prob) tape[i] = static_cast<std::uint8_t>(r & 0xFF);
     }
     if (index < active_pairs_) total += evaluate(tape);
-    std::memcpy(&soup_[std::size_t(a) * kTape], tape, kTape);
-    std::memcpy(&soup_[std::size_t(b) * kTape], tape + kTape, kTape);
+    if (p_.m5_protocol) {
+      std::memcpy(&soup_[std::size_t(b) * kTape], tape + kTape, kTape);
+    } else {
+      std::memcpy(&soup_[std::size_t(a) * kTape], tape, kTape);
+      std::memcpy(&soup_[std::size_t(b) * kTape], tape + kTape, kTape);
+    }
   }
   *ops = total;
 }
@@ -253,7 +313,8 @@ void Soup::save(const std::string& path) const {
   std::FILE* f = std::fopen(tmp.c_str(), "wb");
   if (!f) throw std::runtime_error("cannot write " + tmp);
   const std::uint64_t hdr[6] = {0x4f45454246460002ULL, p_.num_programs, p_.seed, p_.mutation_prob, epoch_,
-                                std::uint64_t(p_.grid_w) | std::uint64_t(p_.grid_h) << 24 | std::uint64_t(p_.radius) << 48};
+                                std::uint64_t(p_.grid_w) | std::uint64_t(p_.grid_h) << 24 | std::uint64_t(p_.radius) << 48 |
+                                    std::uint64_t(p_.m5_protocol) << 63};
   bool ok = std::fwrite(hdr, sizeof hdr, 1, f) == 1 && std::fwrite(soup_.data(), 1, soup_.size(), f) == soup_.size();
   ok = (std::fclose(f) == 0) && ok;
   if (!ok || std::rename(tmp.c_str(), path.c_str()) != 0) throw std::runtime_error("cannot save " + path);
@@ -276,7 +337,10 @@ Soup Soup::load(const std::string& path, int threads) {
   p.threads = threads;
   p.grid_w = static_cast<int>(hdr[5] & 0xFFFFFF);
   p.grid_h = static_cast<int>(hdr[5] >> 24 & 0xFFFFFF);
-  if (hdr[0] == 0x4f45454246460002ULL) p.radius = static_cast<int>(hdr[5] >> 48);
+  if (hdr[0] == 0x4f45454246460002ULL) {
+    p.radius = static_cast<int>(hdr[5] >> 48 & 0x7FFF);
+    p.m5_protocol = hdr[5] >> 63;
+  }
   Soup s(p);
   const bool ok = std::fread(s.soup_.data(), 1, s.soup_.size(), f) == s.soup_.size();
   std::fclose(f);

@@ -26,6 +26,7 @@ add_library(oee_geb_core
   src/geb/world.cpp
   src/geb/rulestat.cpp)
 target_include_directories(oee_geb_core PUBLIC src)
+target_link_libraries(oee_geb_core PUBLIC oee_bff_core)
 
 add_executable(oee_geb_resets apps/oee_geb/main.cpp)
 target_link_libraries(oee_geb_resets PRIVATE oee_geb_core)
@@ -72,3 +73,6 @@ target_link_libraries(test_bff_selfrep PRIVATE oee_bff_core)
 add_test(NAME bff_selfrep_controls COMMAND test_bff_selfrep)
 add_test(NAME bff_spatial_resume
   COMMAND sh -c "B=$<TARGET_FILE:oee_bff>; $B -seed 3 -grid 64 32 -epochs 200 -interval 50 -save g_a.ck -log /dev/null && $B -seed 3 -grid 64 32 -epochs 100 -interval 50 -save g_b.ck -log /dev/null && $B -epochs 200 -interval 50 -resume g_b.ck -save g_b.ck -log /dev/null && cmp g_a.ck g_b.ck")
+add_executable(test_bff_evaluate_n tests/bff/test_evaluate_n.cpp)
+target_link_libraries(test_bff_evaluate_n PRIVATE oee_bff_core)
+add_test(NAME bff_evaluate_n_equivalence COMMAND test_bff_evaluate_n)

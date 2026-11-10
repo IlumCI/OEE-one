@@ -25,7 +25,13 @@ struct Params {
   // Second, independent reset shadow on its own RNG stream (null control for the
   // normalised activity test). Does not change the real run or the first shadow.
   bool second_shadow = false;
+  // M5 coupling (docs/M5.md). 0: Geb's built-in crossover + mutation. 1: heredity by
+  // executing a parent's genome as BFF code; the child receives what the code writes
+  // into a buffer. Not in Geb. Fits in padding: sizeof(Params) stays 32.
+  std::uint8_t heredity = 0;
 };
+
+static_assert(sizeof(Params) == 32, "Params is stored raw in checkpoints; keep its size");
 
 class World;
 
@@ -91,6 +97,9 @@ class World {
   const Genotype& shadow_genotype(int k) const { return shadow_genotypes_[k]; }
   // Reset shadow k-th to a copy of the k-th real agent in cell order (resets variant).
   void reset_shadow_to_real();
+  // Replace every real and shadow genotype by founders from `pool` (cycled). Used once at
+  // start for the M5 coupling; consumes randomness through Organism construction.
+  void seed_genomes(const std::vector<Genotype>& pool);
   const std::vector<Genotype>& second_shadow() const { return shadow2_; }
 
   Ran1& rng() { return rng_; }
@@ -115,6 +124,8 @@ class World {
                                       Genotype& shadow_child);
   void add_shadow(Genotype g);
   Genotype breed_second_shadow();
+  // M5: child genotype = buffer after executing [g1 | random buffer] as BFF code.
+  static Genotype bff_breed(Ran1& r, const Genotype& g1, const Genotype& g2);
   void reset_not_processed();
 
   Params p_;

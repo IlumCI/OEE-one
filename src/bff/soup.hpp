@@ -26,6 +26,10 @@ inline std::uint64_t splitmix64(std::uint64_t x) {
 
 // Run one interaction tape in place; returns the number of non-no-op instructions.
 std::size_t evaluate(std::uint8_t* tape, std::size_t max_steps = kMaxSteps);
+// Same semantics on a tape of any length n >= 1 (heads wrap modulo n; the instruction
+// pointer halts when it leaves [0, n)). For n == kPair it equals evaluate(). Used by the
+// M5 coupling, where agents' genomes are tapes of evolving length.
+std::size_t evaluate_n(std::uint8_t* tape, int n, std::size_t max_steps);
 
 // cubff CheckSelfRep: pair the program with 13 random noise tapes, run 5 generations
 // (each generation copies the right half to the left and refills the right with the
@@ -46,6 +50,10 @@ struct Params {
   // Spatial variant (paper section 2.2; cubff make_2d_pattern.py): programs on a bounded
   // grid_w x grid_h grid, interacting only within a (2*radius+1)^2 box. 0 = well mixed.
   int grid_w = 0, grid_h = 0, radius = 2;
+  // M5 protocol (docs/M5.md): in each pair (A, B), A runs on [A | random buffer] and the
+  // buffer replaces B; A is unchanged. Only programs that write a faithful copy of
+  // themselves into the buffer leave lasting descendants.
+  bool m5_protocol = false;
 };
 
 struct Metrics {

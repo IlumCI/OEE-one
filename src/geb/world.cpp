@@ -1,5 +1,9 @@
 #include "geb/world.hpp"
 
+#include <algorithm>
+
+#include "bff/soup.hpp"
+
 #include <cmath>
 #include <stdexcept>
 #include <utility>
@@ -354,6 +358,52 @@ void World::add_shadow(Genotype g) {
   shadow_birth_times_.push_back(ga_time_);
 }
 
+namespace {
+std::vector<std::uint8_t> to_bytes(const Genotype& g) {
+  std::vector<std::uint8_t> b((g.size() + 7) / 8, 0);
+  for (std::size_t i = 0; i < g.size(); ++i)
+    if (g[i]) b[i / 8] |= static_cast<std::uint8_t>(0x80 >> (i % 8));
+  return b;
+}
+}  // namespace
+
+Genotype World::bff_breed(Ran1& r, const Genotype& g1, const Genotype& /*g2*/) {
+  // M5 v1 (docs/M5.md): asexual, fixed length. Tape = [g1 | random buffer of the same
+  // length]; g1's code runs on it as BFF; the child is the buffer. The mate triggers the
+  // birth (Geb's reproduce action) but contributes no genes. Background mutation: each
+  // tape byte is replaced with probability 2^-12, as in the BFF soup.
+  const std::vector<std::uint8_t> b1 = to_bytes(g1);
+  const int l1 = static_cast<int>(b1.size());
+  std::vector<std::uint8_t> tape(b1);
+  for (int i = 0; i < l1; ++i) tape.push_back(static_cast<std::uint8_t>(r.random(256)));
+  for (auto& byte : tape)
+    if (r.random(4096) == 0) byte = static_cast<std::uint8_t>(r.random(256));
+  const int n = static_cast<int>(tape.size());
+  bff::evaluate_n(tape.data(), n, std::size_t(bff::kMaxSteps) * std::max(1, n / bff::kPair));
+  Genotype child(std::size_t(l1) * 8);
+  for (int i = 0; i < l1 * 8; ++i) child[i] = (tape[l1 + i / 8] >> (7 - i % 8)) & 1;
+  return child;
+}
+
+void World::seed_genomes(const std::vector<Genotype>& pool) {
+  if (pool.empty()) return;
+  // Under BFF heredity, each initial agent is a child of a founder (one application of
+  // the founder's own copy code), so uncopied bytes are randomised as at any later birth.
+  auto pick = [&](std::size_t k, Ran1& r) {
+    const Genotype& g = pool[k % pool.size()];
+    return p_.heredity ? bff_breed(r, g, g) : g;
+  };
+  std::size_t k = 0;
+  for (int at = 0; at < size_; ++at)
+    if (grid_[at]) {
+      const int x = grid_[at]->at_x_64, y = grid_[at]->at_y_64;
+      grid_[at] = std::make_unique<Organism>(*this, pick(k++, rng_), x, y);
+    }
+  for (std::size_t i = 0; i < shadow_genotypes_.size(); ++i) shadow_genotypes_[i] = pick(i, rng_);
+  for (std::size_t i = 0; i < shadow2_.size(); ++i) shadow2_[i] = pick(i, rng2_);
+  reset_not_processed();
+}
+
 Genotype World::breed_second_shadow() {
   Ran1& r = rng2_;
   const int n = static_cast<int>(shadow2_.size());
@@ -363,6 +413,7 @@ Genotype World::breed_second_shadow() {
   if (r.random(2)) std::swap(a, b);
   const Genotype& p1 = shadow2_[a];
   const Genotype& p2 = shadow2_[b];
+  if (p_.heredity) return bff_breed(r, p1, p2);
   const int cp1 = r.random(static_cast<int>(p1.size()) + 1);
   int cp2 = cp1 + (r.random(2) ? -kGenotypeLengthChangeMax : kGenotypeLengthChangeMax);
   const int len2 = static_cast<int>(p2.size());
@@ -407,6 +458,14 @@ std::unique_ptr<Organism> World::reproduce(Organism* a, Organism* b, int cx64, i
   const Genotype& sp2 = shadow_genotypes_[s2];
   const Genotype& g1 = p1->genotype();
   const Genotype& g2 = p2->genotype();
+  if (p_.heredity) {
+    Genotype child = bff_breed(rng_, g1, g2);
+    shadow_child = bff_breed(rng_, sp1, sp2);
+    if (p_.second_shadow) pending_shadow2_ = breed_second_shadow();
+    auto o = std::make_unique<Organism>(*this, std::move(child), cx64, cy64);
+    ++num_reproductions_;
+    return o;
+  }
 
   int cp1 = rng_.random(static_cast<int>(g1.size()) + 1);
   int cp2 = cp1;
@@ -508,10 +567,13 @@ namespace oee::geb {
 
 namespace {
 constexpr std::uint64_t kWorldMagic = 0x4f45453147454257ULL;  // "WBEG1EEO"
+// Coupled (M5) worlds use their own magic so that Params::heredity, which lives in
+// padding bytes of older checkpoints, is only trusted when it was written deliberately.
+constexpr std::uint64_t kWorldMagicCoupled = 0x4f45453547454257ULL;
 }
 
 void World::save(Writer& w) const {
-  w.put(kWorldMagic);
+  w.put(p_.heredity ? kWorldMagicCoupled : kWorldMagic);
   w.put(p_);
   w.put(seed_used_);
   rng_.save(w);
@@ -540,8 +602,10 @@ void World::save(Writer& w) const {
 }
 
 std::unique_ptr<World> World::load(Reader& r) {
-  if (r.get<std::uint64_t>() != kWorldMagic) throw std::runtime_error("not a world checkpoint");
-  const Params p = r.get<Params>();
+  const auto magic = r.get<std::uint64_t>();
+  if (magic != kWorldMagic && magic != kWorldMagicCoupled) throw std::runtime_error("not a world checkpoint");
+  Params p = r.get<Params>();
+  if (magic == kWorldMagic) p.heredity = 0;
   std::unique_ptr<World> w(new World(p, Empty{}));
   w->seed_used_ = r.get<int>();
   w->rng_.load(r);

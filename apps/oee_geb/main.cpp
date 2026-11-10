@@ -2,6 +2,7 @@
 // a display (docs/GEB_SPEC.md section 8), plus optional OEE-one extensions.
 //
 // Original options: -seed N -length N -neurons N -stats -rulestat -stopat N
+// M5 coupling: -heredity bff -founders FILE|random:N (docs/M5.md)
 // Extensions:       -variant resets|no_resets   (default set at compile time)
 //                   -components FILE            (component dictionary for analysis)
 //                   -outdir DIR                 (where rulestat files are written)
@@ -21,6 +22,7 @@
 
 #include <unistd.h>
 
+#include <cctype>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -31,6 +33,7 @@
 #include <vector>
 
 #include "geb/rulestat.hpp"
+#include "bff/soup.hpp"
 #include "geb/world.hpp"
 
 #ifndef OEE_GEB_DEFAULT_RESETS
@@ -173,6 +176,7 @@ int main(int argc, char** argv) {
   bool stats_on = false, rulestat_on = false, resets = OEE_GEB_DEFAULT_RESETS;
   long stopat = 0;
   std::string components_path, presence_path, outdir = ".", log_path, save_path, resume_path;
+  std::string founders_path;
   long save_every = 0, archive_every = 0, freeze_exit = 0;
   int reseed = 0;
   bool neurons_msg = false;
@@ -213,6 +217,13 @@ int main(int argc, char** argv) {
     } else if (!std::strcmp(s, "-random-selection")) {
       p.random_selection = true;
       ++a;
+    } else if (!std::strcmp(s, "-heredity") && has) {
+      // M5 (docs/M5.md): "bff" = heredity by executing parents' genomes as BFF code.
+      p.heredity = !std::strcmp(argv[a + 1], "bff") ? 1 : 0;
+      a += 2;
+    } else if (!std::strcmp(s, "-founders") && has) {
+      founders_path = argv[a + 1];  // one genome per line, hex bytes; or "random:N"
+      a += 2;
     } else if (!std::strcmp(s, "-log") && has) {
       log_path = argv[a + 1];
       a += 2;
@@ -268,6 +279,36 @@ int main(int argc, char** argv) {
     }
   } else {
     world_ptr = std::make_unique<World>(p);
+    if (!founders_path.empty()) {
+      std::vector<Genotype> pool;
+      auto add_bytes = [&](const std::vector<unsigned char>& bytes) {
+        Genotype g(bytes.size() * 8);
+        for (std::size_t i = 0; i < g.size(); ++i) g[i] = (bytes[i / 8] >> (7 - i % 8)) & 1;
+        pool.push_back(std::move(g));
+      };
+      if (founders_path.rfind("random:", 0) == 0) {
+        const long n = std::atol(founders_path.c_str() + 7);
+        for (long i = 0; i < n; ++i) {
+          std::vector<unsigned char> b(64);
+          for (int j = 0; j < 64; ++j)
+            b[j] = static_cast<unsigned char>(oee::bff::splitmix64(std::uint64_t(p.seed) * 1000003ULL + i * 64 + j));
+          add_bytes(b);
+        }
+      } else {
+        std::FILE* f = std::fopen(founders_path.c_str(), "r");
+        if (!f) { std::fprintf(stderr, "cannot read %s\n", founders_path.c_str()); return 2; }
+        char line[65536];
+        while (std::fgets(line, sizeof line, f)) {
+          std::vector<unsigned char> b;
+          for (char* c = line; c[0] && c[1] && std::isxdigit(c[0]) && std::isxdigit(c[1]); c += 2)
+            b.push_back(static_cast<unsigned char>(std::strtoul(std::string(c, 2).c_str(), nullptr, 16)));
+          if (!b.empty()) add_bytes(b);
+        }
+        std::fclose(f);
+      }
+      world_ptr->seed_genomes(pool);
+      std::fprintf(stderr, "Seeded %zu founder genomes\n", pool.size());
+    }
   }
   World& world = *world_ptr;
 
