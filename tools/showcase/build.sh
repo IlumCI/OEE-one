@@ -3,6 +3,9 @@
 # Usage: tools/showcase/build.sh CHECKPOINT BUILD_DIR [STEPS]
 # Env BFF_SEED (default 0), BFF_FROM, BFF_TO (default 2304, 3456): the BFF run replayed for
 # the origin scene (it must transition inside that window; seed 0 does at epoch 2433).
+# Env MAP_SEED (default 101), MAP_FROM, MAP_TO (default 69376, 72512): the spatial BFF run
+# (240x135 grid) replayed for the map scene (seed 101 transitions at epoch 70465; the replay
+# takes about an hour on one core).
 # Requires: build of target `replay`, node + playwright (media), ffmpeg (media).
 set -euo pipefail
 ck="$1"; bin="$2"; steps="${3:-900}"
@@ -14,7 +17,12 @@ mkdir -p "$tmp/bff"
 "$bin/oee_bff" -seed "$bseed" -epochs "$bto" -interval 64 -dump-every 8 -dump-from "$bfrom" -dump-dir "$tmp/bff" \
   -log "$tmp/bff/log.csv" -threads "${THREADS:-1}"
 python3 -I "$here/encode_bff.py" "$tmp/bff" "$bfrom" "$bto" "$tmp/bff.json" --log "$tmp/bff/log.csv"
-python3 -I "$here/encode.py" "$tmp/replay.json" "$here/template.html" "$root/site/index.html" "$tmp/bff.json"
+mseed="${MAP_SEED:-101}"; mfrom="${MAP_FROM:-69376}"; mto="${MAP_TO:-72512}"
+mkdir -p "$tmp/map"
+"$bin/oee_bff" -seed "$mseed" -grid 240 135 -epochs "$mto" -interval 64 -dump-every 16 -dump-from "$mfrom" \
+  -dump-dir "$tmp/map" -log "$tmp/map/log.csv"
+python3 -I "$here/encode_bff2d.py" "$tmp/map" 240 135 "$tmp/bff2d.json"
+python3 -I "$here/encode.py" "$tmp/replay.json" "$here/template.html" "$root/site/index.html" "$tmp/bff.json" "$tmp/bff2d.json"
 [ -n "${NO_MEDIA:-}" ] && exit 0
 cp "$root/site/index.html" "$tmp/wrap.html"; cp "$here/record.js" "$tmp/"
 mkdir -p "$tmp/g" "$tmp/h" "$tmp/v" "$root/site/media"
