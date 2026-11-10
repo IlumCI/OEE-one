@@ -3,6 +3,7 @@
 //
 // Original options: -seed N -length N -neurons N -stats -rulestat -stopat N
 // M5 coupling: -heredity bff -founders FILE|random:N (docs/M5.md)
+// L3 collectives: -collectives (docs/L3.md)
 // Extensions:       -variant resets|no_resets   (default set at compile time)
 //                   -components FILE            (component dictionary for analysis)
 //                   -outdir DIR                 (where rulestat files are written)
@@ -160,6 +161,11 @@ void stats(const World& w) {
   std::fprintf(out, "time: L%ldL\tmean_genotype_length %d SHADOWmean_genotype_length %d\n",
                w.time(), static_cast<int>(total_len / num),
                static_cast<int>(shadow_total_len / w.shadow_count()));
+  if (w.params().collectives) {
+    const auto g = w.group_stats();
+    std::fprintf(out, "time: G%ldG	groups %d largest %d mean_size %.3f bonded_fraction %.3f\n", w.time(), g.groups,
+                 g.largest, g.mean, g.bonded);
+  }
   std::fflush(out);
   if (num < 2) {
     std::fprintf(out, "Terminating because number of individuals = %d\n", num);
@@ -221,6 +227,9 @@ int main(int argc, char** argv) {
       // M5 (docs/M5.md): "bff" = heredity by executing parents' genomes as BFF code.
       p.heredity = !std::strcmp(argv[a + 1], "bff") ? 1 : !std::strcmp(argv[a + 1], "bff0") ? 2 : !std::strcmp(argv[a + 1], "bffv") ? 3 : 0;
       a += 2;
+    } else if (!std::strcmp(s, "-collectives")) {
+      p.collectives = 1;  // L3 (docs/L3.md)
+      ++a;
     } else if (!std::strcmp(s, "-founders") && has) {
       founders_path = argv[a + 1];  // one genome per line, hex bytes; or "random:N"
       a += 2;

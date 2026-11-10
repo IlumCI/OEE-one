@@ -4,6 +4,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <unordered_map>
 #include <vector>
 
 #include "geb/ann.hpp"
@@ -30,6 +31,13 @@ struct Params {
   // into a random buffer. 2: same with a zero buffer (v2). 3: v1 plus viability (a child
   // is born only if its own code copies >= 16 informative bytes of itself). Not in Geb. Fits in padding: sizeof(Params) stays 32.
   std::uint8_t heredity = 0;
+  // L3 collectives (docs/L3.md). 0: Geb. 1: kin colonies. Bond/unbond actions (output
+  // prefixes "000", "001", unused in Geb) act only within a colony and within 2 cells;
+  // budding: a child joins its parent's colony and bonds to it when the parent's bond
+  // output was active and the parent's group has fewer than 32 members (else it founds a
+  // new colony); no killing within a group; an attack succeeds only if the attacker's
+  // group is at least as large as the victim's. Not in Geb.
+  std::uint8_t collectives = 0;
 };
 
 static_assert(sizeof(Params) == 32, "Params is stored raw in checkpoints; keep its size");
@@ -42,6 +50,7 @@ class Organism : public Ann {
   // Restore from a checkpoint (consumes no randomness).
   struct LoadTag {};
   Organism(World& w, Genotype genotype, LoadTag);
+  ~Organism();
 
   void copy_net_inputs_from_neighbourhood();
   void actions();
@@ -53,14 +62,21 @@ class Organism : public Ann {
   int direction_deg = 0;
   long birth_time = 0;
   int age = 0;
+  // L3: ids of bonded agents (at most kMaxBonds; dead ids are pruned lazily).
+  std::vector<std::uint64_t> bonds;
+  bool bond_out = false;
+  std::uint64_t colony = 0;  // L3: kin colony id (founder's id); bonds only within a colony
 
  private:
+  friend class World;
   int action_output(const GeneSpan& prefix);
   void try_to_reproduce_with_organism_in_front();
   void try_to_kill_organism_in_front();
   void turn_anti_clockwise(int by_deg);
   void turn_clockwise(int by_deg);
   void try_to_move_forward(int distance_64);
+  void try_to_bond_with_organism_in_front();
+  void unbond_all();
 
   World& w_;
 };
@@ -92,6 +108,13 @@ class World {
   int world_size() const { return size_; }
   const Organism* at(int cell) const { return grid_[cell].get(); }
   int num_individuals() const { return num_individuals_; }
+  // L3 group statistics: number of groups, largest group, mean group size, fraction of
+  // agents with at least one live bond.
+  struct GroupStats { int groups = 0, largest = 0; double mean = 0, bonded = 0; };
+  GroupStats group_stats() const;
+  static constexpr int kMaxBonds = 4;
+  static constexpr int kBondRange = 2;  // cells (toroidal Chebyshev); farther bonds break
+  static constexpr int kColonyMax = 32;  // a budded child joins the parent's group only below this size
 
   // Shadow population (genotypes only).
   int shadow_count() const { return static_cast<int>(shadow_genotypes_.size()); }
@@ -131,6 +154,13 @@ class World {
   static bool bff_viable(Ran1& r, const Genotype& g);
   static Genotype bff_breed_viable(Ran1& r, const std::vector<const Genotype*>& pool);
   void reset_not_processed();
+  // L3 helpers.
+  Organism* find_by_id(std::uint64_t id) const;
+  void prune_bonds(Organism* o) const;
+  int group_size(const Organism* o, std::vector<const Organism*>* members = nullptr) const;
+  static void bond(Organism* a, Organism* b);
+  bool in_bond_range(const Organism* a, const Organism* b) const;
+  std::unordered_map<std::uint64_t, Organism*> byid_;  // live agents (L3 lookups)
 
   Params p_;
   Ran1 rng_;

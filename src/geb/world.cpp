@@ -7,6 +7,8 @@
 #include <cmath>
 #include <stdexcept>
 #include <utility>
+#include <unordered_set>
+#include <unordered_map>
 
 namespace oee::geb {
 
@@ -16,6 +18,8 @@ const Character kKill("100");
 const Character kTurnAnticlockwise("101");
 const Character kTurnClockwise("110");
 const Character kMoveForward("111");
+const Character kBond("000");    // L3 only
+const Character kUnbond("001");  // L3 only
 constexpr int kPrimingLevel = 2;
 }  // namespace
 
@@ -24,6 +28,8 @@ constexpr int kPrimingLevel = 2;
 
 Organism::Organism(World& w, Genotype genotype, int x64, int y64)
     : Ann(std::move(genotype), w.p_.max_num_nodes), id(w.next_id_++), w_(w) {
+  w.byid_[id] = this;
+  colony = id;
   birth_time = w.ga_time_;
   at_x_64 = x64;
   at_y_64 = y64;
@@ -37,6 +43,11 @@ Organism::Organism(World& w, Genotype genotype, int x64, int y64)
 
 Organism::Organism(World& w, Genotype genotype, LoadTag)
     : Ann(std::move(genotype), w.p_.max_num_nodes), id(0), w_(w) {}
+
+Organism::~Organism() {
+  auto it = w_.byid_.find(id);
+  if (it != w_.byid_.end() && it->second == this) w_.byid_.erase(it);
+}
 
 void Organism::copy_net_inputs_from_neighbourhood() {
   const int L = w_.length_;
@@ -145,6 +156,107 @@ void Organism::actions() {
   turn_clockwise(static_cast<int>((World::kMaxTurnDeg * o) >> kExcitatoryScaleShift));
   o = action_output(kMoveForward.span());
   try_to_move_forward(static_cast<int>((o << 6) >> kExcitatoryScaleShift));
+  if (w_.p_.collectives) {
+    w_.prune_bonds(this);
+    o = action_output(kBond.span());
+    bond_out = o > World::kTA;
+    if (bond_out) try_to_bond_with_organism_in_front();
+    o = action_output(kUnbond.span());
+    if (o > World::kTA) unbond_all();
+  }
+}
+
+void Organism::try_to_bond_with_organism_in_front() {
+  World& w = w_;
+  Organism* other = w.grid_[w.forward1(at_x_64, at_y_64, direction_deg)].get();
+  if (!other || other == this || !w.in_bond_range(this, other)) return;
+  if (other->colony != colony) return;  // kin bonds only
+  World::bond(this, other);
+}
+
+void Organism::unbond_all() {
+  for (std::uint64_t id : bonds)
+    if (Organism* p = w_.find_by_id(id))
+      p->bonds.erase(std::remove(p->bonds.begin(), p->bonds.end(), this->id), p->bonds.end());
+  bonds.clear();
+}
+
+Organism* World::find_by_id(std::uint64_t id) const {
+  auto it = byid_.find(id);
+  return it == byid_.end() ? nullptr : it->second;
+}
+
+bool World::in_bond_range(const Organism* a, const Organism* b) const {
+  auto d = [this](int u, int v) { int x = std::abs(u - v); return std::min(x, length_ - x); };
+  return std::max(d(a->at_x, b->at_x), d(a->at_y, b->at_y)) <= kBondRange;
+}
+
+void World::prune_bonds(Organism* o) const {
+  // Drop bonds to dead agents and to agents out of range (bonds are physical).
+  std::vector<std::uint64_t> keep;
+  for (std::uint64_t id : o->bonds) {
+    Organism* p = find_by_id(id);
+    if (p && in_bond_range(o, p)) {
+      keep.push_back(id);
+    } else if (p) {
+      p->bonds.erase(std::remove(p->bonds.begin(), p->bonds.end(), o->id), p->bonds.end());
+    }
+  }
+  o->bonds.swap(keep);
+}
+
+void World::bond(Organism* a, Organism* b) {
+  if (std::find(a->bonds.begin(), a->bonds.end(), b->id) != a->bonds.end()) return;
+  a->w_.prune_bonds(a);
+  a->w_.prune_bonds(b);
+  if (static_cast<int>(a->bonds.size()) >= kMaxBonds || static_cast<int>(b->bonds.size()) >= kMaxBonds) return;
+  a->bonds.push_back(b->id);
+  b->bonds.push_back(a->id);
+}
+
+int World::group_size(const Organism* o, std::vector<const Organism*>* members) const {
+  const auto& byid = byid_;
+  std::vector<const Organism*> stack{o}, seen{o};
+  std::unordered_set<std::uint64_t> visited{o->id};
+  while (!stack.empty()) {
+    const Organism* x = stack.back();
+    stack.pop_back();
+    for (std::uint64_t id : x->bonds) {
+      auto it = byid.find(id);
+      if (it == byid.end() || !in_bond_range(x, it->second) || !visited.insert(id).second) continue;
+      stack.push_back(it->second);
+      seen.push_back(it->second);
+    }
+  }
+  if (members) *members = seen;
+  return static_cast<int>(seen.size());
+}
+
+World::GroupStats World::group_stats() const {
+  GroupStats g;
+  const auto& byid = byid_;
+  std::unordered_set<std::uint64_t> done;
+  int agents = 0, bonded = 0;
+  for (int c = 0; c < size_; ++c) {
+    const Organism* o = grid_[c].get();
+    if (!o) continue;
+    ++agents;
+    bool live = false;
+    for (auto id : o->bonds) {
+      auto it = byid.find(id);
+      live |= it != byid.end() && in_bond_range(o, it->second);
+    }
+    bonded += live;
+    if (done.count(o->id)) continue;
+    std::vector<const Organism*> m;
+    const int n = group_size(o, &m);
+    for (auto* x : m) done.insert(x->id);
+    ++g.groups;
+    g.largest = std::max(g.largest, n);
+  }
+  g.mean = g.groups ? double(agents) / g.groups : 0;
+  g.bonded = agents ? double(bonded) / agents : 0;
+  return g;
 }
 
 void Organism::try_to_reproduce_with_organism_in_front() {
@@ -188,6 +300,10 @@ void Organism::try_to_reproduce_with_organism_in_front() {
     if (!replace) --w.num_individuals_;
     return;
   }
+  if (w.p_.collectives && bond_out && w.group_size(this) < World::kColonyMax) {  // L3 budding
+    child->colony = colony;
+    World::bond(this, child.get());
+  }
   if (replace) {
     std::unique_ptr<Organism> old = std::move(w.grid_[child_at]);
     w.grid_[child_at] = std::move(child);
@@ -203,6 +319,15 @@ void Organism::try_to_kill_organism_in_front() {
   World& w = w_;
   if (w.num_individuals_ == w.p_.min_num_individuals) return;
   int other_at = w.forward1(at_x_64, at_y_64, direction_deg);
+  if (w.grid_[other_at] && w.p_.collectives) {
+    // L3: no killing within a group; an attack succeeds only if the attacker's group is
+    // at least as large as the victim's.
+    std::vector<const Organism*> mine;
+    const int na = w.group_size(this, &mine);
+    const Organism* victim = w.grid_[other_at].get();
+    if (std::find(mine.begin(), mine.end(), victim) != mine.end()) return;
+    if (na < w.group_size(victim)) return;
+  }
   if (w.grid_[other_at]) {
     if (w.p_.random_selection) other_at = w.random_occupied_cell(at);
     w.remove_real(other_at).reset();
@@ -625,10 +750,13 @@ constexpr std::uint64_t kWorldMagic = 0x4f45453147454257ULL;  // "WBEG1EEO"
 // Coupled (M5) worlds use their own magic so that Params::heredity, which lives in
 // padding bytes of older checkpoints, is only trusted when it was written deliberately.
 constexpr std::uint64_t kWorldMagicCoupled = 0x4f45453547454257ULL;
+// Worlds with L3 collectives (and possibly M5 heredity) store Params::collectives and
+// per-agent bond lists; padding bytes of older checkpoints are never trusted.
+constexpr std::uint64_t kWorldMagicL3 = 0x4f45453347454257ULL;
 }
 
 void World::save(Writer& w) const {
-  w.put(p_.heredity ? kWorldMagicCoupled : kWorldMagic);
+  w.put(p_.collectives ? kWorldMagicL3 : p_.heredity ? kWorldMagicCoupled : kWorldMagic);
   w.put(p_);
   w.put(seed_used_);
   rng_.save(w);
@@ -643,6 +771,11 @@ void World::save(Writer& w) const {
     w.put(o->at_x_64); w.put(o->at_y_64); w.put(o->direction_deg); w.put(o->birth_time);
     w.put(o->age);
     o->save_state(w);
+    if (p_.collectives) {
+      w.put_vec(o->bonds);
+      w.put<std::uint8_t>(o->bond_out);
+      w.put(o->colony);
+    }
   }
   w.put<std::uint64_t>(shadow_genotypes_.size());
   for (const Genotype& g : shadow_genotypes_) w.put_vec(g);
@@ -658,9 +791,11 @@ void World::save(Writer& w) const {
 
 std::unique_ptr<World> World::load(Reader& r) {
   const auto magic = r.get<std::uint64_t>();
-  if (magic != kWorldMagic && magic != kWorldMagicCoupled) throw std::runtime_error("not a world checkpoint");
+  if (magic != kWorldMagic && magic != kWorldMagicCoupled && magic != kWorldMagicL3)
+    throw std::runtime_error("not a world checkpoint");
   Params p = r.get<Params>();
   if (magic == kWorldMagic) p.heredity = 0;
+  if (magic != kWorldMagicL3) p.collectives = 0;
   std::unique_ptr<World> w(new World(p, Empty{}));
   w->seed_used_ = r.get<int>();
   w->rng_.load(r);
@@ -675,6 +810,12 @@ std::unique_ptr<World> World::load(Reader& r) {
     o->at_y_64 = r.get<int>(); o->direction_deg = r.get<int>(); o->birth_time = r.get<long>();
     o->age = r.get<int>();
     o->load_state(r);
+    if (p.collectives) {
+      o->bonds = r.get_vec<std::uint64_t>();
+      o->bond_out = r.get<std::uint8_t>();
+      o->colony = r.get<std::uint64_t>();
+    }
+    w->byid_[o->id] = o.get();
     w->grid_[c] = std::move(o);
   }
   const auto ns = r.get<std::uint64_t>();
