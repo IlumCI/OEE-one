@@ -76,3 +76,5 @@ add_test(NAME bff_spatial_resume
 add_executable(test_bff_evaluate_n tests/bff/test_evaluate_n.cpp)
 target_link_libraries(test_bff_evaluate_n PRIVATE oee_bff_core)
 add_test(NAME bff_evaluate_n_equivalence COMMAND test_bff_evaluate_n)
+add_executable(m5_heritability tools/m5/heritability.cpp)
+target_link_libraries(m5_heritability PRIVATE oee_geb_core)
