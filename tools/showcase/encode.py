@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Encode replay JSON (tools/replay) into the compact footage stream used by the showcase.
 
-Usage: encode.py REPLAY_JSON TEMPLATE_HTML OUT_HTML [BFF_JSON]
+Usage: encode.py REPLAY_JSON TEMPLATE_HTML OUT_HTML [BFF_JSON] [BFF2D_JSON]
 Per frame: u16 count, then per agent u16 slot, u16 x64, u16 y64,
 u16 (dir | (pen+1) << 9 | nodes << 11), u16 genome signature. Slots are reused one
 frame after an agent dies, so a slot never jumps between two agents across a frame.
@@ -13,6 +13,7 @@ import sys
 
 src, template, out = sys.argv[1:4]
 bff = open(sys.argv[4]).read() if len(sys.argv) > 4 else json.dumps(dict(programs=0, epochs=[], entropy={}, data=""))
+bff2d = open(sys.argv[5]).read() if len(sys.argv) > 5 else json.dumps(dict(w=0, h=0, epochs=[], data=""))
 d = json.load(open(src))
 slot, free, pending, buf, prev = {}, [], [], bytearray(), set()
 for fr in d["frames"]:
@@ -30,6 +31,7 @@ html = open(template).read()
 html = html.replace("__FRAMES__", base64.b64encode(bytes(buf)).decode())
 html = html.replace("__META__", json.dumps(dict(L=d["L"], t0=d["t0"])))
 html = html.replace("__BFF__", bff.replace("</", "<\\/"))
+html = html.replace("__BFF2D__", bff2d.replace("</", "<\\/"))
 head = ('<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n'
         '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">\n'
         '<meta name="description" content="Self-evolving agent civilizations. Real footage from an '

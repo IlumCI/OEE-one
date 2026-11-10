@@ -3,8 +3,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&display=swap">
 <style>
-/* Layout: two full-screen scenes (origin: BFF soup; agents: Geb lattice) crossfade;
-   a wordmark and one caption per scene sit on top. */
+/* Layout: three full-screen scenes crossfade in turn (origin: well-mixed BFF soup;
+   map: spatial BFF grid; agents: Geb lattice); a wordmark and one caption per scene. */
 :root {
   color-scheme: dark;
   --void: #08090b;
@@ -20,10 +20,13 @@
 }
 html, body { height: 100%; margin: 0; overflow: hidden; background: var(--void); color: var(--bone); }
 canvas#field { position: fixed; inset: 0; width: 100vw; height: 100vh; image-rendering: pixelated; image-rendering: crisp-edges; display: block; }
+canvas#map { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); image-rendering: pixelated;
+  image-rendering: crisp-edges; display: block; }
 canvas#soup { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); image-rendering: pixelated;
   image-rendering: crisp-edges; display: block; }
 canvas, h1.tag { transition: opacity 1.4s ease; }
-.scene-origin #field, .scene-agents #soup, .scene-origin h1.agents, .scene-agents h1.origin { opacity: 0; }
+html:not(.scene-origin) #soup, html:not(.scene-map) #map, html:not(.scene-agents) #field,
+html:not(.scene-origin) h1.origin, html:not(.scene-map) h1.map, html:not(.scene-agents) h1.agents { opacity: 0; }
 @media (prefers-reduced-motion: reduce) { canvas, h1.tag { transition: none; } }
 .tag { position: fixed; z-index: 2; font-family: var(--f-pixel); text-transform: uppercase; color: var(--bone);
   background: var(--void); line-height: 1; padding: .7em .85em .6em; box-shadow: 0 0 0 2px var(--lattice); }
@@ -35,13 +38,16 @@ h1 { margin: 0; bottom: calc(env(safe-area-inset-bottom, 0px) + 7vh); left: 50%;
 </style>
 
 <canvas id="field" aria-label="Evolved agents shown as pixel machines: moving, attacking, building offspring and mutating"></canvas>
+<canvas id="map" aria-label="A grid of programs on which self-copying families spread outward from where they arose"></canvas>
 <canvas id="soup" aria-label="A soup of random programs in which self-copying programs emerge and spread"></canvas>
 <div class="tag mark">OEE·ONE</div>
 <h1 class="tag origin">Life from random code</h1>
+<h1 class="tag map">Life spreads across space</h1>
 <h1 class="tag agents">Self-evolving agent civilizations</h1>
 
 <script id="footage" type="application/octet-stream">__FRAMES__</script>
 <script id="soupdata" type="application/json">__BFF__</script>
+<script id="mapdata" type="application/json">__BFF2D__</script>
 <script>
 (() => {
   const META = __META__;
@@ -251,8 +257,9 @@ h1 { margin: 0; bottom: calc(env(safe-area-inset-bottom, 0px) + 7vh); left: 50%;
   const dimc = (c, f) => c.map(v => Math.round(v * f));
   const LAT = hex(C('--lattice'));
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const pinned = location.hash === '#origin' ? 'origin' : location.hash === '#agents' ? 'agents' : null;
-  const setScene = sc => { root.classList.toggle('scene-origin', sc === 'origin'); root.classList.toggle('scene-agents', sc === 'agents'); };
+  const SCENES = ['origin', 'map', 'agents'];
+  const pinned = SCENES.includes(location.hash.slice(1)) ? location.hash.slice(1) : null;
+  const setScene = sc => SCENES.forEach(x => root.classList.toggle('scene-' + x, x === sc));
   setScene(pinned || 'origin');
 
   const meta = JSON.parse(document.getElementById('soupdata').textContent);
@@ -288,7 +295,45 @@ h1 { margin: 0; bottom: calc(env(safe-area-inset-bottom, 0px) + 7vh); left: 50%;
     g.putImageData(img, 0, 0);
   }
 
-  const FPS = reduce ? 3 : 8, HOLD = 2.5, AGENTS = 22;
+  // Map scene: spatial BFF, one pixel per program (bits 0-2 family, 3-4 background shade).
+  const mmeta = JSON.parse(document.getElementById('mapdata').textContent);
+  const MW = mmeta.w, MH = mmeta.h, MNF = mmeta.epochs.length;
+  const mcv = document.getElementById('map'), mg = mcv.getContext('2d');
+  const SHADE = [hex(C('--void')), hex(C('--noise1')), hex(C('--noise2')), hex(C('--lattice'))];
+  let mframes = null, mimg = null, mlast = -1, portrait = false;
+  function mlayout() {
+    portrait = innerHeight > innerWidth;
+    mcv.width = portrait ? MH : MW; mcv.height = portrait ? MW : MH;
+    const s = Math.max(innerWidth / mcv.width, innerHeight / mcv.height);   // cover the screen
+    mcv.style.width = Math.ceil(mcv.width * s) + 'px'; mcv.style.height = Math.ceil(mcv.height * s) + 'px';
+    mimg = mg.createImageData(mcv.width, mcv.height);
+    mlast = -1;
+  }
+  if (MNF) { addEventListener('resize', mlayout); mlayout(); }
+  function mdraw(k) {
+    if (!mframes || k === mlast) return;
+    mlast = k;
+    const base = k * MW * MH, d = mimg.data;
+    for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) {
+      const v = mframes[base + y * MW + x], fam = v & 7;
+      const c = fam ? FAM[fam - 1] : SHADE[(v >> 3) & 3];
+      const px = portrait ? MH - 1 - y : x, py = portrait ? x : y;
+      const o = (py * mcv.width + px) * 4;
+      d[o] = c[0]; d[o + 1] = c[1]; d[o + 2] = c[2]; d[o + 3] = 255;
+    }
+    mg.putImageData(mimg, 0, 0);
+  }
+
+  const FPS = reduce ? 3 : 8, MFPS = reduce ? 3 : 10, HOLD = 2.5, AGENTS = 22;
+  const length = sc => sc === 'origin' ? NF / FPS + HOLD : sc === 'map' ? MNF / MFPS + HOLD : AGENTS;
+  const nextScene = sc => {
+    let i = SCENES.indexOf(sc);
+    for (let n = 0; n < SCENES.length; n++) {
+      i = (i + 1) % SCENES.length;
+      if (SCENES[i] === 'agents' || (SCENES[i] === 'origin' && frames) || (SCENES[i] === 'map' && mframes)) return SCENES[i];
+    }
+    return 'agents';
+  };
   let t0 = null, slow = 1, slowT = 1, simT = 0, prev = null, phase = pinned || 'origin', phaseT = 0;
   const hold = on => { slowT = on ? 0.15 : 1; };
   addEventListener('pointerdown', () => hold(true));
@@ -298,19 +343,22 @@ h1 { margin: 0; bottom: calc(env(safe-area-inset-bottom, 0px) + 7vh); left: 50%;
     const dt = prev === null ? 0 : Math.min(0.05, (now - prev) / 1000); prev = now;
     slow += (slowT - slow) * Math.min(1, dt * 4);
     phaseT += dt * slow;
-    if (phase === 'origin') {
-      const k = Math.min(NF - 1, Math.floor(phaseT * FPS));
-      draw(k);
-      if (!pinned && phaseT > NF / FPS + HOLD) { phase = 'agents'; phaseT = 0; setScene('agents'); }
-      if (pinned && phaseT > NF / FPS + HOLD) phaseT = 0;
-    } else if (!pinned && phaseT > AGENTS) { phase = 'origin'; phaseT = 0; last = -1; setScene('origin'); }
+    if (phase === 'origin') draw(Math.min(NF - 1, Math.floor(phaseT * FPS)));
+    if (phase === 'map') mdraw(Math.min(MNF - 1, Math.floor(phaseT * MFPS)));
+    if (phaseT > length(phase)) {
+      phaseT = 0; last = -1; mlast = -1;
+      if (!pinned) { phase = nextScene(phase); setScene(phase); }
+    }
     requestAnimationFrame(tick);
   }
-  const bin = atob(meta.data), z = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) z[i] = bin.charCodeAt(i);
-  new Response(new Blob([z]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer()
-    .then(b => { frames = new Uint8Array(b); last = -1; })
-    .catch(() => { phase = 'agents'; setScene('agents'); });
+  const gunzip = b64 => {
+    const bin = atob(b64), z = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) z[i] = bin.charCodeAt(i);
+    return new Response(new Blob([z]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();
+  };
+  if (NF) gunzip(meta.data).then(b => { frames = new Uint8Array(b); last = -1; }).catch(() => {});
+  if (MNF) gunzip(mmeta.data).then(b => { mframes = new Uint8Array(b); mlast = -1; }).catch(() => {});
+  if (!NF && !pinned) { phase = 'agents'; setScene('agents'); }
   requestAnimationFrame(tick);
 })();
 </script>
