@@ -233,6 +233,9 @@ int main(int argc, char** argv) {
     } else if (!std::strcmp(s, "-collectives-random")) {
       p.collectives = 2;  // L3 control: random grouping decisions
       ++a;
+    } else if (!std::strcmp(s, "-senescence")) {
+      p.collectives |= 4;  // L3 v4: death after World::kMaxAge updates (use after -collectives*)
+      ++a;
     } else if (!std::strcmp(s, "-founders") && has) {
       founders_path = argv[a + 1];  // one genome per line, hex bytes; or "random:N"
       a += 2;

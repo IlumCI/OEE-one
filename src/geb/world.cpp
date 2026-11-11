@@ -156,7 +156,7 @@ void Organism::actions() {
   turn_clockwise(static_cast<int>((World::kMaxTurnDeg * o) >> kExcitatoryScaleShift));
   o = action_output(kMoveForward.span());
   try_to_move_forward(static_cast<int>((o << 6) >> kExcitatoryScaleShift));
-  if (w_.p_.collectives == 2) {
+  if (w_.p_.collectives & 2) {
     // L3 control: grouping decisions are coin flips, not network outputs, so grouping
     // tendency has no heritable variation (bond p = 1/2, unbond p = 1/20).
     w_.prune_bonds(this);
@@ -713,6 +713,13 @@ void World::step() {
     ind->update_outputs(rng_, net_);
     ind->actions();
     ++ind->age;
+    // L3 v4 senescence: agents die after kMaxAge of their own updates (Geb has no natural
+    // death, so protection from combat would otherwise mean immortality).
+    if ((p_.collectives & 4) && ind->age > kMaxAge && grid_[ind->at].get() == ind &&
+        num_individuals_ > p_.min_num_individuals) {
+      remove_real(ind->at).reset();
+      --num_individuals_;
+    }
   }
   --num_not_processed_;
   if (num_not_processed_) {

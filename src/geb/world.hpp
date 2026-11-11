@@ -37,6 +37,8 @@ struct Params {
   // output was active and the parent's group has fewer than 32 members (else it founds a
   // new colony); no killing within a group; an attack succeeds only if the attacker's
   // group is at least as large as the victim's. Not in Geb.
+  // Bit flags: 1 = kin-colony rules; 2 = control (grouping decisions are coin flips);
+  // 4 = senescence (death after kMaxAge updates). Values used: 1, 2, 5, 6.
   std::uint8_t collectives = 0;
 };
 
@@ -114,7 +116,8 @@ class World {
   GroupStats group_stats() const;
   static constexpr int kMaxBonds = 4;
   static constexpr int kBondRange = 2;  // cells (toroidal Chebyshev); farther bonds break
-  static constexpr int kColonyMax = 32;  // a budded child joins the parent's group only below this size
+  static constexpr int kColonyMax = 32;
+  static constexpr int kMaxAge = 1000;  // L3 v4 senescence (collectives bit 2)  // a budded child joins the parent's group only below this size
 
   // Shadow population (genotypes only).
   int shadow_count() const { return static_cast<int>(shadow_genotypes_.size()); }
