@@ -38,7 +38,8 @@ struct Params {
   // new colony); no killing within a group; an attack succeeds only if the attacker's
   // group is at least as large as the victim's. Not in Geb.
   // Bit flags: 1 = kin-colony rules; 2 = control (grouping decisions are coin flips);
-  // 4 = senescence (death after kMaxAge updates). Values used: 1, 2, 5, 6.
+  // 4 = senescence (death after kMaxAge updates). Values used: 1, 2, 5, 6, and 4 alone
+  // (plain Geb plus senescence: no colony rules, a control).
   std::uint8_t collectives = 0;
 };
 

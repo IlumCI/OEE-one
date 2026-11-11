@@ -163,7 +163,7 @@ void Organism::actions() {
     bond_out = w_.rng_.random(2) == 1;
     if (bond_out) try_to_bond_with_organism_in_front();
     if (w_.rng_.random(20) == 0) unbond_all();
-  } else if (w_.p_.collectives) {
+  } else if (w_.p_.collectives & 1) {
     w_.prune_bonds(this);
     o = action_output(kBond.span());
     bond_out = o > World::kTA;
@@ -307,7 +307,7 @@ void Organism::try_to_reproduce_with_organism_in_front() {
     if (!replace) --w.num_individuals_;
     return;
   }
-  if (w.p_.collectives && bond_out && w.group_size(this) < World::kColonyMax) {  // L3 budding
+  if ((w.p_.collectives & 3) && bond_out && w.group_size(this) < World::kColonyMax) {  // L3 budding
     child->colony = colony;
     World::bond(this, child.get());
   }
@@ -326,7 +326,7 @@ void Organism::try_to_kill_organism_in_front() {
   World& w = w_;
   if (w.num_individuals_ == w.p_.min_num_individuals) return;
   int other_at = w.forward1(at_x_64, at_y_64, direction_deg);
-  if (w.grid_[other_at] && w.p_.collectives) {
+  if (w.grid_[other_at] && (w.p_.collectives & 3)) {
     // L3: no killing within a group; an attack succeeds only if the attacker's group is
     // at least as large as the victim's.
     std::vector<const Organism*> mine;

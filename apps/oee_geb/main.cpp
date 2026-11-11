@@ -161,7 +161,7 @@ void stats(const World& w) {
   std::fprintf(out, "time: L%ldL\tmean_genotype_length %d SHADOWmean_genotype_length %d\n",
                w.time(), static_cast<int>(total_len / num),
                static_cast<int>(shadow_total_len / w.shadow_count()));
-  if (w.params().collectives) {
+  if (w.params().collectives & 3) {
     const auto g = w.group_stats();
     std::fprintf(out, "time: G%ldG	groups %d largest %d mean_size %.3f bonded_fraction %.3f\n", w.time(), g.groups,
                  g.largest, g.mean, g.bonded);
