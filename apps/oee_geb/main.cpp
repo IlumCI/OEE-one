@@ -230,6 +230,9 @@ int main(int argc, char** argv) {
     } else if (!std::strcmp(s, "-collectives")) {
       p.collectives = 1;  // L3 (docs/L3.md)
       ++a;
+    } else if (!std::strcmp(s, "-collectives-random")) {
+      p.collectives = 2;  // L3 control: random grouping decisions
+      ++a;
     } else if (!std::strcmp(s, "-founders") && has) {
       founders_path = argv[a + 1];  // one genome per line, hex bytes; or "random:N"
       a += 2;

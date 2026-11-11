@@ -156,7 +156,14 @@ void Organism::actions() {
   turn_clockwise(static_cast<int>((World::kMaxTurnDeg * o) >> kExcitatoryScaleShift));
   o = action_output(kMoveForward.span());
   try_to_move_forward(static_cast<int>((o << 6) >> kExcitatoryScaleShift));
-  if (w_.p_.collectives) {
+  if (w_.p_.collectives == 2) {
+    // L3 control: grouping decisions are coin flips, not network outputs, so grouping
+    // tendency has no heritable variation (bond p = 1/2, unbond p = 1/20).
+    w_.prune_bonds(this);
+    bond_out = w_.rng_.random(2) == 1;
+    if (bond_out) try_to_bond_with_organism_in_front();
+    if (w_.rng_.random(20) == 0) unbond_all();
+  } else if (w_.p_.collectives) {
     w_.prune_bonds(this);
     o = action_output(kBond.span());
     bond_out = o > World::kTA;
