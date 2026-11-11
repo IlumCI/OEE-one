@@ -34,3 +34,6 @@ scale_L10_N160_s15 resets 15 1000000 -length 10 -neurons 160
 scale_L10_N80_s15 resets 15 1000000 -length 10 -neurons 80
 scale_L10_N40_s15 resets 15 1000000 -length 10 -neurons 40
 scale_L10_N20_s15 resets 15 1000000 -length 10 -neurons 20
+scale_L80_N160_s21 resets 21 3000000 -length 80 -neurons 160
+scale_L80_N160_s22 resets 22 3000000 -length 80 -neurons 160
+scale_L80_N160_s23 resets 23 3000000 -length 80 -neurons 160

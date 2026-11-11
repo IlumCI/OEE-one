@@ -69,10 +69,11 @@ over the runs of each setting.
 
 ### Design (reduced)
 - **Settings:** eight (world length L, neuron limit N) pairs:
-  - joint scaling, N = 2L: (10, 20), (20, 40), (40, 80);
+  - joint scaling, N = 2L: (10, 20), (20, 40), (40, 80), (80, 160);
   - neurons only, L = 10: N = 20, 40, 80, 160;
   - world only, N = 20: L = 10, 20, 40.
-- **Runs:** 5 seeds per setting (seeds 11-15), each 1M steps.
+- **Runs:** 5 seeds per setting (seeds 11-15), each 1M steps. (80, 160): 3 seeds (21-23),
+  run to 3M in `runs3/`; the scaling row uses the same 0.5M-1M window.
 - **(20, 20):** reuses the five M1 runs `resets_s1..5`, restricted to the same window.
 - **Simulator:** reset-shadow variant, otherwise Geb v08b3 defaults.
 - **Commands:** `oee_geb_resets -seed S -length L -neurons N -stats -rulestat`.
@@ -85,7 +86,7 @@ when L or N is scaled alone, and whether it keeps increasing when both are scale
 together.
 
 ### Results
-All 40 runs (36 new, plus the five (20, 20) M1 runs), window 0.5M-1M steps.
+All 43 runs (36 scaling runs, three (80, 160) runs, plus the five M1 runs), window 0.5M-1M steps.
 
 | L | N | runs | max individual complexity (mean) | 95% CI | Channon 2019 joint fit |
 |---|---|---|---|---|---|
@@ -97,18 +98,23 @@ All 40 runs (36 new, plus the five (20, 20) M1 runs), window 0.5M-1M steps.
 | 20 | 40 | 5 | 11.64 | ±1.15 | 12.03 |
 | 40 | 20 | 5 | 12.31 | ±0.96 |  |
 | 40 | 80 | 5 | 14.62 | ±0.81 | 13.90 |
+| 80 | 160 | 3 | 16.37 | ±0.66 | 15.77 |
 
-Joint scaling fit (N = 2L): complexity = 9.19 + 2.66 log2(L/10), slope SE 0.22, R² 0.920, n 15 runs. Channon 2019: 10.17 + 1.87 log2(scale).
-softmin model (all runs): complexity = 3.99 + 3.20 softmin(ln L, ln N), R² 0.733, n 40 runs.
+Joint scaling fit (N = 2L): complexity = 9.33 + 2.46 log2(L/10), slope SE 0.15, R² 0.944, n 18 runs. Channon 2019: 10.17 + 1.87 log2(scale).
+softmin model (all runs): complexity = 4.23 + 3.09 softmin(ln L, ln N), R² 0.840, n 43 runs.
 
 ![scaling](results/scaling/scaling.png)
 
 ### Interpretation
 1. **Joint scaling (N = 2L): complexity keeps increasing.**
-   - Fit: 9.19 + 2.66·log2(L/10). Slope SE 0.22; R² 0.92 over 15 runs and three scales.
+   - Fit: 9.33 + 2.46·log2(L/10). Slope SE 0.15; R² 0.94 over 18 runs and four scales.
+   - L80/N160 (3 seeds): 16.37 ± 0.66, above L40/N80 (14.62). The previous three-scale fit
+     (9.19 + 2.66·log2) predicted 17.17; the observed value is 0.8 below it, so growth is
+     continuing but at a slightly lower rate. No plateau through L = 80.
    - Channon reports 10.17 + 1.87·log2(scale). The trend has the same form, roughly
      logarithmic growth with no sign of a plateau.
-   - The slope here is steeper, about 3.6 standard errors above Channon's, and the
+   - The slope here is steeper, about 3.9 standard errors above Channon's (it was 3.6 SE
+     with three scales; the SE shrank more than the slope), and the
      intercept is lower. Likely cause: the short 1M-step window, in which smaller
      settings may not yet have reached their asymptote. This is not established.
 2. **Neurons only (L = 10): plateau.**
@@ -121,7 +127,7 @@ softmin model (all runs): complexity = 3.99 + 3.20 softmin(ln L, ln N), R² 0.73
      - The softmin model (complexity = a + b·softmin(ln L, ln N)) still predicts growth
        at these settings, because softmin(ln 40, ln 20) = ln 13.3 lies well below ln 20.
      - A plateau should appear only for L ≫ N.
-     - Fitted over all 40 runs: 3.99 + 3.20·softmin(ln L, ln N), R² 0.73.
+     - Fitted over all 43 runs: 4.23 + 3.09·softmin(ln L, ln N), R² 0.84.
    - Testing the world-only plateau directly needs L ≥ 80 at N = 20.
 
 Summary: Channon's main 2019 result is reproduced qualitatively — complexity keeps
@@ -135,6 +141,6 @@ never froze within 1M steps.
 ## Reproduce
 ```
 tools/supervise_runs.sh runs2 build 60        # runs2/runs.txt lists the 36 runs
-python3 -I tools/scaling/analyse.py out runs/resets_s{1..5} runs2/scale_*
+python3 -I tools/scaling/analyse.py out runs/resets_s{1..5} runs2/scale_* runs3/scale_L80_N160_s2{1,2,3}
 python3 -I tools/activity/report.py out runs2/rescue_s1
 ```

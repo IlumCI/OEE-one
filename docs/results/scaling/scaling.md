@@ -8,6 +8,7 @@
 | 20 | 40 | 5 | 11.64 | ±1.15 | 12.03 |
 | 40 | 20 | 5 | 12.31 | ±0.96 |  |
 | 40 | 80 | 5 | 14.62 | ±0.81 | 13.90 |
+| 80 | 160 | 3 | 16.37 | ±0.66 | 15.77 |
 
-Joint scaling fit (N = 2L): complexity = 9.19 + 2.66 log2(L/10), slope SE 0.22, R² 0.920, n 15 runs. Channon 2019: 10.17 + 1.87 log2(scale).
-softmin model (all runs): complexity = 3.99 + 3.20 softmin(ln L, ln N), R² 0.733, n 40 runs.
+Joint scaling fit (N = 2L): complexity = 9.33 + 2.46 log2(L/10), slope SE 0.15, R² 0.944, n 18 runs. Channon 2019: 10.17 + 1.87 log2(scale).
+softmin model (all runs): complexity = 4.23 + 3.09 softmin(ln L, ln N), R² 0.840, n 43 runs.
