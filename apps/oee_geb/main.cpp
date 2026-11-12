@@ -163,8 +163,9 @@ void stats(const World& w) {
                static_cast<int>(shadow_total_len / w.shadow_count()));
   if (w.params().collectives & 3) {
     const auto g = w.group_stats();
-    std::fprintf(out, "time: G%ldG	groups %d largest %d mean_size %.3f bonded_fraction %.3f colonies %d largest_colony %d propagules %ld\n",
-                 w.time(), g.groups, g.largest, g.mean, g.bonded, g.colonies, g.largest_colony, w.propagules());
+    std::fprintf(out, "time: G%ldG	groups %d largest %d mean_size %.3f bonded_fraction %.3f colonies %d largest_colony %d propagules %ld warrior_fraction %.3f\n",
+                 w.time(), g.groups, g.largest, g.mean, g.bonded, g.colonies, g.largest_colony, w.propagules(),
+                 g.warrior_fraction);
   }
   std::fflush(out);
   if (num < 2) {
@@ -232,6 +233,9 @@ int main(int argc, char** argv) {
       ++a;
     } else if (!std::strcmp(s, "-collectives-random")) {
       p.collectives = 2;  // L3 control: random grouping decisions
+      ++a;
+    } else if (!std::strcmp(s, "-division-of-labour")) {
+      p.collectives |= 8 | 16;  // L3 v6: mixed-role groups win fights (implies v5)
       ++a;
     } else if (!std::strcmp(s, "-colony-reproduction")) {
       p.collectives |= 8;  // L3 v5: grown groups found colonies (use after -collectives*)

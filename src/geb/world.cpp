@@ -141,11 +141,14 @@ int Organism::action_output(const GeneSpan& prefix) {
 void Organism::actions() {
   pen_colour = -1;
   long o = action_output(kReproduce.span());
+  if (w_.p_.collectives & 16)  // L3 v6: role moving averages (time constant 64 updates)
+    ema_rep += (((o > World::kTA) << 16) - ema_rep) >> 6;
   if (o > World::kTA) {
     pen_colour = 1;
     try_to_reproduce_with_organism_in_front();
   }
   o = action_output(kKill.span());
+  if (w_.p_.collectives & 16) ema_kill += (((o > World::kTA) << 16) - ema_kill) >> 6;
   if (o > World::kTA) {
     pen_colour = 2;
     try_to_kill_organism_in_front();
@@ -239,6 +242,14 @@ int World::group_size(const Organism* o, std::vector<const Organism*>* members) 
   return static_cast<int>(seen.size());
 }
 
+int World::combat_power(const std::vector<const Organism*>& g) {
+  const int n = static_cast<int>(g.size());
+  int war = 0;
+  for (const Organism* o : g) war += o->warrior();
+  const bool mixed = n >= kDolMin && 4 * war >= n && 4 * war <= 3 * n;
+  return mixed ? 2 * n : n;
+}
+
 World::GroupStats World::group_stats() const {
   GroupStats g;
   const auto& byid = byid_;
@@ -265,6 +276,9 @@ World::GroupStats World::group_stats() const {
   for (int c = 0; c < size_; ++c)
     if (const Organism* o = grid_[c].get()) g.largest_colony = std::max(g.largest_colony, ++col[o->colony]);
   g.colonies = static_cast<int>(col.size());
+  int war = 0;
+  for (int c = 0; c < size_; ++c) if (const Organism* o = grid_[c].get()) war += o->warrior();
+  g.warrior_fraction = agents ? double(war) / agents : 0;
   g.mean = g.groups ? double(agents) / g.groups : 0;
   g.bonded = agents ? double(bonded) / agents : 0;
   return g;
@@ -349,7 +363,11 @@ void Organism::try_to_kill_organism_in_front() {
     const Organism* victim = w.grid_[other_at].get();
     if ((w.p_.collectives & 8) && victim->colony == colony) return;  // v5: no killing kin
     if (std::find(mine.begin(), mine.end(), victim) != mine.end()) return;
-    if (na < w.group_size(victim)) return;
+    if (w.p_.collectives & 16) {  // v6: combat power rewards mixed-role groups
+      std::vector<const Organism*> theirs;
+      w.group_size(victim, &theirs);
+      if (World::combat_power(mine) < World::combat_power(theirs)) return;
+    } else if (na < w.group_size(victim)) return;
   }
   if (w.grid_[other_at]) {
     if (w.p_.random_selection) other_at = w.random_occupied_cell(at);
@@ -805,6 +823,7 @@ void World::save(Writer& w) const {
       w.put_vec(o->bonds);
       w.put<std::uint8_t>(o->bond_out);
       w.put(o->colony);
+      if (p_.collectives & 16) { w.put(o->ema_rep); w.put(o->ema_kill); }
     }
   }
   w.put<std::uint64_t>(shadow_genotypes_.size());
@@ -845,6 +864,7 @@ std::unique_ptr<World> World::load(Reader& r) {
       o->bonds = r.get_vec<std::uint64_t>();
       o->bond_out = r.get<std::uint8_t>();
       o->colony = r.get<std::uint64_t>();
+      if (p.collectives & 16) { o->ema_rep = r.get<int>(); o->ema_kill = r.get<int>(); }
     }
     w->byid_[o->id] = o.get();
     w->grid_[c] = std::move(o);

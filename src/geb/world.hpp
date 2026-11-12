@@ -45,6 +45,10 @@ struct Params {
   // members; otherwise it stays in the parent's colony, unbonded. No killing within a
   // colony (bonded or not). A colony with >= kColonyMax members founds a new colony with
   // every birth. New colonies are thus offspring of grown groups; colony size is capped.
+  // 16 = L3 v6 division of labour (with 8): an agent's role is warrior if it fires kill
+  // more often than reproduce (moving averages), else breeder. A group's combat power is
+  // its size, doubled if it has >= kDolMin members and 25-75% warriors. An attack succeeds
+  // only if the attacker's power is >= the victim's. Mixed groups win fights.
   std::uint8_t collectives = 0;
 };
 
@@ -74,6 +78,9 @@ class Organism : public Ann {
   std::vector<std::uint64_t> bonds;
   bool bond_out = false;
   std::uint64_t colony = 0;  // L3: kin colony id (founder's id); bonds only within a colony
+  // L3 v6: exponential moving averages of reproduce / kill firing (fixed point, 1<<16 = 1).
+  int ema_rep = 0, ema_kill = 0;
+  bool warrior() const { return ema_kill > ema_rep; }
 
  private:
   friend class World;
@@ -118,12 +125,14 @@ class World {
   int num_individuals() const { return num_individuals_; }
   // L3 group statistics: number of groups, largest group, mean group size, fraction of
   // agents with at least one live bond.
-  struct GroupStats { int groups = 0, largest = 0, colonies = 0, largest_colony = 0; double mean = 0, bonded = 0; };
+  struct GroupStats { int groups = 0, largest = 0, colonies = 0, largest_colony = 0; double mean = 0, bonded = 0, warrior_fraction = 0; };
   GroupStats group_stats() const;
   static constexpr int kMaxBonds = 4;
   static constexpr int kBondRange = 2;  // cells (toroidal Chebyshev); farther bonds break
   static constexpr int kColonyMax = 32;
-  static constexpr int kPropaguleMin = 4;  // L3 v5: minimum group size to found a colony
+  static constexpr int kPropaguleMin = 4;
+  static constexpr int kDolMin = 4;  // L3 v6: minimum group size for the mixed-role bonus
+  static int combat_power(const std::vector<const Organism*>& g);  // L3 v5: minimum group size to found a colony
   long propagules() const { return propagules_; }
   static constexpr int kMaxAge = 1000;  // L3 v4 senescence (collectives bit 2)  // a budded child joins the parent's group only below this size
 
