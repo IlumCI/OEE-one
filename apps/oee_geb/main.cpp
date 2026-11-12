@@ -163,9 +163,9 @@ void stats(const World& w) {
                static_cast<int>(shadow_total_len / w.shadow_count()));
   if (w.params().collectives & 3) {
     const auto g = w.group_stats();
-    std::fprintf(out, "time: G%ldG	groups %d largest %d mean_size %.3f bonded_fraction %.3f colonies %d largest_colony %d propagules %ld warrior_fraction %.3f\n",
+    std::fprintf(out, "time: G%ldG	groups %d largest %d mean_size %.3f bonded_fraction %.3f colonies %d largest_colony %d propagules %ld warrior_fraction %.3f groups_ge4 %d mixed %d\n",
                  w.time(), g.groups, g.largest, g.mean, g.bonded, g.colonies, g.largest_colony, w.propagules(),
-                 g.warrior_fraction);
+                 g.warrior_fraction, g.large, g.mixed);
   }
   std::fflush(out);
   if (num < 2) {

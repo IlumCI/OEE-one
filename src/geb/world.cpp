@@ -269,6 +269,7 @@ World::GroupStats World::group_stats() const {
     std::vector<const Organism*> m;
     const int n = group_size(o, &m);
     for (auto* x : m) done.insert(x->id);
+    if (n >= kDolMin) { ++g.large; g.mixed += combat_power(m) == 2 * n; }
     ++g.groups;
     g.largest = std::max(g.largest, n);
   }

@@ -125,7 +125,7 @@ class World {
   int num_individuals() const { return num_individuals_; }
   // L3 group statistics: number of groups, largest group, mean group size, fraction of
   // agents with at least one live bond.
-  struct GroupStats { int groups = 0, largest = 0, colonies = 0, largest_colony = 0; double mean = 0, bonded = 0, warrior_fraction = 0; };
+  struct GroupStats { int groups = 0, largest = 0, colonies = 0, largest_colony = 0; int large = 0, mixed = 0; double mean = 0, bonded = 0, warrior_fraction = 0; };
   GroupStats group_stats() const;
   static constexpr int kMaxBonds = 4;
   static constexpr int kBondRange = 2;  // cells (toroidal Chebyshev); farther bonds break
