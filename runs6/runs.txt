@@ -20,3 +20,4 @@ l3v5_s3 resets_v5 3 4000000 -collectives -colony-reproduction -senescence -secon
 l3v6_s1 resets_v6 1 4000000 -collectives -division-of-labour -senescence -second-shadow -presence presence
 l3v6_s2 resets_v6 2 4000000 -collectives -division-of-labour -senescence -second-shadow -presence presence
 l3v6_s3 resets_v6 3 4000000 -collectives -division-of-labour -senescence -second-shadow -presence presence
+l3v5L40_s1 resets_v5 1 4000000 -length 40 -collectives -colony-reproduction -senescence -second-shadow -presence presence
