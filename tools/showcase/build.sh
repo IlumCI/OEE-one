@@ -6,6 +6,8 @@
 # Env MAP_SEED (default 101), MAP_FROM, MAP_TO (default 69376, 72512): the spatial BFF run
 # (240x135 grid) replayed for the map scene (seed 101 transitions at epoch 70465; the replay
 # takes about an hour on one core).
+# Env COL_CK: an L3 colony-run checkpoint (e.g. runs6/l3v5L40_s1/ck) replayed for the nations
+# scene (COL_STEPS default 600, every 2 steps); omitted = no nations scene.
 # Requires: build of target `replay`, node + playwright (media), ffmpeg (media).
 set -euo pipefail
 ck="$1"; bin="$2"; steps="${3:-900}"
@@ -22,14 +24,26 @@ mkdir -p "$tmp/map"
 "$bin/oee_bff" -seed "$mseed" -grid 240 135 -epochs "$mto" -interval 64 -dump-every 16 -dump-from "$mfrom" \
   -dump-dir "$tmp/map" -log "$tmp/map/log.csv"
 python3 -I "$here/encode_bff2d.py" "$tmp/map" 240 135 "$tmp/bff2d.json"
-python3 -I "$here/encode.py" "$tmp/replay.json" "$here/template.html" "$root/site/index.html" "$tmp/bff.json" "$tmp/bff2d.json"
+col=()
+if [ -n "${COL_CK:-}" ]; then "$bin/replay" "$COL_CK" "${COL_STEPS:-600}" 2 colonies > "$tmp/col.bin"; col=("$tmp/col.bin"); fi
+python3 -I "$here/encode.py" "$tmp/replay.json" "$here/template.html" "$root/site/index.html" "$tmp/bff.json" "$tmp/bff2d.json" "${col[@]}"
 [ -n "${NO_MEDIA:-}" ] && exit 0
 cp "$root/site/index.html" "$tmp/wrap.html"; cp "$here/record.js" "$tmp/"
 mkdir -p "$tmp/g" "$tmp/h" "$tmp/v" "$root/site/media"
-mkdir -p "$tmp/og" "$tmp/oh" "$tmp/ov"
+mkdir -p "$tmp/og" "$tmp/oh" "$tmp/ov" "$tmp/ng" "$tmp/nh" "$tmp/nv"
 (cd "$tmp" && HASH='#agents' node record.js 960 540 20 12 g && HASH='#agents' node record.js 1920 1080 30 20 h \
   && HASH='#agents' node record.js 1080 1920 30 20 v && HASH='#origin' node record.js 960 540 12 20 og \
   && HASH='#origin' node record.js 1920 1080 30 20 oh && HASH='#origin' node record.js 1080 1920 30 20 ov)
+if [ -n "${COL_CK:-}" ]; then
+  (cd "$tmp" && HASH='#nations' node record.js 960 540 12 20 ng && HASH='#nations' node record.js 1920 1080 30 20 nh \
+    && HASH='#nations' node record.js 1080 1920 30 20 nv)
+  ffmpeg -loglevel error -y -framerate 12 -i "$tmp/ng/f%04d.png" \
+    -vf "split[a][b];[a]palettegen=max_colors=32:stats_mode=full[p];[b][p]paletteuse=dither=none" -loop 0 "$root/site/media/oee-one-nations.gif"
+  for v in nh:nations-1080p nv:nations-vertical; do
+    ffmpeg -loglevel error -y -framerate 30 -i "$tmp/${v%%:*}/f%04d.png" -c:v libx264 -pix_fmt yuv420p -crf 26 \
+      -tune animation -preset slow -movflags +faststart "$root/site/media/oee-one-${v##*:}.mp4"
+  done
+fi
 ffmpeg -loglevel error -y -framerate 20 -i "$tmp/g/f%04d.png" \
   -vf "split[a][b];[a]palettegen=max_colors=32:stats_mode=full[p];[b][p]paletteuse=dither=none" -loop 0 "$root/site/media/oee-one.gif"
 ffmpeg -loglevel error -y -framerate 12 -i "$tmp/og/f%04d.png" \

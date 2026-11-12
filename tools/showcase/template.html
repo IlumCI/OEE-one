@@ -15,7 +15,7 @@
   --mate: #f5d76e;     /* reproduction attempt */
   --sp1: #4aa3c8; --sp2: #e0a040; --sp3: #ecebe4;   /* simple, mid, complex networks */
   --noise1: #14161b; --noise2: #1c1f26; --code: #3a3f4b;   /* soup: inert bytes, lone code */
-  --fam1: #f5d76e; --fam2: #4aa3c8; --fam3: #e0a040; --fam4: #ecebe4; --fam5: #ff2e4d; --fam6: #7fd1a8;
+  --fam1: #f5d76e; --fam2: #4aa3c8; --fam3: #e0a040; --fam4: #ecebe4; --fam5: #ff2e4d; --fam6: #7fd1a8; --fam7: #b48cf0;
   --f-pixel: "Silkscreen", ui-monospace, "Courier New", monospace;
 }
 html, body { height: 100%; margin: 0; overflow: hidden; background: var(--void); color: var(--bone); }
@@ -24,9 +24,11 @@ canvas#map { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -5
   image-rendering: crisp-edges; display: block; }
 canvas#soup { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); image-rendering: pixelated;
   image-rendering: crisp-edges; display: block; }
+canvas#nations { position: fixed; inset: 0; width: 100vw; height: 100vh; image-rendering: pixelated; image-rendering: crisp-edges; display: block; }
 canvas, h1.tag { transition: opacity 1.4s ease; }
 html:not(.scene-origin) #soup, html:not(.scene-map) #map, html:not(.scene-agents) #field,
-html:not(.scene-origin) h1.origin, html:not(.scene-map) h1.map, html:not(.scene-agents) h1.agents { opacity: 0; }
+html:not(.scene-origin) h1.origin, html:not(.scene-map) h1.map, html:not(.scene-agents) h1.agents,
+html:not(.scene-nations) #nations, html:not(.scene-nations) h1.nations { opacity: 0; }
 @media (prefers-reduced-motion: reduce) { canvas, h1.tag { transition: none; } }
 .tag { position: fixed; z-index: 2; font-family: var(--f-pixel); text-transform: uppercase; color: var(--bone);
   background: var(--void); line-height: 1; padding: .7em .85em .6em; box-shadow: 0 0 0 2px var(--lattice); }
@@ -40,14 +42,17 @@ h1 { margin: 0; bottom: calc(env(safe-area-inset-bottom, 0px) + 7vh); left: 50%;
 <canvas id="field" aria-label="Evolved agents shown as pixel machines: moving, attacking, building offspring and mutating"></canvas>
 <canvas id="map" aria-label="A grid of programs on which self-copying families spread outward from where they arose"></canvas>
 <canvas id="soup" aria-label="A soup of random programs in which self-copying programs emerge and spread"></canvas>
+<canvas id="nations" aria-label="Agents bonded into kin colonies, each colony one colour, fighting and splitting off new colonies"></canvas>
 <div class="tag mark">OEE·ONE</div>
 <h1 class="tag origin">Life from random code</h1>
 <h1 class="tag map">Life spreads across space</h1>
 <h1 class="tag agents">Self-evolving agent civilizations</h1>
+<h1 class="tag nations">Machines form nations</h1>
 
 <script id="footage" type="application/octet-stream">__FRAMES__</script>
 <script id="soupdata" type="application/json">__BFF__</script>
 <script id="mapdata" type="application/json">__BFF2D__</script>
+<script id="nationdata" type="application/octet-stream">__COL__</script>
 <script>
 (() => {
   const META = __META__;
@@ -257,7 +262,7 @@ h1 { margin: 0; bottom: calc(env(safe-area-inset-bottom, 0px) + 7vh); left: 50%;
   const dimc = (c, f) => c.map(v => Math.round(v * f));
   const LAT = hex(C('--lattice'));
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const SCENES = ['origin', 'map', 'agents'];
+  const SCENES = ['origin', 'map', 'agents', 'nations'];
   const pinned = SCENES.includes(location.hash.slice(1)) ? location.hash.slice(1) : null;
   const setScene = sc => SCENES.forEach(x => root.classList.toggle('scene-' + x, x === sc));
   setScene(pinned || 'origin');
@@ -324,13 +329,76 @@ h1 { margin: 0; bottom: calc(env(safe-area-inset-bottom, 0px) + 7vh); left: 50%;
     mg.putImageData(mimg, 0, 0);
   }
 
-  const FPS = reduce ? 3 : 8, MFPS = reduce ? 3 : 10, HOLD = 2.5, AGENTS = 22;
-  const length = sc => sc === 'origin' ? NF / FPS + HOLD : sc === 'map' ? MNF / MFPS + HOLD : AGENTS;
+  // Nations scene: L3 kin colonies (tools/replay "colonies" mode). Each agent a 3x3 block in
+  // its colony's colour; bonds drawn as dim lines; red flash = attack, bone flash = birth.
+  const ncv = document.getElementById('nations'), ng = ncv.getContext('2d');
+  const NPAL = [1, 2, 3, 4, 6, 7].map(i => C('--fam' + i));   // no red: red marks attacks
+  const FAMS = NPAL, FAMD = NPAL.map(c => 'rgb(' + dimc(hex(c), 0.42).join(',') + ')');
+  const NVOID = C('--void'), NLAT = C('--lattice'), NSTRIKE = C('--strike'), NBONE = C('--bone');
+  let nframes = null, NL = 40, NNF = 0, naw = 0, nah = 0, nlast = -1;
+  const NCELL = 6;
+  function nlayout() {
+    const P = Math.max(3, Math.round(Math.max(innerWidth, innerHeight) / 240));
+    naw = Math.ceil(innerWidth / P); nah = Math.ceil(innerHeight / P);
+    ncv.width = naw; ncv.height = nah; ng.imageSmoothingEnabled = false;
+    ng.fillStyle = NVOID; ng.fillRect(0, 0, naw, nah); nlast = -1;
+  }
+  addEventListener('resize', nlayout); nlayout();
+  function nparse(ab) {
+    const dv = new DataView(ab), out = [];
+    NL = dv.getUint16(0, true);
+    for (let o = 2; o < ab.byteLength;) {
+      const n = dv.getUint16(o, true); o += 2;
+      const a = new Uint8Array(ab, o, 4 * n); o += 4 * n;
+      const m = dv.getUint16(o, true); o += 2;
+      const e = new Uint16Array(ab.slice(o, o + 4 * m)); o += 4 * m;
+      out.push({ n, a, e });
+    }
+    NNF = out.length;
+    return out;
+  }
+  function ndraw(k) {
+    if (!nframes || k === nlast) return;
+    nlast = k;
+    const fr = nframes[k], TILE = NL * NCELL;
+    ng.globalAlpha = reduce ? 1 : 0.6; ng.fillStyle = NVOID; ng.fillRect(0, 0, naw, nah); ng.globalAlpha = 1;
+    const ox = Math.floor((naw % TILE) / 2), oy = Math.floor((nah % TILE) / 2);
+    const plot = (ax, ay, col) => {
+      ng.fillStyle = col;
+      for (let ty = oy - TILE; ty < nah; ty += TILE) for (let tx = ox - TILE; tx < naw; tx += TILE) {
+        const sx = ((ax % TILE) + TILE) % TILE + tx, sy = ((ay % TILE) + TILE) % TILE + ty;
+        if (sx >= 0 && sx < naw && sy >= 0 && sy < nah) ng.fillRect(sx, sy, 1, 1);
+      }
+    };
+    for (let cy = 0; cy < NL; cy++) for (let cx = 0; cx < NL; cx++) plot(cx * NCELL, cy * NCELL, NLAT);
+    const cx = i => fr.a[4 * i] * NCELL + 3, cy = i => fr.a[4 * i + 1] * NCELL + 3;
+    for (let j = 0; j < fr.e.length; j += 2) {
+      const i = fr.e[j], q = fr.e[j + 1];
+      const x0 = cx(i), y0 = cy(i);
+      let dx = cx(q) - x0, dy = cy(q) - y0;
+      if (dx > TILE / 2) dx -= TILE; if (dx < -TILE / 2) dx += TILE;
+      if (dy > TILE / 2) dy -= TILE; if (dy < -TILE / 2) dy += TILE;
+      const steps = Math.max(Math.abs(dx), Math.abs(dy));
+      const col = FAMD[fr.a[4 * i + 2]];
+      for (let s = 0; s <= steps; s++) plot(Math.round(x0 + dx * s / steps), Math.round(y0 + dy * s / steps), col);
+    }
+    for (let i = 0; i < fr.n; i++) {
+      const x = cx(i), y = cy(i), col = FAMS[fr.a[4 * i + 2]], fl = fr.a[4 * i + 3], pen = (fl >> 1) - 1;
+      for (let by = -1; by <= 1; by++) for (let bx = -1; bx <= 1; bx++) plot(x + bx, y + by, col);
+      if ((fl & 1) || pen === 2) plot(x, y, NSTRIKE);   // warrior or attacking: red core
+      if (pen === 1) { plot(x - 2, y - 2, NBONE); plot(x + 2, y - 2, NBONE); plot(x - 2, y + 2, NBONE); plot(x + 2, y + 2, NBONE); }
+    }
+  }
+
+  const FPS = reduce ? 3 : 8, MFPS = reduce ? 3 : 10, NFPS = reduce ? 3 : 9, HOLD = 2.5, AGENTS = 22;
+  const length = sc => sc === 'origin' ? NF / FPS + HOLD : sc === 'map' ? MNF / MFPS + HOLD
+                     : sc === 'nations' ? Math.min(30, NNF / NFPS) + HOLD : AGENTS;
   const nextScene = sc => {
     let i = SCENES.indexOf(sc);
     for (let n = 0; n < SCENES.length; n++) {
       i = (i + 1) % SCENES.length;
-      if (SCENES[i] === 'agents' || (SCENES[i] === 'origin' && frames) || (SCENES[i] === 'map' && mframes)) return SCENES[i];
+      if (SCENES[i] === 'agents' || (SCENES[i] === 'origin' && frames) || (SCENES[i] === 'map' && mframes)
+          || (SCENES[i] === 'nations' && nframes)) return SCENES[i];
     }
     return 'agents';
   };
@@ -345,8 +413,9 @@ h1 { margin: 0; bottom: calc(env(safe-area-inset-bottom, 0px) + 7vh); left: 50%;
     phaseT += dt * slow;
     if (phase === 'origin') draw(Math.min(NF - 1, Math.floor(phaseT * FPS)));
     if (phase === 'map') mdraw(Math.min(MNF - 1, Math.floor(phaseT * MFPS)));
+    if (phase === 'nations') ndraw(Math.min(NNF - 1, Math.floor(phaseT * NFPS)));
     if (phaseT > length(phase)) {
-      phaseT = 0; last = -1; mlast = -1;
+      phaseT = 0; last = -1; mlast = -1; nlast = -1;
       if (!pinned) { phase = nextScene(phase); setScene(phase); }
     }
     requestAnimationFrame(tick);
@@ -358,6 +427,8 @@ h1 { margin: 0; bottom: calc(env(safe-area-inset-bottom, 0px) + 7vh); left: 50%;
   };
   if (NF) gunzip(meta.data).then(b => { frames = new Uint8Array(b); last = -1; }).catch(() => {});
   if (MNF) gunzip(mmeta.data).then(b => { mframes = new Uint8Array(b); mlast = -1; }).catch(() => {});
+  const ncol = document.getElementById('nationdata').textContent.trim();
+  if (ncol) gunzip(ncol).then(b => { nframes = nparse(b); nlast = -1; }).catch(() => {});
   if (!NF && !pinned) { phase = 'agents'; setScene('agents'); }
   requestAnimationFrame(tick);
 })();
