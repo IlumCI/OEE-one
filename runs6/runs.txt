@@ -1,0 +1,19 @@
+l3_s1 resets 1 2000000 -collectives -second-shadow -presence presence
+l3_s2 resets 2 2000000 -collectives -second-shadow -presence presence
+# v3 control (done; no immortality, mean age 12) l3ctl_s1 resets_ctl 1 2000000 -collectives-random -second-shadow -presence presence
+# v3 control (done; no immortality, mean age 12) l3ctl_s2 resets_ctl 2 2000000 -collectives-random -second-shadow -presence presence
+l3v4_s1 resets_v4 1 2000000 -collectives -senescence -second-shadow -presence presence
+l3v4_s2 resets_v4 2 2000000 -collectives -senescence -second-shadow -presence presence
+l3v4ctl_s1 resets_v4 1 2000000 -collectives-random -senescence -second-shadow -presence presence
+l3v4ctl_s2 resets_v4 2 2000000 -collectives-random -senescence -second-shadow -presence presence
+gebsen_s1 resets_v4b 1 2000000 -senescence -second-shadow -presence presence
+gebsen_s2 resets_v4b 2 2000000 -senescence -second-shadow -presence presence
+l3v4_s3 resets_v4b 3 4000000 -collectives -senescence -second-shadow -presence presence
+l3v4ctl_s3 resets_v4b 3 4000000 -collectives-random -senescence -second-shadow -presence presence
+l3v4_s4 resets_v4b 4 4000000 -collectives -senescence -second-shadow -presence presence
+l3v4ctl_s4 resets_v4b 4 4000000 -collectives-random -senescence -second-shadow -presence presence
+l3v4_s5 resets_v4b 5 4000000 -collectives -senescence -second-shadow -presence presence
+l3v4_s6 resets_v4b 6 4000000 -collectives -senescence -second-shadow -presence presence
+l3v5_s1 resets_v5 1 4000000 -collectives -colony-reproduction -senescence -second-shadow -presence presence
+l3v5_s2 resets_v5 2 4000000 -collectives -colony-reproduction -senescence -second-shadow -presence presence
+l3v5_s3 resets_v5 3 4000000 -collectives -colony-reproduction -senescence -second-shadow -presence presence

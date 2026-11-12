@@ -40,6 +40,11 @@ struct Params {
   // Bit flags: 1 = kin-colony rules; 2 = control (grouping decisions are coin flips);
   // 4 = senescence (death after kMaxAge updates). Values used: 1, 2, 5, 6, and 4 alone
   // (plain Geb plus senescence: no colony rules, a control).
+  // 8 = L3 v5 colony reproduction (with 1 or 2): a child that is not budded founds a new
+  // colony (single-agent propagule) only if its parent's group has >= kPropaguleMin
+  // members; otherwise it stays in the parent's colony, unbonded. No killing within a
+  // colony (bonded or not). A colony with >= kColonyMax members founds a new colony with
+  // every birth. New colonies are thus offspring of grown groups; colony size is capped.
   std::uint8_t collectives = 0;
 };
 
@@ -113,11 +118,13 @@ class World {
   int num_individuals() const { return num_individuals_; }
   // L3 group statistics: number of groups, largest group, mean group size, fraction of
   // agents with at least one live bond.
-  struct GroupStats { int groups = 0, largest = 0; double mean = 0, bonded = 0; };
+  struct GroupStats { int groups = 0, largest = 0, colonies = 0, largest_colony = 0; double mean = 0, bonded = 0; };
   GroupStats group_stats() const;
   static constexpr int kMaxBonds = 4;
   static constexpr int kBondRange = 2;  // cells (toroidal Chebyshev); farther bonds break
   static constexpr int kColonyMax = 32;
+  static constexpr int kPropaguleMin = 4;  // L3 v5: minimum group size to found a colony
+  long propagules() const { return propagules_; }
   static constexpr int kMaxAge = 1000;  // L3 v4 senescence (collectives bit 2)  // a budded child joins the parent's group only below this size
 
   // Shadow population (genotypes only).
@@ -184,6 +191,7 @@ class World {
   std::vector<int> np_positions_;
   std::vector<std::uint64_t> np_ids_;
   int num_not_processed_ = 0;
+  long propagules_ = 0;  // L3 v5: colonies founded (cumulative, checkpointed when bit 8 set)
   long ga_time_ = -1;
   long num_reproductions_ = 0;
   int num_individuals_ = 0;

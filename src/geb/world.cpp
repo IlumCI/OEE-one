@@ -261,6 +261,10 @@ World::GroupStats World::group_stats() const {
     ++g.groups;
     g.largest = std::max(g.largest, n);
   }
+  std::unordered_map<std::uint64_t, int> col;
+  for (int c = 0; c < size_; ++c)
+    if (const Organism* o = grid_[c].get()) g.largest_colony = std::max(g.largest_colony, ++col[o->colony]);
+  g.colonies = static_cast<int>(col.size());
   g.mean = g.groups ? double(agents) / g.groups : 0;
   g.bonded = agents ? double(bonded) / agents : 0;
   return g;
@@ -307,9 +311,20 @@ void Organism::try_to_reproduce_with_organism_in_front() {
     if (!replace) --w.num_individuals_;
     return;
   }
-  if ((w.p_.collectives & 3) && bond_out && w.group_size(this) < World::kColonyMax) {  // L3 budding
-    child->colony = colony;
-    World::bond(this, child.get());
+  if (w.p_.collectives & 3) {
+    const int gs = w.group_size(this);
+    int cs = 0;  // v5: members of the parent's colony (bonded or not)
+    if (w.p_.collectives & 8)
+      for (int c = 0; c < w.size_; ++c) cs += w.grid_[c] && w.grid_[c]->colony == colony;
+    if ((w.p_.collectives & 8) && cs >= World::kColonyMax) {  // v5: full colony splits off
+      ++w.propagules_;                                          // a propagule (new colony)
+    } else if (bond_out && gs < World::kColonyMax) {  // L3 budding
+      child->colony = colony;
+      World::bond(this, child.get());
+    } else if (w.p_.collectives & 8) {  // L3 v5: only grown groups found colonies
+      if (gs >= World::kPropaguleMin) ++w.propagules_;
+      else child->colony = colony;
+    }
   }
   if (replace) {
     std::unique_ptr<Organism> old = std::move(w.grid_[child_at]);
@@ -332,6 +347,7 @@ void Organism::try_to_kill_organism_in_front() {
     std::vector<const Organism*> mine;
     const int na = w.group_size(this, &mine);
     const Organism* victim = w.grid_[other_at].get();
+    if ((w.p_.collectives & 8) && victim->colony == colony) return;  // v5: no killing kin
     if (std::find(mine.begin(), mine.end(), victim) != mine.end()) return;
     if (na < w.group_size(victim)) return;
   }
@@ -801,6 +817,7 @@ void World::save(Writer& w) const {
   w.put_vec(np_positions_);
   w.put_vec(np_ids_);
   w.put(num_not_processed_);
+  if (p_.collectives & 8) w.put(propagules_);
 }
 
 std::unique_ptr<World> World::load(Reader& r) {
@@ -842,6 +859,7 @@ std::unique_ptr<World> World::load(Reader& r) {
   w->np_positions_ = r.get_vec<int>();
   w->np_ids_ = r.get_vec<std::uint64_t>();
   w->num_not_processed_ = r.get<int>();
+  if (p.collectives & 8) w->propagules_ = r.get<long>();
   return w;
 }
 
