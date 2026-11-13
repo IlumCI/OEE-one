@@ -123,6 +123,8 @@ class World {
   // L3 v7: enlarge the torus to length L (> current). Agents keep their coordinates; new
   // cells are empty. Call only at a cycle boundary (right after time() changes).
   void grow(int L);
+  // L3 v8: raise the neuron limit for agents developed from now on (existing agents keep theirs).
+  void set_max_num_nodes(int n) { if (n > p_.max_num_nodes) p_.max_num_nodes = n; }
   int world_size() const { return size_; }
   const Organism* at(int cell) const { return grid_[cell].get(); }
   int num_individuals() const { return num_individuals_; }
