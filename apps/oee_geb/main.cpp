@@ -182,6 +182,8 @@ int main(int argc, char** argv) {
   Params p;
   bool stats_on = false, rulestat_on = false, resets = OEE_GEB_DEFAULT_RESETS;
   long stopat = 0;
+  long grow_every = 0;  // L3 v7: world length L(t) = min(grow_max, L0 + grow_by * (t / grow_every))
+  int grow_by = 4, grow_max = 64;
   std::string components_path, presence_path, outdir = ".", log_path, save_path, resume_path;
   std::string founders_path;
   long save_every = 0, archive_every = 0, freeze_exit = 0;
@@ -234,6 +236,15 @@ int main(int argc, char** argv) {
     } else if (!std::strcmp(s, "-collectives-random")) {
       p.collectives = 2;  // L3 control: random grouping decisions
       ++a;
+    } else if (!std::strcmp(s, "-grow-every") && has) {
+      grow_every = std::atol(argv[a + 1]);
+      a += 2;
+    } else if (!std::strcmp(s, "-grow-by") && has) {
+      grow_by = std::atoi(argv[a + 1]);
+      a += 2;
+    } else if (!std::strcmp(s, "-grow-max") && has) {
+      grow_max = std::atoi(argv[a + 1]);
+      a += 2;
     } else if (!std::strcmp(s, "-division-of-labour")) {
       p.collectives |= 8 | 16;  // L3 v6: mixed-role groups win fights (implies v5)
       ++a;
@@ -432,12 +443,17 @@ int main(int argc, char** argv) {
   long last_birth_time = world.time();
   long last_births = world.num_reproductions();
 
+  const int length0 = p.world_length;  // initial length from the command line (L3 v7 growth)
   bool done = false;
   while (!done) {
     const long before = world.time();
     world.step();
     if (world.time() != before) {
       const long t = world.time();
+      if (grow_every) {  // absolute schedule: idempotent across checkpoint resumes
+        const long target = std::min<long>(grow_max, length0 + grow_by * (t / grow_every));
+        if (target > world.world_length()) world.grow(static_cast<int>(target));
+      }
       if (stats_on && !(t % kStatsEvery)) stats(world);
       if (rulestat && !(t % kRulestatEvery)) rulestat->snapshot(world);
       if (!save_path.empty() && save_every && !(t % save_every))

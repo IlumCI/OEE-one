@@ -767,6 +767,33 @@ void World::step() {
   }
 }
 
+void World::grow(int L) {
+  if (L <= length_) return;
+  const int old = length_;
+  std::vector<std::unique_ptr<Organism>> g(static_cast<std::size_t>(L) * L);
+  for (int c = 0; c < size_; ++c)
+    if (grid_[c]) {
+      const int nc = (c % old) + (c / old) * L;
+      grid_[c]->at = nc;
+      g[nc] = std::move(grid_[c]);
+    }
+  if (p_.max_num_individuals == size_) p_.max_num_individuals = L * L;
+  length_ = L;
+  size_ = L * L;
+  p_.world_length = L;
+  grid_.swap(g);
+  np_positions_.assign(size_, 0);
+  np_ids_.assign(size_, 0);
+  init_wrap();
+  num_not_processed_ = 0;  // same cycle: rebuild the not-processed list without advancing time
+  for (int at = 0; at < size_; ++at)
+    if (grid_[at]) {
+      np_positions_[num_not_processed_] = at;
+      np_ids_[num_not_processed_] = grid_[at]->id;
+      ++num_not_processed_;
+    }
+}
+
 void World::reseed(int s) {
   rng_.seed(s);
   if (p_.second_shadow) rng2_.seed(s % 30000 + 1777);

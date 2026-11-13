@@ -120,6 +120,9 @@ class World {
   long time() const { return ga_time_; }
   long num_reproductions() const { return num_reproductions_; }
   int world_length() const { return length_; }
+  // L3 v7: enlarge the torus to length L (> current). Agents keep their coordinates; new
+  // cells are empty. Call only at a cycle boundary (right after time() changes).
+  void grow(int L);
   int world_size() const { return size_; }
   const Organism* at(int cell) const { return grid_[cell].get(); }
   int num_individuals() const { return num_individuals_; }
