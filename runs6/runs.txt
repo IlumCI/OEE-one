@@ -30,3 +30,4 @@ l3v8_s1 resets_v8 1 4000000 -collectives -division-of-labour -senescence -grow-e
 l3v8_s2 resets_v8 2 3000000 -collectives -division-of-labour -senescence -grow-every 500000 -grow-by 4 -grow-max 52 -grow-neurons-by 8 -grow-neurons-max 84 -second-shadow -presence presence
 l3v8_s3 resets_v8 3 3000000 -collectives -division-of-labour -senescence -grow-every 500000 -grow-by 4 -grow-max 52 -grow-neurons-by 8 -grow-neurons-max 84 -second-shadow -presence presence
 l3v8_s4 resets_v8 4 3000000 -collectives -division-of-labour -senescence -grow-every 500000 -grow-by 4 -grow-max 52 -grow-neurons-by 8 -grow-neurons-max 84 -second-shadow -presence presence
+gebgrow_s1 resets_v8 1 3000000 -grow-every 500000 -grow-by 4 -grow-max 52 -grow-neurons-by 8 -grow-neurons-max 84 -second-shadow -presence presence
