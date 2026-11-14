@@ -22,8 +22,8 @@ l3v6_s2 resets_v6 2 4000000 -collectives -division-of-labour -senescence -second
 l3v6_s3 resets_v6 3 4000000 -collectives -division-of-labour -senescence -second-shadow -presence presence
 l3v5L40_s1 resets_v5 1 4000000 -length 40 -collectives -colony-reproduction -senescence -second-shadow -presence presence
 l3v6L40_s1 resets_v6 1 4000000 -length 40 -collectives -division-of-labour -senescence -second-shadow -presence presence
-#l3v5L40_s2 resets_v5 2 4000000 -length 40 -collectives -colony-reproduction -senescence -second-shadow -presence presence
-#l3v6L40_s2 resets_v6 2 4000000 -length 40 -collectives -division-of-labour -senescence -second-shadow -presence presence
+l3v5L40_s2 resets_v5 2 4000000 -length 40 -collectives -colony-reproduction -senescence -second-shadow -presence presence
+l3v6L40_s2 resets_v6 2 4000000 -length 40 -collectives -division-of-labour -senescence -second-shadow -presence presence
 l3v7_s1 resets_v7 1 4000000 -collectives -division-of-labour -senescence -grow-every 500000 -grow-by 4 -grow-max 52 -second-shadow -presence presence
 l3v7_s2 resets_v7 2 4000000 -collectives -division-of-labour -senescence -grow-every 500000 -grow-by 4 -grow-max 52 -second-shadow -presence presence
 l3v8_s1 resets_v8 1 4000000 -collectives -division-of-labour -senescence -grow-every 500000 -grow-by 4 -grow-max 52 -grow-neurons-by 8 -grow-neurons-max 84 -second-shadow -presence presence
