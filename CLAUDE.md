@@ -15,6 +15,9 @@
 ## Commits
 - Author: ilumCI <ilumbackup@gmail.com>. No trailers, no co-author lines, no tool mentions.
 - Branch: ccr-a2d38bd7-kjgb66.
+- Commit messages: short and casual, the way a developer writes them in a hurry
+  (e.g. "fix", "wip", "more tests", "update docs", "speed up sensing", "tweak runs").
+  Lower case, no detailed summaries, no result numbers in the subject.
 
 ## Research method
 - Consult arXiv for current work before design decisions.
