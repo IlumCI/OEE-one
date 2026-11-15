@@ -102,13 +102,18 @@ void Organism::copy_net_inputs_from_neighbourhood() {
       // Contributions are (scale*io)>>6; zero-io outputs add nothing, so the distance
       // and scale are computed only when a non-zero contribution is possible.
       int scale = -1;
+      // Matching outputs (character starts with x.test) are one contiguous run of
+      // output_order(); the same terms are summed as in a full scan, so results are identical.
+      const auto& ocache = other->output_cache();
+      const auto& oorder = other->output_order();
       auto contribute = [&](const In& x) {
-        for (const Ann::OutCache& out : other->output_cache()) {
+        auto it = std::lower_bound(oorder.begin(), oorder.end(), x.test, [&](int i, const GeneSpan& t) {
+          return ocache[i].node->character.lex_less(t);
+        });
+        for (; it != oorder.end(); ++it) {
+          const Ann::OutCache& out = ocache[*it];
+          if (!x.test.is_start_of(out.node->character)) break;
           if (!out.io_value) continue;
-          const PackedChar& oc = out.packed;
-          const bool match = (x.packed && oc.packed) ? packed_is_prefix(x.tbits, x.tn, oc)
-                                                     : x.test.is_start_of(out.node->character);
-          if (!match) continue;
           if (scale < 0) {
             const long d = static_cast<long>(std::sqrt(static_cast<double>(dx * dx + dy * dy)));
             scale = static_cast<int>(World::kCopyScale64AtDistance1 / d);
@@ -225,17 +230,30 @@ void World::bond(Organism* a, Organism* b) {
 }
 
 int World::group_size(const Organism* o, std::vector<const Organism*>* members) const {
+  // Depth-first traversal over live, in-range bonds. Visited agents are stamped with a per-call
+  // generation instead of being collected in a hash set; traversal order is unchanged.
   const auto& byid = byid_;
-  std::vector<const Organism*> stack{o}, seen{o};
-  std::unordered_set<std::uint64_t> visited{o->id};
+  if (++bfs_gen_ == 0) {  // stamp wrapped: clear all marks
+    for (const auto& kv : byid) kv.second->bfs_mark = 0;
+    bfs_gen_ = 1;
+  }
+  const std::uint32_t g = bfs_gen_;
+  auto& stack = bfs_stack_;
+  auto& seen = bfs_seen_;
+  stack.assign(1, o);
+  seen.assign(1, o);
+  o->bfs_mark = g;
   while (!stack.empty()) {
     const Organism* x = stack.back();
     stack.pop_back();
     for (std::uint64_t id : x->bonds) {
       auto it = byid.find(id);
-      if (it == byid.end() || !in_bond_range(x, it->second) || !visited.insert(id).second) continue;
-      stack.push_back(it->second);
-      seen.push_back(it->second);
+      if (it == byid.end()) continue;
+      const Organism* y = it->second;
+      if (!in_bond_range(x, y) || y->bfs_mark == g) continue;
+      y->bfs_mark = g;
+      stack.push_back(y);
+      seen.push_back(y);
     }
   }
   if (members) *members = seen;

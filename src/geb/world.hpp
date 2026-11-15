@@ -78,6 +78,7 @@ class Organism : public Ann {
   std::vector<std::uint64_t> bonds;
   bool bond_out = false;
   std::uint64_t colony = 0;  // L3: kin colony id (founder's id); bonds only within a colony
+  mutable std::uint32_t bfs_mark = 0;  // group_size traversal stamp (not part of the state)
   // L3 v6: exponential moving averages of reproduce / kill firing (fixed point, 1<<16 = 1).
   int ema_rep = 0, ema_kill = 0;
   bool warrior() const { return ema_kill > ema_rep; }
@@ -205,7 +206,9 @@ class World {
   std::vector<int> np_positions_;
   std::vector<std::uint64_t> np_ids_;
   int num_not_processed_ = 0;
-  long propagules_ = 0;  // L3 v5: colonies founded (cumulative, checkpointed when bit 8 set)
+  long propagules_ = 0;
+  mutable std::uint32_t bfs_gen_ = 0;  // group_size: current stamp
+  mutable std::vector<const Organism*> bfs_stack_, bfs_seen_;  // group_size scratch  // L3 v5: colonies founded (cumulative, checkpointed when bit 8 set)
   long ga_time_ = -1;
   long num_reproductions_ = 0;
   int num_individuals_ = 0;

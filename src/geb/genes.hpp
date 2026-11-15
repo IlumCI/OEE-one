@@ -29,6 +29,16 @@ struct GeneSpan {
     return true;
   }
 
+  // Lexicographic order with a prefix before its extensions; a null span sorts first. All spans
+  // having a given prefix form one contiguous block in this order.
+  bool lex_less(const GeneSpan& other) const {
+    const int n = length(), m = other.length();
+    const int k = n < m ? n : m;
+    for (int i = 0; i < k; ++i)
+      if (at(i) != other.at(i)) return at(i) < other.at(i);
+    return n < m;
+  }
+
   bool is_equal_to(const GeneSpan& other) const {
     if (length() != other.length()) return false;
     if (!base) return other.base == nullptr;
