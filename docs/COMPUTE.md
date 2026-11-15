@@ -212,3 +212,38 @@ Speed, v8 checkpoint, 400 steps (wall time incl. load): 1 thread 38.3 s, 2 threa
 The ceiling is the serial phase b (actions, group traversal, births with development of the
 newborn: ~35-40% of the work), so Amdahl caps this design near 2.5-3x. Next lever: run phase b of
 non-conflicting agents in parallel too (needs the global items of step 3 handled at commit).
+
+Profile after step 4 (callgrind, v8 checkpoint at 4M, 30 steps, serial): of the step, phase a work
+(sensing 46% of total, network update 6.5%, development 4.9%) is ~73%; phase b (actions 20%: births
+13% incl. development of the newborn 6.9%, kills 3.3%) ~27%. Amdahl bound 1/(0.27+0.73/n): 2.2x at
+n = 4 (measured 2.2x), 3.7x for n -> infinity. On this 4-core machine the engine is at its bound;
+running phase b of non-conflicting agents in parallel pays only on machines with more cores. It needs
+(from step 3) a commit-time treatment of colony counts, shadow draws, ids and population limits, and
+a separate stream for the newborn's priming (a semantic change of the counter mode, to be validated
+statistically like step 2). Deferred until more cores are available.
+
+## Step 5: storage (2026-11-15)
+
+- `presence` (55-60% of run storage; hex hashes, highly repetitive across snapshots): lossless xz
+  packing of finished runs, `tools/storage/pack_runs.sh pack|unpack DIR...`, verified by
+  decompress-and-compare before the plain file is removed. Ratios measured on a 30 MB sample:
+  gzip -9 2.3x, bzip2 3.2x, xz -6 5.8x (long-range matches between snapshots). Delta coding
+  between consecutive snapshots was tried and is larger than the original (shadow sets change
+  almost completely per snapshot under resets), so it is not used. The analysis tools open
+  `presence` or `presence.xz` transparently (`geb_activity.open_presence`); analysis output on a
+  packed run is byte-identical to the unpacked one. A packed run must be unpacked before it is
+  resumed.
+- Checkpoint archives: `-archive-keep-log` keeps archives at `archive_every`*2^k plus the newest
+  two (e.g. 250k, 500k, 1M, 2M, 4M and the last two); opt-in, for new runs.
+- Not done: binary presence written by the simulator (xz on finished runs already gives 5-6x
+  without changing the writer, the resume offsets or the readers).
+
+## D6: several hosts (2026-11-15)
+
+`tools/supervise_runs.sh`: a spec whose first extra argument is `@host` runs only under
+`HOST=host`; untagged specs run on any host. Each run holds a lease (`<run>/lease`: host, time),
+renewed every interval while its process is alive; another host starts it (from its last checkpoint)
+only after `LEASE` seconds (default 900) without renewal, so a lost spot/preemptible machine costs at
+most the steps since its last checkpoint. Works with a shared runs directory or with one directory per
+host (tags only). Tested with two supervisors on one machine: tagged specs placed correctly, a live
+run is not taken over, an expired lease is.
