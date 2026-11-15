@@ -33,4 +33,19 @@ class Ran1 {
   int iff_ = 0;
 };
 
+// Counter-based stream: value i of stream (a,b,d) is a hash of the key and i, so any agent's
+// draws are reproducible on their own (needed for order-equivalent parallel updates).
+struct CRng{
+std::uint64_t k=0,c=0;
+static std::uint64_t mix(std::uint64_t z){z+=0x9e3779b97f4a7c15ULL;z=(z^(z>>30))*0xbf58476d1ce4e5b9ULL;z=(z^(z>>27))*0x94d049bb133111ebULL;return z^(z>>31);}
+void key(std::uint64_t a,std::uint64_t b,std::uint64_t d){k=mix(mix(mix(a)^b)^d);c=0;}
+int random(int m){if(m<=0)return 0;return int(double(mix(k+(c++))>>11)*0x1.0p-53*m);}
+};
+
+// Geb's ran1 (legacy, bit-exact) or a counter stream, chosen per world.
+struct Rng{
+Ran1*r1=nullptr;CRng c;
+int random(int m){return r1?r1->random(m):c.random(m);}
+};
+
 }  // namespace oee::geb

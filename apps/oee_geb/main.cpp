@@ -237,6 +237,7 @@ int main(int argc, char** argv) {
     } else if (!std::strcmp(s, "-collectives-random")) {
       p.collectives = 2;  // L3 control: random grouping decisions
       ++a;
+    } else if(!std::strcmp(s,"-crng")){p.rng_mode=1;++a;  // compute step 2: counter RNG streams
     } else if (!std::strcmp(s, "-grow-every") && has) {
       grow_every = std::atol(argv[a + 1]);
       a += 2;

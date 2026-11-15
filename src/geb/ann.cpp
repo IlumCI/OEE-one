@@ -487,7 +487,7 @@ void Ann::run_rule(Rule& rule, std::list<Node>::iterator node_it) {
   rule.used = true;
 }
 
-void Ann::calc_new_outputs(Node& node, Ran1& rng, const NetConstants& k) {
+void Ann::calc_new_outputs(Node& node, Rng& rng, const NetConstants& k) {
   bool inhibited = false;
   for (const Node* x : node.inhibitory_inputs)
     if (x->inhibitory_output) {
@@ -525,7 +525,7 @@ void Ann::rebuild_out_cache() {
   }
 }
 
-void Ann::update_outputs(Ran1& rng, const NetConstants& k) {
+void Ann::update_outputs(Rng& rng, const NetConstants& k) {
   for (Node& n : nodes_) calc_new_outputs(n, rng, k);
   for (Node& n : nodes_) {
     n.inhibitory_output = n.new_inhibitory_output;

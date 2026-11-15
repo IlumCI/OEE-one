@@ -50,9 +50,12 @@ struct Params {
   // its size, doubled if it has >= kDolMin members and 25-75% warriors. An attack succeeds
   // only if the attacker's power is >= the victim's. Mixed groups win fights.
   std::uint8_t collectives = 0;
+  // Compute step 2 (docs/COMPUTE.md): 0 = Geb's single ran1 stream; 1 = counter streams keyed by
+  // (seed, cycle, agent id), cycle order from a per-cycle permutation. Changes draws, not rules.
+  std::uint8_t rng_mode = 0;
 };
 
-static_assert(sizeof(Params) == 32, "Params is stored raw in checkpoints; keep its size");
+static_assert(sizeof(Params)==36,"Params is stored raw in checkpoints (first 32 bytes in pre-v9 files)");
 
 class World;
 
@@ -175,10 +178,10 @@ class World {
   void add_shadow(Genotype g);
   Genotype breed_second_shadow();
   // M5: child genotype = buffer after executing [g1 | random buffer] as BFF code.
-  static Genotype bff_breed(Ran1& r, const Genotype& g1, const Genotype& g2, int heredity);
+  static Genotype bff_breed(Rng& r, const Genotype& g1, const Genotype& g2, int heredity);
   // M5 v3: does g's own code pass on at least 16 informative bytes of itself?
-  static bool bff_viable(Ran1& r, const Genotype& g);
-  static Genotype bff_breed_viable(Ran1& r, const std::vector<const Genotype*>& pool);
+  static bool bff_viable(Rng& r, const Genotype& g);
+  static Genotype bff_breed_viable(Rng& r, const std::vector<const Genotype*>& pool);
   void reset_not_processed();
   // L3 helpers.
   Organism* find_by_id(std::uint64_t id) const;
@@ -190,6 +193,9 @@ class World {
 
   Params p_;
   Ran1 rng_;
+  Rng R1_,R2_;  // draw through these: legacy -> rng_/rng2_, counter mode -> keyed streams
+  std::uint64_t cseed_=0;
+  void cyc_shuffle();  // counter mode: random order of the cycle's agent list
   int seed_used_ = 0;
   NetConstants net_;
   int length_, size_;

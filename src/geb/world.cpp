@@ -1,4 +1,6 @@
 #include "geb/world.hpp"
+#include <cstring>
+#include <array>
 
 #include <algorithm>
 
@@ -36,9 +38,9 @@ Organism::Organism(World& w, Genotype genotype, int x64, int y64)
   at_x = at_x_64 >> 6;
   at_y = at_y_64 >> 6;
   at = at_x + at_y * w.length_;
-  direction_deg = w.rng_.random(360);
+  direction_deg = w.R1_.random(360);
   copy_net_inputs_from_neighbourhood();
-  for (int rep = 0; rep < kPrimingLevel; ++rep) update_outputs(w.rng_, w.net_);
+  for (int rep = 0; rep < kPrimingLevel; ++rep) update_outputs(w.R1_, w.net_);
 }
 
 Organism::Organism(World& w, Genotype genotype, LoadTag)
@@ -137,7 +139,7 @@ int Organism::action_output(const GeneSpan& prefix) {
         break;
       }
     }
-  if (sum == -1) sum = w_.rng_.random(World::kMaxNoiseOnIsolatedOutputs);
+  if (sum == -1) sum = w_.R1_.random(World::kMaxNoiseOnIsolatedOutputs);
   return static_cast<int>(sum);
 }
 
@@ -166,9 +168,9 @@ void Organism::actions() {
     // L3 control: grouping decisions are coin flips, not network outputs, so grouping
     // tendency has no heritable variation (bond p = 1/2, unbond p = 1/20).
     w_.prune_bonds(this);
-    bond_out = w_.rng_.random(2) == 1;
+    bond_out = w_.R1_.random(2) == 1;
     if (bond_out) try_to_bond_with_organism_in_front();
-    if (w_.rng_.random(20) == 0) unbond_all();
+    if (w_.R1_.random(20) == 0) unbond_all();
   } else if (w_.p_.collectives & 1) {
     w_.prune_bonds(this);
     o = action_output(kBond.span());
@@ -461,6 +463,8 @@ void World::init_wrap() {
 World::World(const Params& p) : p_(p) {
   seed_used_ = rng_.seed(p_.seed);
   if (p_.second_shadow) rng2_.seed(seed_used_ % 30000 + 1777);
+  cseed_=std::uint64_t(seed_used_);
+  if(p_.rng_mode){R1_.c.key(cseed_,~0ULL,1);R2_.c.key(cseed_,~0ULL,2);}else{R1_.r1=&rng_;R2_.r1=&rng2_;}
   init_tables();
   if (p_.min_num_individuals == -1) p_.min_num_individuals = 0;
   if (p_.max_num_individuals == -1 || p_.max_num_individuals > size_)
@@ -510,11 +514,11 @@ int World::random_occupied_cell(int exclude) {
   occupied_.clear();
   for (int c = 0; c < size_; ++c)
     if (grid_[c] && c != exclude) occupied_.push_back(c);
-  return occupied_[rng_.random(static_cast<int>(occupied_.size()))];
+  return occupied_[R1_.random(static_cast<int>(occupied_.size()))];
 }
 
 void World::kill_random_shadow() {
-  const int del = rng_.random(shadow_count());
+  const int del = R1_.random(shadow_count());
   const int last = shadow_count() - 1;
   shadow_genotypes_[del] = std::move(shadow_genotypes_[last]);
   shadow_ages_[del] = shadow_ages_[last];
@@ -523,7 +527,7 @@ void World::kill_random_shadow() {
   shadow_ages_.pop_back();
   shadow_birth_times_.pop_back();
   if (p_.second_shadow) {
-    const int d2 = rng2_.random(static_cast<int>(shadow2_.size()));
+    const int d2 = R2_.random(static_cast<int>(shadow2_.size()));
     shadow2_[d2] = std::move(shadow2_.back());
     shadow2_.pop_back();
   }
@@ -554,7 +558,7 @@ std::vector<std::uint8_t> to_bytes(const Genotype& g) {
 }
 }  // namespace
 
-Genotype World::bff_breed(Ran1& r, const Genotype& g1, const Genotype& /*g2*/, int heredity) {
+Genotype World::bff_breed(Rng& r, const Genotype& g1, const Genotype& /*g2*/, int heredity) {
   // M5 v1 (docs/M5.md): asexual, fixed length. Tape = [g1 | random buffer of the same
   // length]; g1's code runs on it as BFF; the child is the buffer. The mate triggers the
   // birth (Geb's reproduce action) but contributes no genes. Background mutation: each
@@ -575,7 +579,7 @@ Genotype World::bff_breed(Ran1& r, const Genotype& g1, const Genotype& /*g2*/, i
   return child;
 }
 
-bool World::bff_viable(Ran1& r, const Genotype& g) {
+bool World::bff_viable(Rng& r, const Genotype& g) {
   // v3 viability: the genome's own code, run on [g | random buffer], passes on at least
   // kViableBytes informative (non-zero) bytes of g (best alignment within +-8).
   constexpr int kViableBytes = 16;
@@ -596,7 +600,7 @@ bool World::bff_viable(Ran1& r, const Genotype& g) {
   return false;
 }
 
-Genotype World::bff_breed_viable(Ran1& r, const std::vector<const Genotype*>& pool) {
+Genotype World::bff_breed_viable(Rng& r, const std::vector<const Genotype*>& pool) {
   // Shadow populations under v3: redraw parents until the child is viable (at most 64
   // draws), so the null applies the same viability rule as the real population.
   for (int t = 0; t < 64; ++t) {
@@ -611,7 +615,7 @@ void World::seed_genomes(const std::vector<Genotype>& pool) {
   if (pool.empty()) return;
   // Under BFF heredity, each initial agent is a child of a founder (one application of
   // the founder's own copy code), so uncopied bytes are randomised as at any later birth.
-  auto pick = [&](std::size_t k, Ran1& r) {
+  auto pick = [&](std::size_t k, Rng& r) {
     const Genotype& g = pool[k % pool.size()];
     return p_.heredity ? bff_breed(r, g, g, p_.heredity) : g;
   };
@@ -619,15 +623,15 @@ void World::seed_genomes(const std::vector<Genotype>& pool) {
   for (int at = 0; at < size_; ++at)
     if (grid_[at]) {
       const int x = grid_[at]->at_x_64, y = grid_[at]->at_y_64;
-      grid_[at] = std::make_unique<Organism>(*this, pick(k++, rng_), x, y);
+      grid_[at] = std::make_unique<Organism>(*this, pick(k++, R1_), x, y);
     }
-  for (std::size_t i = 0; i < shadow_genotypes_.size(); ++i) shadow_genotypes_[i] = pick(i, rng_);
-  for (std::size_t i = 0; i < shadow2_.size(); ++i) shadow2_[i] = pick(i, rng2_);
+  for (std::size_t i = 0; i < shadow_genotypes_.size(); ++i) shadow_genotypes_[i] = pick(i, R1_);
+  for (std::size_t i = 0; i < shadow2_.size(); ++i) shadow2_[i] = pick(i, R2_);
   reset_not_processed();
 }
 
 Genotype World::breed_second_shadow() {
-  Ran1& r = rng2_;
+  Rng& r = R2_;
   const int n = static_cast<int>(shadow2_.size());
   int a = r.random(n);
   int b = a;
@@ -656,7 +660,7 @@ Genotype World::breed_second_shadow() {
 }
 
 namespace {
-Genotype breed(Ran1&, const Genotype& p1, const Genotype& p2, int cp1, int cp2) {
+Genotype breed(Rng&, const Genotype& p1, const Genotype& p2, int cp1, int cp2) {
   const int len2 = static_cast<int>(p2.size());
   Genotype child;
   child.reserve(cp1 + len2 - cp2);
@@ -670,7 +674,7 @@ std::unique_ptr<Organism> World::reproduce(Organism* a, Organism* b, int cx64, i
                                            Genotype& shadow_child) {
   Organism* p1;
   Organism* p2;
-  if (rng_.random(2) == 0) {
+  if (R1_.random(2) == 0) {
     p1 = a;
     p2 = b;
   } else {
@@ -678,45 +682,45 @@ std::unique_ptr<Organism> World::reproduce(Organism* a, Organism* b, int cx64, i
     p2 = a;
   }
   const int n = shadow_count();
-  const int s1 = rng_.random(n);
+  const int s1 = R1_.random(n);
   int s2 = s1;
-  while (s2 == s1) s2 = rng_.random(n);
+  while (s2 == s1) s2 = R1_.random(n);
   const Genotype& sp1 = shadow_genotypes_[s1];
   const Genotype& sp2 = shadow_genotypes_[s2];
   const Genotype& g1 = p1->genotype();
   const Genotype& g2 = p2->genotype();
   if (p_.heredity == 3) {
-    Genotype child = bff_breed(rng_, g1, g2, 3);
-    if (!bff_viable(rng_, child)) return nullptr;  // no working copier: no birth
+    Genotype child = bff_breed(R1_, g1, g2, 3);
+    if (!bff_viable(R1_, child)) return nullptr;  // no working copier: no birth
     std::vector<const Genotype*> pool;
     for (const Genotype& g : shadow_genotypes_) pool.push_back(&g);
-    shadow_child = bff_breed_viable(rng_, pool);
+    shadow_child = bff_breed_viable(R1_, pool);
     if (p_.second_shadow) pending_shadow2_ = breed_second_shadow();
     auto o = std::make_unique<Organism>(*this, std::move(child), cx64, cy64);
     ++num_reproductions_;
     return o;
   }
   if (p_.heredity) {
-    Genotype child = bff_breed(rng_, g1, g2, p_.heredity);
-    shadow_child = bff_breed(rng_, sp1, sp2, p_.heredity);
+    Genotype child = bff_breed(R1_, g1, g2, p_.heredity);
+    shadow_child = bff_breed(R1_, sp1, sp2, p_.heredity);
     if (p_.second_shadow) pending_shadow2_ = breed_second_shadow();
     auto o = std::make_unique<Organism>(*this, std::move(child), cx64, cy64);
     ++num_reproductions_;
     return o;
   }
 
-  int cp1 = rng_.random(static_cast<int>(g1.size()) + 1);
+  int cp1 = R1_.random(static_cast<int>(g1.size()) + 1);
   int cp2 = cp1;
-  int scp1 = rng_.random(static_cast<int>(sp1.size()) + 1);
+  int scp1 = R1_.random(static_cast<int>(sp1.size()) + 1);
   int scp2 = scp1;
-  if (rng_.random(100) < kGenotypeLengthChangeProb) {
-    if (rng_.random(2))
+  if (R1_.random(100) < kGenotypeLengthChangeProb) {
+    if (R1_.random(2))
       cp2 -= kGenotypeLengthChangeMax;
     else
       cp2 += kGenotypeLengthChangeMax;
   }
-  if (rng_.random(100) < kGenotypeLengthChangeProb) {
-    if (rng_.random(2))
+  if (R1_.random(100) < kGenotypeLengthChangeProb) {
+    if (R1_.random(2))
       scp2 -= kGenotypeLengthChangeMax;
     else
       scp2 += kGenotypeLengthChangeMax;
@@ -727,14 +731,14 @@ std::unique_ptr<Organism> World::reproduce(Organism* a, Organism* b, int cx64, i
   if (cp2 >= len2) cp2 = len2 - 1;
   if (scp2 < 0) scp2 = 0;
   if (scp2 >= slen2) scp2 = slen2 - 1;
-  Genotype child = breed(rng_, g1, g2, cp1, cp2);
-  shadow_child = breed(rng_, sp1, sp2, scp1, scp2);
+  Genotype child = breed(R1_, g1, g2, cp1, cp2);
+  shadow_child = breed(R1_, sp1, sp2, scp1, scp2);
   for (int m = 0; m < kNumMutations; ++m) {
-    Gene& gene = child[rng_.random(static_cast<int>(child.size()))];
+    Gene& gene = child[R1_.random(static_cast<int>(child.size()))];
     gene = gene == 0 ? 1 : 0;
   }
   for (int m = 0; m < kNumMutations; ++m) {
-    Gene& gene = shadow_child[rng_.random(static_cast<int>(shadow_child.size()))];
+    Gene& gene = shadow_child[R1_.random(static_cast<int>(shadow_child.size()))];
     gene = gene == 0 ? 1 : 0;
   }
   if (p_.second_shadow) pending_shadow2_ = breed_second_shadow();
@@ -752,16 +756,26 @@ void World::reset_not_processed() {
       np_ids_[num_not_processed_] = grid_[at]->id;
       ++num_not_processed_;
     }
+  cyc_shuffle();
+}
+
+// Counter mode: the cycle's update order is a permutation drawn from a per-cycle stream;
+// step() then takes agents from the end of the list (the legacy mode draws an index instead).
+void World::cyc_shuffle(){
+if(!p_.rng_mode)return;
+CRng c;c.key(cseed_,std::uint64_t(ga_time_),~0ULL);
+for(int i=num_not_processed_-1;i>0;--i){int j=c.random(i+1);std::swap(np_positions_[i],np_positions_[j]);std::swap(np_ids_[i],np_ids_[j]);}
 }
 
 void World::step() {
   if (num_not_processed_ == 0) return;
-  const int r = rng_.random(num_not_processed_);
+  const int r = p_.rng_mode?num_not_processed_-1:R1_.random(num_not_processed_);
   Organism* ind = grid_[np_positions_[r]].get();
   if (ind && ind->id == np_ids_[r] && ind->birth_time != ga_time_) {
+    if(p_.rng_mode){R1_.c.key(cseed_,ga_time_,ind->id);R2_.c.key(cseed_^0x5eed2ULL,ga_time_,ind->id);}
     ind->copy_net_inputs_from_neighbourhood();
     ind->morphogenesis_step();
-    ind->update_outputs(rng_, net_);
+    ind->update_outputs(R1_, net_);
     ind->actions();
     ++ind->age;
     // L3 v4 senescence: agents die after kMaxAge of their own updates (Geb has no natural
@@ -808,11 +822,13 @@ void World::grow(int L) {
       np_ids_[num_not_processed_] = grid_[at]->id;
       ++num_not_processed_;
     }
+  cyc_shuffle();
 }
 
 void World::reseed(int s) {
   rng_.seed(s);
   if (p_.second_shadow) rng2_.seed(s % 30000 + 1777);
+  cseed_=std::uint64_t(s);
 }
 
 void World::reset_shadow_to_real() {
@@ -845,11 +861,13 @@ constexpr std::uint64_t kWorldMagicCoupled = 0x4f45453547454257ULL;
 // Worlds with L3 collectives (and possibly M5 heredity) store Params::collectives and
 // per-agent bond lists; padding bytes of older checkpoints are never trusted.
 constexpr std::uint64_t kWorldMagicL3 = 0x4f45453347454257ULL;
+// Compute step 2 and later: full Params (incl. rng_mode) stored; all fields trusted.
+constexpr std::uint64_t kWorldMagicV9 = 0x4f45453947454257ULL;
 }
 
 void World::save(Writer& w) const {
-  w.put(p_.collectives ? kWorldMagicL3 : p_.heredity ? kWorldMagicCoupled : kWorldMagic);
-  w.put(p_);
+  if(p_.rng_mode){w.put(kWorldMagicV9);w.put(p_);}
+  else{w.put(p_.collectives ? kWorldMagicL3 : p_.heredity ? kWorldMagicCoupled : kWorldMagic);std::array<char,32>im;std::memcpy(im.data(),&p_,32);w.put(im);}
   w.put(seed_used_);
   rng_.save(w);
   rng2_.save(w);
@@ -885,13 +903,17 @@ void World::save(Writer& w) const {
 
 std::unique_ptr<World> World::load(Reader& r) {
   const auto magic = r.get<std::uint64_t>();
-  if (magic != kWorldMagic && magic != kWorldMagicCoupled && magic != kWorldMagicL3)
+  if (magic != kWorldMagic && magic != kWorldMagicCoupled && magic != kWorldMagicL3 && magic != kWorldMagicV9)
     throw std::runtime_error("not a world checkpoint");
-  Params p = r.get<Params>();
+  Params p;
+  if(magic==kWorldMagicV9)p=r.get<Params>();
+  else{const auto im=r.get<std::array<char,32>>();std::memcpy(&p,im.data(),32);p.rng_mode=0;
   if (magic == kWorldMagic) p.heredity = 0;
-  if (magic != kWorldMagicL3) p.collectives = 0;
+  if (magic != kWorldMagicL3) p.collectives = 0;}
   std::unique_ptr<World> w(new World(p, Empty{}));
   w->seed_used_ = r.get<int>();
+  w->cseed_=std::uint64_t(w->seed_used_);
+  if(!p.rng_mode){w->R1_.r1=&w->rng_;w->R2_.r1=&w->rng2_;}
   w->rng_.load(r);
   w->rng2_.load(r);
   w->ga_time_ = r.get<long>(); w->num_reproductions_ = r.get<long>();

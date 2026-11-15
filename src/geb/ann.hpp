@@ -113,7 +113,7 @@ class Ann {
   const std::vector<OutCache>& output_nonzero() const { return out_nz_; }
 
   void morphogenesis_step();
-  void update_outputs(Ran1& rng, const NetConstants& k);
+  void update_outputs(Rng& rng, const NetConstants& k);
 
   // Network and development state (the genotype is saved by the owner; rules are
   // regenerated from it on construction, only their `used` flags are stored).
@@ -126,7 +126,7 @@ class Ann {
   void run_rule(Rule& rule, std::list<Node>::iterator node_it);
   void delete_node(std::list<Node>::iterator node_it);
   static void add_link(Node* from, Node* to, bool excitatory);
-  static void calc_new_outputs(Node& node, Ran1& rng, const NetConstants& k);
+  static void calc_new_outputs(Node& node, Rng& rng, const NetConstants& k);
 
   // Heap-held so spans into it stay valid if the Ann object is moved.
   std::unique_ptr<Genotype> genotype_;
