@@ -1,7 +1,7 @@
 #!/bin/bash
 # Archive finished runs to the 'run-data' branch on origin and free the container (docs/COMPUTE.md
 # step 5). Usage: tools/storage/archive_runs.sh TMPDIR BATCH_MB RUNDIR...
-# Each RUNDIR (finished, not running, presence already packed) becomes
+# Each RUNDIR (finished, not running) becomes
 #   data/<runs dir>/<run>/run.tar.xz.partNNN  (xz -3, 90 MB parts) + SHA256SUMS + files.txt
 # Batches of about BATCH_MB are committed in a throwaway blob-less clone (only the branch's trees are
 # fetched, so local disk holds one batch) and pushed; the branch tip holds every archived run.
@@ -34,7 +34,7 @@ d=$(realpath "$d");p="${d#"$repo"/}"
 [ -f "$d/finished" ]||{ echo "skip $p (not finished)";continue;}
 [ -f "$d/ARCHIVED" ]&&continue
 [ -f "$d/pid" ]&&grep -qa oee_geb "/proc/$(cat "$d/pid")/cmdline" 2>/dev/null&&{ echo "skip $p (running)";continue;}
-[ -f "$d/presence" ]&&{ echo "skip $p (presence not packed)";continue;}
+# plain presence is fine: xz in the archive compresses it
 o="$R/data/$p";mkdir -p "$o"
 (cd "$d"&&find . -type f|sort>"$o/files.txt")
 tar -C "$(dirname "$d")" -cf - "$(basename "$d")"|xz -3 -T2 -c|split -b 90M -d -a 3 - "$o/run.tar.xz.part"
