@@ -149,8 +149,16 @@ crng seeds 1-3 vs legacy `l3v6_s1..s3`:
 - D (rule) 76 / 88 / 99 vs 119 / 86 / 88 (p = 0.7);
 - real D 8-15x its null in both.
 No detectable difference at n = 3 per condition (low power: differences of roughly one seed-to-seed
-standard deviation would not be detected). Plain-Geb check (`crng_geb_s1..s2` vs `runs/resets`)
-pending.
+standard deviation would not be detected).
+
+Result (plain Geb, L20, 250k windows; mean over the 250k-1M windows), crng seeds 1-2 vs legacy
+`runs/resets_s1..s5`:
+- maximum individual complexity 11.27 / 11.20 vs 10.61 / 10.89 / 11.48 / 10.38 / 10.80 (exact
+  two-sided rank-sum p = 0.38);
+- D (rule) 20.1 / 21.1 vs 16.8 / 20.3 / 22.0 / 15.8 / 19.7 (p = 0.57);
+- D null 3.9-4.5 vs 3.1-5.1.
+No detectable difference on either rule set. Counter streams accepted as the default for new runs;
+legacy mode stays for bit-exact Geb reproduction.
 
 ## Step 3: locality (analysis, 2026-11-15)
 
