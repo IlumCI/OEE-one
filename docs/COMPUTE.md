@@ -105,3 +105,22 @@ networks.
 3. D1 synchronous engine behind a flag; statistical validation against the reference runs.
 4. D6 multi-host supervisor.
 5. D7 for the soup layers when they come back into use.
+
+## Step 1 results (2026-11-15)
+
+Verified on the v8 seed-1 checkpoint at 3.5M (48x48, ~1,750 agents), 2,000 steps: log, presence,
+rulestat, shadow rulestat and final checkpoint byte-identical to the previous binary; 10/10 unit
+tests pass. CPU time 215.8 s -> 172.6 s (-20%). Instruction profile (60 steps): 13.7e9 -> 10.8e9.
+
+| change | effect | kept |
+|---|---|---|
+| group traversal with visit stamps and reused buffers (no hash set / allocation per call) | group_size 1.61e9 -> 0.41e9 | yes |
+| compact list of non-zero outputs scanned in sensing | sensing 7.6e9 -> 5.9e9 | yes |
+| outputs sorted by character + binary search for the matching run | sensing 7.6e9 -> 11.7e9 (slower) | no |
+| per-neighbour output terms precomputed at first match | sensing 5.9e9 -> 7.7e9 (slower) | no |
+
+Finding: most input/output comparisons in sensing are matches (line profile: the match test and the
+accumulation have similar counts), so sensing is real work proportional to the number of matches,
+not wasted scanning; indexing cannot remove it. The remaining large lever is parallelism (D1
+option C), not further single-thread tuning. Remaining single-thread item: per-event allocation
+(operator new 5.5%).
