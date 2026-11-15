@@ -193,7 +193,7 @@ class World {
 
   Params p_;
   Ran1 rng_;
-  Rng R1_,R2_;  // draw through these: legacy -> rng_/rng2_, counter mode -> keyed streams
+  Rng R1_,R2_,R3_;  // real / second shadow / first shadow draws; legacy: rng_,rng2_,rng_ (Geb order)
   std::uint64_t cseed_=0;
   void cyc_shuffle();  // counter mode: random order of the cycle's agent list
   int seed_used_ = 0;

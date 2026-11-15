@@ -464,7 +464,7 @@ World::World(const Params& p) : p_(p) {
   seed_used_ = rng_.seed(p_.seed);
   if (p_.second_shadow) rng2_.seed(seed_used_ % 30000 + 1777);
   cseed_=std::uint64_t(seed_used_);
-  if(p_.rng_mode){R1_.c.key(cseed_,~0ULL,1);R2_.c.key(cseed_,~0ULL,2);}else{R1_.r1=&rng_;R2_.r1=&rng2_;}
+  if(p_.rng_mode){R1_.c.key(cseed_,~0ULL,1);R2_.c.key(cseed_,~0ULL,2);R3_.c.key(cseed_,~0ULL,3);}else{R1_.r1=&rng_;R2_.r1=&rng2_;R3_.r1=&rng_;}
   init_tables();
   if (p_.min_num_individuals == -1) p_.min_num_individuals = 0;
   if (p_.max_num_individuals == -1 || p_.max_num_individuals > size_)
@@ -518,7 +518,7 @@ int World::random_occupied_cell(int exclude) {
 }
 
 void World::kill_random_shadow() {
-  const int del = R1_.random(shadow_count());
+  const int del = R3_.random(shadow_count());
   const int last = shadow_count() - 1;
   shadow_genotypes_[del] = std::move(shadow_genotypes_[last]);
   shadow_ages_[del] = shadow_ages_[last];
@@ -682,9 +682,9 @@ std::unique_ptr<Organism> World::reproduce(Organism* a, Organism* b, int cx64, i
     p2 = a;
   }
   const int n = shadow_count();
-  const int s1 = R1_.random(n);
+  const int s1 = R3_.random(n);
   int s2 = s1;
-  while (s2 == s1) s2 = R1_.random(n);
+  while (s2 == s1) s2 = R3_.random(n);
   const Genotype& sp1 = shadow_genotypes_[s1];
   const Genotype& sp2 = shadow_genotypes_[s2];
   const Genotype& g1 = p1->genotype();
@@ -694,7 +694,7 @@ std::unique_ptr<Organism> World::reproduce(Organism* a, Organism* b, int cx64, i
     if (!bff_viable(R1_, child)) return nullptr;  // no working copier: no birth
     std::vector<const Genotype*> pool;
     for (const Genotype& g : shadow_genotypes_) pool.push_back(&g);
-    shadow_child = bff_breed_viable(R1_, pool);
+    shadow_child = bff_breed_viable(R3_, pool);
     if (p_.second_shadow) pending_shadow2_ = breed_second_shadow();
     auto o = std::make_unique<Organism>(*this, std::move(child), cx64, cy64);
     ++num_reproductions_;
@@ -702,7 +702,7 @@ std::unique_ptr<Organism> World::reproduce(Organism* a, Organism* b, int cx64, i
   }
   if (p_.heredity) {
     Genotype child = bff_breed(R1_, g1, g2, p_.heredity);
-    shadow_child = bff_breed(R1_, sp1, sp2, p_.heredity);
+    shadow_child = bff_breed(R3_, sp1, sp2, p_.heredity);
     if (p_.second_shadow) pending_shadow2_ = breed_second_shadow();
     auto o = std::make_unique<Organism>(*this, std::move(child), cx64, cy64);
     ++num_reproductions_;
@@ -711,7 +711,7 @@ std::unique_ptr<Organism> World::reproduce(Organism* a, Organism* b, int cx64, i
 
   int cp1 = R1_.random(static_cast<int>(g1.size()) + 1);
   int cp2 = cp1;
-  int scp1 = R1_.random(static_cast<int>(sp1.size()) + 1);
+  int scp1 = R3_.random(static_cast<int>(sp1.size()) + 1);
   int scp2 = scp1;
   if (R1_.random(100) < kGenotypeLengthChangeProb) {
     if (R1_.random(2))
@@ -719,8 +719,8 @@ std::unique_ptr<Organism> World::reproduce(Organism* a, Organism* b, int cx64, i
     else
       cp2 += kGenotypeLengthChangeMax;
   }
-  if (R1_.random(100) < kGenotypeLengthChangeProb) {
-    if (R1_.random(2))
+  if (R3_.random(100) < kGenotypeLengthChangeProb) {
+    if (R3_.random(2))
       scp2 -= kGenotypeLengthChangeMax;
     else
       scp2 += kGenotypeLengthChangeMax;
@@ -732,13 +732,13 @@ std::unique_ptr<Organism> World::reproduce(Organism* a, Organism* b, int cx64, i
   if (scp2 < 0) scp2 = 0;
   if (scp2 >= slen2) scp2 = slen2 - 1;
   Genotype child = breed(R1_, g1, g2, cp1, cp2);
-  shadow_child = breed(R1_, sp1, sp2, scp1, scp2);
+  shadow_child = breed(R3_, sp1, sp2, scp1, scp2);
   for (int m = 0; m < kNumMutations; ++m) {
     Gene& gene = child[R1_.random(static_cast<int>(child.size()))];
     gene = gene == 0 ? 1 : 0;
   }
   for (int m = 0; m < kNumMutations; ++m) {
-    Gene& gene = shadow_child[R1_.random(static_cast<int>(shadow_child.size()))];
+    Gene& gene = shadow_child[R3_.random(static_cast<int>(shadow_child.size()))];
     gene = gene == 0 ? 1 : 0;
   }
   if (p_.second_shadow) pending_shadow2_ = breed_second_shadow();
@@ -772,7 +772,7 @@ void World::step() {
   const int r = p_.rng_mode?num_not_processed_-1:R1_.random(num_not_processed_);
   Organism* ind = grid_[np_positions_[r]].get();
   if (ind && ind->id == np_ids_[r] && ind->birth_time != ga_time_) {
-    if(p_.rng_mode){R1_.c.key(cseed_,ga_time_,ind->id);R2_.c.key(cseed_^0x5eed2ULL,ga_time_,ind->id);}
+    if(p_.rng_mode){R1_.c.key(cseed_,ga_time_,ind->id);R2_.c.key(cseed_^0x5eed2ULL,ga_time_,ind->id);R3_.c.key(cseed_^0x5eed3ULL,ga_time_,ind->id);}
     ind->copy_net_inputs_from_neighbourhood();
     ind->morphogenesis_step();
     ind->update_outputs(R1_, net_);
@@ -913,7 +913,7 @@ std::unique_ptr<World> World::load(Reader& r) {
   std::unique_ptr<World> w(new World(p, Empty{}));
   w->seed_used_ = r.get<int>();
   w->cseed_=std::uint64_t(w->seed_used_);
-  if(!p.rng_mode){w->R1_.r1=&w->rng_;w->R2_.r1=&w->rng2_;}
+  if(!p.rng_mode){w->R1_.r1=&w->rng_;w->R2_.r1=&w->rng2_;w->R3_.r1=&w->rng_;}
   w->rng_.load(r);
   w->rng2_.load(r);
   w->ga_time_ = r.get<long>(); w->num_reproductions_ = r.get<long>();
