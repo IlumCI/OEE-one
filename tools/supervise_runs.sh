@@ -15,6 +15,11 @@
 #   same archive refreeze MAX_TRIES times, the next older archive is used. Every rescue
 #   is appended to <run>/rescues.txt. Geb's rules are unchanged; a rescued run is one
 #   trajectory conditioned on not freezing (see docs/RESULTS.md).
+# - Several hosts (docs/COMPUTE.md D6): a spec whose first extra arg is @<host> runs only on the
+#   supervisor started with HOST=<host> (default: hostname); untagged specs run anywhere. On a
+#   shared runs dir each run is leased (<run>/lease: host, time), renewed every interval while the
+#   run is alive; another host takes a run over only after LEASE seconds (default 900) without
+#   renewal, e.g. after a spot/preemptible machine was lost. Checkpoints are machine-independent.
 set -uo pipefail
 runs="$(realpath "$1")"; bins="$(realpath "$2")"; interval="${3:-60}"
 log="$runs/supervisor.log"
@@ -24,6 +29,10 @@ ROLLBACK="${ROLLBACK:-250000}"
 MAX_TRIES="${MAX_TRIES:-2}"
 SAVE_EVERY="${SAVE_EVERY:-20000}"
 MAX_PROCS="${MAX_PROCS:-4}"   # concurrent simulations; runs start in runs.txt order
+HOST="${HOST:-$(hostname)}"
+LEASE="${LEASE:-900}"
+lease_ok(){ local f="$1/lease" h ts;[ -f "$f" ]||return 0;read -r h ts <"$f";[ "$h" = "$HOST" ]&&return 0;[ $(( $(date +%s)-${ts:-0} )) -gt "$LEASE" ];}
+lease(){ echo "$HOST $(date +%s)" > "$1/lease.tmp"&&mv "$1/lease.tmp" "$1/lease";}
 
 rescue() {  # $1 = run dir, $2 = seed
   local d="$1" seed="$2"
@@ -60,11 +69,13 @@ rescue() {  # $1 = run dir, $2 = seed
 while true; do
   while read -r name variant seed stopat extra; do
     [[ -z "$name" || "$name" == \#* ]] && continue
+    if [[ "$extra" == @* ]]; then tag="${extra%% *}"; extra="${extra#"$tag"}"; [ "${tag#@}" = "$HOST" ] || continue; fi
     d="$runs/$name"
     mkdir -p "$d"
     [ -f "$d/finished" ] && continue
     [ -f "$d/unrescuable" ] && continue
-    if [ -f "$d/pid" ] && grep -qa oee_geb "/proc/$(cat "$d/pid")/cmdline" 2>/dev/null; then continue; fi
+    if [ -f "$d/pid" ] && grep -qa oee_geb "/proc/$(cat "$d/pid")/cmdline" 2>/dev/null; then lease_ok "$d" && lease "$d"; continue; fi
+    lease_ok "$d" || continue
     if [ -f "$d/exit_code" ]; then
       code="$(cat "$d/exit_code")"
       if [ "$code" = "100" ]; then touch "$d/finished"; continue; fi
@@ -76,6 +87,7 @@ while true; do
     done
     [ "$running" -ge "$MAX_PROCS" ] && continue
     rm -f "$d/exit_code"
+    lease "$d"
     resume=()
     [ -f "$d/ck" ] && resume=(-resume ck)
     if [ -f "$d/reseed" ] && [ -f "$d/ck" ]; then
