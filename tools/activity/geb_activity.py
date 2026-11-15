@@ -124,11 +124,25 @@ def load_presence(run_dir, variant, grouping):
     return times, real_sets, shadow_sets
 
 
+def presence_path(run_dir):
+    """presence, or its lossless packed form presence.xz (tools/storage/pack_runs.sh)."""
+    p=os.path.join(run_dir,"presence")
+    return p if os.path.exists(p) or not os.path.exists(p+".xz") else p+".xz"
+
+
+def open_presence(run_dir):
+    p=presence_path(run_dir)
+    if p.endswith(".xz"):
+        import lzma
+        return lzma.open(p,"rt",encoding="ascii")
+    return open(p,"r",encoding="ascii")
+
+
 def load_presence_file(run_dir, grouping):
     """Read the hash-based presence record written by oee_geb -presence."""
     part = 0 if grouping == "rule" else 1
     by_time = defaultdict(dict)
-    with open(os.path.join(run_dir, "presence"), "r", encoding="ascii") as f:
+    with open_presence(run_dir) as f:
         for line in f:
             fields = line.split()
             if len(fields) < 3 or len(fields) != 3 + int(fields[2]):

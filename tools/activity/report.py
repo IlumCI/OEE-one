@@ -38,10 +38,10 @@ def main():
     ]
     for run in runs:
         name = os.path.basename(run.rstrip("/"))
-        pres = os.path.join(run, "presence")
+        pres = ga.presence_path(run)
         has_presence = False
         if os.path.exists(pres):
-            with open(pres) as f:
+            with ga.open_presence(run) as f:
                 head = [next(f, "") for _ in range(3)]
             has_presence = any(l.split()[1:2] == ["S2"] for l in head if l.strip())
         configs = []

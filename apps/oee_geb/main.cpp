@@ -188,6 +188,7 @@ int main(int argc, char** argv) {
   std::string components_path, presence_path, outdir = ".", log_path, save_path, resume_path;
   std::string founders_path;
   long save_every = 0, archive_every = 0, freeze_exit = 0;
+  bool akeep = false;  // compute step 5: keep archives at archive_every*2^k plus the newest two
   int reseed = 0;
   int nthr = 1;  // compute step 4: worker threads (counter-RNG mode only; results unchanged)
   bool neurons_msg = false;
@@ -238,6 +239,7 @@ int main(int argc, char** argv) {
     } else if (!std::strcmp(s, "-collectives-random")) {
       p.collectives = 2;  // L3 control: random grouping decisions
       ++a;
+    } else if(!std::strcmp(s,"-archive-keep-log")){akeep=true;++a;
     } else if(!std::strcmp(s,"-threads")&&has){nthr=std::atoi(argv[a+1]);a+=2;
     } else if(!std::strcmp(s,"-crng")){p.rng_mode=1;++a;  // compute step 2: counter RNG streams
     } else if (!std::strcmp(s, "-grow-every") && has) {
@@ -473,9 +475,12 @@ int main(int argc, char** argv) {
       if (rulestat && !(t % kRulestatEvery)) rulestat->snapshot(world);
       if (!save_path.empty() && save_every && !(t % save_every))
         save_checkpoint(save_path, world, rulestat.get(), outs, config);
-      if (!save_path.empty() && archive_every && !(t % archive_every))
+      if (!save_path.empty() && archive_every && !(t % archive_every)) {
         save_checkpoint(save_path + ".archive." + std::to_string(t), world, rulestat.get(), outs,
                         config);
+        // Log-spaced retention: drop the archive two back unless its index k=t/archive_every is a power of two.
+        if(akeep){const long k=t/archive_every-2;if(k>0&&(k&(k-1)))std::remove((save_path+".archive."+std::to_string(k*archive_every)).c_str());}
+      }
       if (world.num_reproductions() != last_births) {
         last_births = world.num_reproductions();
         last_birth_time = t;
