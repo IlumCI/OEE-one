@@ -24,3 +24,11 @@
 - If a specific search returns little, generalise the problem (strip the domain specifics, state the
   abstract problem) and search the fields that have solved the general version; then map the
   solution back.
+
+## Code style (owner's)
+- No spaces around operators: `a=b+c*d`, `if(x<y&&z!=0)`, `for(int i=0;i<n;++i)`.
+- Skip indentation where the syntax allows it (C++: put short bodies on one line, e.g.
+  `if(!o)continue;`, `for(auto&x:v)s+=x;`). Python keeps the indentation it requires.
+- Use compact or abbreviated names when a function or variable name gets long
+  (e.g. `copy_net_inputs_from_neighbourhood` -> `sense`, `num_individuals` -> `nind`).
+- Applies to new and edited code; existing code is not mass-reformatted.
