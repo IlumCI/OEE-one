@@ -124,3 +124,41 @@ accumulation have similar counts), so sensing is real work proportional to the n
 not wasted scanning; indexing cannot remove it. The remaining large lever is parallelism (D1
 option C), not further single-thread tuning. Remaining single-thread item: per-event allocation
 (operator new 5.5%).
+
+## Step 2: counter RNG streams (2026-11-15)
+
+Flag `-crng` (`Params::rng_mode` = 1). Three streams, each keyed by (seed, cycle, agent id) and
+re-keyed at the start of the agent's update: real-agent draws (R1), first shadow population (R3),
+second shadow (R2). The cycle's update order is a permutation of the cycle's agent list drawn
+from a per-cycle stream; `step()` takes agents from the end of it. Legacy mode (default) routes
+all three through Geb's ran1 in the original order.
+Checkpoint format v9 (magic `OEE9GEBW`) stores the full 36-byte Params; older checkpoints store and
+read the first 32 bytes (rng_mode = 0).
+
+Checks: legacy mode byte-identical to the previous binary (log, presence, rulestat, checkpoint) on a
+fresh 12k-step run and on the v8 3.5M checkpoint; 10/10 unit tests. Counter mode: identical output
+on repeat; resume at 10k = uninterrupted 20k (log and presence identical).
+Statistical validation (queued): `crng_v6_s1..s3` (v6 rules, L20, 2M) vs `l3v6_s1..s3`;
+`crng_geb_s1..s2` (plain Geb, L20, 1M) vs `runs/resets_s1..s5`. Compare D (rule) and maximum
+individual complexity per 500k window.
+
+## Step 3: locality (analysis, 2026-11-15)
+
+What an agent update reads and writes, and what is non-local:
+- Sensing: cells within `copy_to_length` (3). Movement, attack, reproduction: the cell in front and
+  the one beyond it (reproduction places the child in front of the mate, or replaces the mate).
+  All local. The global random cell (`random_occupied_cell`) is used only by the GebR control.
+- Bond groups: traversal over in-range bonds; bounded by colony size (32 under v5+ rules) but not by
+  a fixed radius. Handled as a dynamic read set in step 4.
+- Population counter: read against `min_num_individuals` (kills, senescence) and
+  `max_num_individuals` (births). With max = world size the max check is implied by the target cell
+  being occupied. Exact rule for step 4: execute in parallel only while the population is farther
+  from either limit than the batch size; otherwise serial.
+- Agent ids (`next_id_`), `byid_`, colony ids of propagules: assigned at commit, in serial order.
+- Shadow populations: global, but they never interact with real agents; with counter streams their
+  draws are independent of the real-agent draws, so shadow updates are logged per agent and applied
+  at commit in serial order.
+- Counters (`num_reproductions_`, `propagules_`) and statistics: commutative, or computed at cycle
+  boundaries.
+Conclusion: no ecological rule has to change for order-equivalent parallel execution; step 4 is an
+engine change (batching, conflict detection on cell read/write sets, commit in serial order).
