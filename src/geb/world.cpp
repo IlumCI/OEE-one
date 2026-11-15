@@ -106,8 +106,14 @@ void Organism::copy_net_inputs_from_neighbourhood() {
       // runs over the compact list of non-zero outputs; same terms, identical results.
       const auto& nz = other->output_nonzero();
       if (nz.empty()) continue;
+      // Each output's term (scale*io)>>6 depends only on this neighbour, not on the receiving
+      // input: computed once, at the first match (as before, scale is never computed when nothing
+      // matches), then added per matching input. Same terms, identical results.
+      thread_local std::vector<int> term;
+      const std::size_t nnz = nz.size();
       auto contribute = [&](const In& x) {
-        for (const Ann::OutCache& out : nz) {
+        for (std::size_t j = 0; j < nnz; ++j) {
+          const Ann::OutCache& out = nz[j];
           const PackedChar& oc = out.packed;
           const bool match = (x.packed && oc.packed) ? packed_is_prefix(x.tbits, x.tn, oc)
                                                      : x.test.is_start_of(out.node->character);
@@ -115,8 +121,10 @@ void Organism::copy_net_inputs_from_neighbourhood() {
           if (scale < 0) {
             const long d = static_cast<long>(std::sqrt(static_cast<double>(dx * dx + dy * dy)));
             scale = static_cast<int>(World::kCopyScale64AtDistance1 / d);
+            term.resize(nnz);
+            for (std::size_t q = 0; q < nnz; ++q) term[q] = (scale * nz[q].io_value) >> 6;
           }
-          x.entry->io_value += ((scale * out.io_value) >> 6);
+          x.entry->io_value += term[j];
         }
       };
       for (int k = 0; k < n_in; ++k)
