@@ -102,18 +102,16 @@ void Organism::copy_net_inputs_from_neighbourhood() {
       // Contributions are (scale*io)>>6; zero-io outputs add nothing, so the distance
       // and scale are computed only when a non-zero contribution is possible.
       int scale = -1;
-      // Matching outputs (character starts with x.test) are one contiguous run of
-      // output_order(); the same terms are summed as in a full scan, so results are identical.
-      const auto& ocache = other->output_cache();
-      const auto& oorder = other->output_order();
+      // Only outputs with a non-zero value can contribute (zero terms add nothing), so the scan
+      // runs over the compact list of non-zero outputs; same terms, identical results.
+      const auto& nz = other->output_nonzero();
+      if (nz.empty()) continue;
       auto contribute = [&](const In& x) {
-        auto it = std::lower_bound(oorder.begin(), oorder.end(), x.test, [&](int i, const GeneSpan& t) {
-          return ocache[i].node->character.lex_less(t);
-        });
-        for (; it != oorder.end(); ++it) {
-          const Ann::OutCache& out = ocache[*it];
-          if (!x.test.is_start_of(out.node->character)) break;
-          if (!out.io_value) continue;
+        for (const Ann::OutCache& out : nz) {
+          const PackedChar& oc = out.packed;
+          const bool match = (x.packed && oc.packed) ? packed_is_prefix(x.tbits, x.tn, oc)
+                                                     : x.test.is_start_of(out.node->character);
+          if (!match) continue;
           if (scale < 0) {
             const long d = static_cast<long>(std::sqrt(static_cast<double>(dx * dx + dy * dy)));
             scale = static_cast<int>(World::kCopyScale64AtDistance1 / d);

@@ -393,7 +393,6 @@ Rule* Ann::pick_update_rule(const Node& node) {
 
 void Ann::morphogenesis_step() {
   if (!morphogenesis_steps_left_) return;
-  order_dirty_ = true;
   for (Node& n : nodes_) n.just_constructed = false;
   for (auto it = nodes_.begin(); it != nodes_.end();) {
     auto next = std::next(it);
@@ -519,14 +518,10 @@ void Ann::calc_new_outputs(Node& node, Ran1& rng, const NetConstants& k) {
 
 void Ann::rebuild_out_cache() {
   out_cache_.clear();
-  for (const IoEntry& e : net_outputs_) out_cache_.push_back(OutCache{e.node->packed, e.io_value, e.node});
-  if (order_dirty_ || out_order_.size() != out_cache_.size()) {
-    out_order_.resize(out_cache_.size());
-    for (std::size_t i = 0; i < out_order_.size(); ++i) out_order_[i] = static_cast<int>(i);
-    std::stable_sort(out_order_.begin(), out_order_.end(), [this](int a, int b) {
-      return out_cache_[a].node->character.lex_less(out_cache_[b].node->character);
-    });
-    order_dirty_ = morphogenesis_steps_left_ > 0;
+  out_nz_.clear();
+  for (const IoEntry& e : net_outputs_) {
+    out_cache_.push_back(OutCache{e.node->packed, e.io_value, e.node});
+    if (e.io_value) out_nz_.push_back(out_cache_.back());
   }
 }
 

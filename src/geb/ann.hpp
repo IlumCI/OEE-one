@@ -109,9 +109,8 @@ class Ann {
     const Node* node;
   };
   const std::vector<OutCache>& output_cache() const { return out_cache_; }
-  // Indices into output_cache() in GeneSpan::lex_less order of the node characters, so the
-  // outputs whose character starts with a given prefix are one contiguous run.
-  const std::vector<int>& output_order() const { return out_order_; }
+  // The entries of output_cache() with a non-zero value, in the same order.
+  const std::vector<OutCache>& output_nonzero() const { return out_nz_; }
 
   void morphogenesis_step();
   void update_outputs(Ran1& rng, const NetConstants& k);
@@ -135,8 +134,7 @@ class Ann {
   std::list<Node> nodes_;
   std::list<IoEntry> net_inputs_, net_outputs_;
   std::vector<OutCache> out_cache_;
-  std::vector<int> out_order_;
-  bool order_dirty_ = true;  // set while the topology can change (development, load)
+  std::vector<OutCache> out_nz_;
   void rebuild_out_cache();
   int num_nodes_ = 0;
   int max_num_nodes_;
