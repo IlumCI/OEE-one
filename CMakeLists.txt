@@ -26,7 +26,7 @@ add_library(oee_geb_core
   src/geb/world.cpp
   src/geb/rulestat.cpp)
 target_include_directories(oee_geb_core PUBLIC src)
-target_link_libraries(oee_geb_core PUBLIC oee_bff_core)
+target_link_libraries(oee_geb_core PUBLIC oee_bff_core Threads::Threads)
 
 add_executable(oee_geb_resets apps/oee_geb/main.cpp)
 target_link_libraries(oee_geb_resets PRIVATE oee_geb_core)

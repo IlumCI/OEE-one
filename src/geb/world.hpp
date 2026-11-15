@@ -2,8 +2,12 @@
 // random-selection shadow population. See docs/GEB_SPEC.md sections 5-6.
 #pragma once
 
+#include <atomic>
+#include <condition_variable>
 #include <cstdint>
 #include <memory>
+#include <mutex>
+#include <thread>
 #include <unordered_map>
 #include <vector>
 
@@ -114,8 +118,15 @@ class World {
   World(const World&) = delete;
   World& operator=(const World&) = delete;
 
-  // One call processes one agent slot (ga_main_loop).
+  // One call processes one agent slot (ga_main_loop). With set_threads(n>1) in counter-RNG mode
+  // (not GebR) one call processes the rest of the cycle: order-equivalent parallel engine,
+  // results bit-identical to serial (docs/COMPUTE.md step 4).
   void step();
+  void set_threads(int n);
+  // Switch a legacy-RNG world (e.g. resumed from an old checkpoint) to counter streams from now on;
+  // like reseed, the run continues on a different stochastic branch.
+  void to_crng();
+  int threads() const {return nthr_;}
   // Delete all agents (ga_terminate). Consumes RNG as the original does.
   void terminate();
 
@@ -215,6 +226,30 @@ class World {
   long propagules_ = 0;
   mutable std::uint32_t bfs_gen_ = 0;  // group_size: current stamp
   mutable std::vector<const Organism*> bfs_stack_, bfs_seen_;  // group_size scratch  // L3 v5: colonies founded (cumulative, checkpointed when bit 8 set)
+  // Step 4 parallel engine: phase a (sense, develop, network) runs on workers once every earlier
+  // agent of the cycle within copy_to_length+2 cells has committed; phase b (actions) commits
+  // serially in cycle order.
+  int nthr_=1;
+  std::vector<std::thread> pool_;
+  std::mutex m_;
+  std::condition_variable cv_,cvd_;
+  std::uint64_t epoch_=0;
+  int fin_=0;
+  bool quit_=false;
+  int n_=0;
+  std::atomic<int> done_{0};
+  std::vector<int> opos_,dep_,last_;
+  std::vector<std::uint64_t> oid_;
+  std::vector<CRng> r1s_;
+  std::unique_ptr<std::atomic<std::uint8_t>[]> st_;
+  int stcap_=0;
+  bool par_ok() const {return nthr_>1&&p_.rng_mode&&!p_.random_selection;}
+  bool live(int t) const {const Organism*o=grid_[opos_[t]].get();return o&&o->id==oid_[t]&&o->birth_time!=ga_time_;}
+  void pa(int t);
+  void pb(Organism*o,const CRng&r1);
+  void par_cycle();
+  void work();
+  void stop_pool();
   long ga_time_ = -1;
   long num_reproductions_ = 0;
   int num_individuals_ = 0;

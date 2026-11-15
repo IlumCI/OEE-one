@@ -180,3 +180,35 @@ What an agent update reads and writes, and what is non-local:
   boundaries.
 Conclusion: no ecological rule has to change for order-equivalent parallel execution; step 4 is an
 engine change (batching, conflict detection on cell read/write sets, commit in serial order).
+
+## Step 4: order-equivalent parallel engine (2026-11-15)
+
+`-threads N` (counter-RNG mode only; GebR stays serial). Each agent update is split into phase a
+(sense, develop, network update: reads cells within c = `copy_to_length`, writes only the agent's
+own network) and phase b (actions: reads/writes cells within 2 of the actor; a newborn senses within
+c of itself, so within c + 2 of the actor; group traversal, colony counts, shadows, ids and
+population counters are read and written only here). At the start of a cycle every agent sits in
+its own cell, so for agent t in cycle order the dependency is `dep[t]` = the latest earlier agent
+whose start cell is within R = c + 2 (toroidal Chebyshev). Phase a of t runs on a worker as soon as
+`dep[t]` has committed; phase b runs on the calling thread strictly in cycle order. No commit after
+`dep[t]` can reach t's neighbourhood before t commits, and no commit reads a phase a that is still
+running, so the result is the serial counter-RNG run exactly (generalised problem: deterministic
+optimistic execution against a preset serial order, as in deterministic databases / Block-STM, with
+the read/write sets known in advance from locality instead of discovered at run time).
+
+Also `-crng` on `-resume` of a legacy checkpoint switches the run to counter streams from that
+point (`World::to_crng`, a new stochastic branch, like `-reseed`).
+
+Checks:
+- byte-identical log, presence, rulestat, shadow rulestat and checkpoint, serial vs 2/3/4 threads:
+  plain Geb L20 (20k steps), v6 rules L20 (20k), v8 seed-1 checkpoint at 4M (52x52, ~2,050 agents,
+  neuron limit 84; 400 steps);
+- ThreadSanitizer: no reports (v6 rules L32 3k steps; v8 checkpoint 10 steps, 4 threads);
+- 10/10 unit tests (legacy golden equivalence unchanged).
+
+Speed, v8 checkpoint, 400 steps (wall time incl. load): 1 thread 38.3 s, 2 threads 23.3 s (1.6x),
+3 threads 18.3 s (2.1x), 4 threads 17.1 s (2.2x). On L20 worlds the dependency window (11x11 of
+20x20 cells) leaves little parallelism and threads are slower (31 s -> 41 s): use 1 thread there.
+The ceiling is the serial phase b (actions, group traversal, births with development of the
+newborn: ~35-40% of the work), so Amdahl caps this design near 2.5-3x. Next lever: run phase b of
+non-conflicting agents in parallel too (needs the global items of step 3 handled at commit).

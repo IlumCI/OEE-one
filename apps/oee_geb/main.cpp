@@ -189,6 +189,7 @@ int main(int argc, char** argv) {
   std::string founders_path;
   long save_every = 0, archive_every = 0, freeze_exit = 0;
   int reseed = 0;
+  int nthr = 1;  // compute step 4: worker threads (counter-RNG mode only; results unchanged)
   bool neurons_msg = false;
   for (int a = 1; a < argc;) {
     const char* s = argv[a];
@@ -237,6 +238,7 @@ int main(int argc, char** argv) {
     } else if (!std::strcmp(s, "-collectives-random")) {
       p.collectives = 2;  // L3 control: random grouping decisions
       ++a;
+    } else if(!std::strcmp(s,"-threads")&&has){nthr=std::atoi(argv[a+1]);a+=2;
     } else if(!std::strcmp(s,"-crng")){p.rng_mode=1;++a;  // compute step 2: counter RNG streams
     } else if (!std::strcmp(s, "-grow-every") && has) {
       grow_every = std::atol(argv[a + 1]);
@@ -352,6 +354,8 @@ int main(int argc, char** argv) {
     }
   }
   World& world = *world_ptr;
+  if(p.rng_mode&&!world.params().rng_mode){world.to_crng();std::fprintf(stderr,"Switched to counter RNG streams at time %ld\n",world.time());}
+  world.set_threads(nthr);
 
   File log, rs, srs, rv, srv, dict, pres;
   std::unique_ptr<RuleStat> rulestat;

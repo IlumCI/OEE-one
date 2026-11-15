@@ -484,7 +484,7 @@ World::World(const Params& p) : p_(p) {
   num_reproductions_ = 0;
 }
 
-World::~World() = default;
+World::~World(){stop_pool();}
 
 int World::forward1(int from_x_64, int from_y_64, int dir) const {
   int x_64 = from_x_64, y_64 = from_y_64;
@@ -769,6 +769,7 @@ for(int i=num_not_processed_-1;i>0;--i){int j=c.random(i+1);std::swap(np_positio
 
 void World::step() {
   if (num_not_processed_ == 0) return;
+  if(par_ok()){par_cycle();return;}
   const int r = p_.rng_mode?num_not_processed_-1:R1_.random(num_not_processed_);
   Organism* ind = grid_[np_positions_[r]].get();
   if (ind && ind->id == np_ids_[r] && ind->birth_time != ga_time_) {
@@ -795,6 +796,108 @@ void World::step() {
       if (shadow_birth_times_[s] != ga_time_) ++shadow_ages_[s];
     reset_not_processed();
   }
+}
+
+// ---------------------------------------------------------------------------
+// Step 4: order-equivalent parallel engine (docs/COMPUTE.md).
+// Phase a of agent t (sense, develop, network update) reads cells within c=copy_to_length of t and
+// writes only t's own network. Phase b (actions) reads and writes cells within 2 of the actor and
+// develops children that sense within c of themselves, i.e. within c+2 of the actor. With every
+// agent of the cycle starting at its own cell, t's phase a is fixed once every earlier agent
+// (in cycle order) whose start cell is within R=c+2 has committed: no later commit can reach t's
+// neighbourhood before t commits, and no running phase a can be read by a commit. Phase b runs
+// serially in cycle order on the calling thread, so results equal the serial counter-RNG run.
+
+void World::set_threads(int n){
+if(n<1)n=1;
+if(n==nthr_)return;
+stop_pool();nthr_=n;
+for(int i=1;i<n;++i)pool_.emplace_back([this]{work();});
+}
+
+void World::to_crng(){
+if(p_.rng_mode)return;
+p_.rng_mode=1;
+R1_.r1=R2_.r1=R3_.r1=nullptr;
+R1_.c.key(cseed_,~0ULL,1);R2_.c.key(cseed_,~0ULL,2);R3_.c.key(cseed_,~0ULL,3);
+cyc_shuffle();
+}
+
+void World::stop_pool(){
+{std::lock_guard<std::mutex>lk(m_);quit_=true;}
+cv_.notify_all();
+for(auto&t:pool_)t.join();
+pool_.clear();quit_=false;
+}
+
+void World::pa(int t){
+Organism*o=grid_[opos_[t]].get();
+Rng r;r.c.key(cseed_,ga_time_,o->id);
+o->copy_net_inputs_from_neighbourhood();
+o->morphogenesis_step();
+o->update_outputs(r,net_);
+r1s_[t]=r.c;
+}
+
+void World::pb(Organism*ind,const CRng&r1){
+R1_.c=r1;R2_.c.key(cseed_^0x5eed2ULL,ga_time_,ind->id);R3_.c.key(cseed_^0x5eed3ULL,ga_time_,ind->id);
+ind->actions();
+++ind->age;
+if((p_.collectives&4)&&ind->age>kMaxAge&&grid_[ind->at].get()==ind&&num_individuals_>p_.min_num_individuals){remove_real(ind->at).reset();--num_individuals_;}
+}
+
+void World::work(){
+std::uint64_t seen=0;
+for(;;){
+{std::unique_lock<std::mutex>lk(m_);cv_.wait(lk,[&]{return quit_||epoch_!=seen;});if(quit_)return;seen=epoch_;}
+const int n=n_,win=64*nthr_;
+for(;;){
+const int c=done_.load(std::memory_order_acquire);
+if(c>=n)break;
+const int hi=std::min(n,c+win);bool got=false;
+for(int t=c+1;t<hi;++t){
+if(dep_[t]>=c||st_[t].load(std::memory_order_relaxed))continue;
+std::uint8_t z=0;
+if(!st_[t].compare_exchange_strong(z,1,std::memory_order_acq_rel))continue;
+if(live(t))pa(t);
+st_[t].store(2,std::memory_order_release);got=true;
+}
+if(!got)std::this_thread::yield();
+}
+{std::lock_guard<std::mutex>lk(m_);++fin_;}
+cvd_.notify_one();
+}
+}
+
+void World::par_cycle(){
+const int n=num_not_processed_,L=length_,R=p_.copy_to_length+2;
+opos_.resize(n);oid_.resize(n);dep_.resize(n);r1s_.resize(n);
+for(int t=0;t<n;++t){opos_[t]=np_positions_[n-1-t];oid_[t]=np_ids_[n-1-t];}
+// dep_[t]: latest earlier agent whose start cell is within R (toroidal Chebyshev), -1 if none.
+last_.assign(size_,-1);
+for(int t=0;t<n;++t){
+int d=-1;
+if(2*R+1>=L)d=t-1;
+else{const int x=opos_[t]%L,y=opos_[t]/L;
+for(int dy=-R;dy<=R;++dy){const int*row=last_.data()+((y+dy+L)%L)*L;for(int dx=-R;dx<=R;++dx){const int v=row[(x+dx+L)%L];if(v>d)d=v;}}}
+dep_[t]=d;last_[opos_[t]]=t;
+}
+if(stcap_<n){stcap_=n+n/2+16;st_.reset(new std::atomic<std::uint8_t>[stcap_]);}
+for(int t=0;t<n;++t)st_[t].store(0,std::memory_order_relaxed);
+n_=n;done_.store(0,std::memory_order_release);
+{std::lock_guard<std::mutex>lk(m_);fin_=0;++epoch_;}
+cv_.notify_all();
+for(int t=0;t<n;++t){
+std::uint8_t z=0;
+if(st_[t].compare_exchange_strong(z,1,std::memory_order_acq_rel)){if(live(t))pa(t);st_[t].store(2,std::memory_order_relaxed);}
+else while(st_[t].load(std::memory_order_acquire)!=2)std::this_thread::yield();
+if(live(t))pb(grid_[opos_[t]].get(),r1s_[t]);
+done_.store(t+1,std::memory_order_release);
+}
+{std::unique_lock<std::mutex>lk(m_);cvd_.wait(lk,[&]{return fin_==int(pool_.size());});}
+num_not_processed_=0;
+for(int s=0;s<shadow_count();++s)if(shadow_birth_times_[s]!=ga_time_)++shadow_ages_[s];
+reset_not_processed();
 }
 
 void World::grow(int L) {
