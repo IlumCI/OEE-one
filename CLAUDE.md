@@ -15,3 +15,9 @@
 ## Commits
 - Author: ilumCI <ilumbackup@gmail.com>. No trailers, no co-author lines, no tool mentions.
 - Branch: ccr-a2d38bd7-kjgb66.
+
+## Research method
+- Consult arXiv for current work before design decisions.
+- If a specific search returns little, generalise the problem (strip the domain specifics, state the
+  abstract problem) and search the fields that have solved the general version; then map the
+  solution back.

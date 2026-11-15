@@ -43,8 +43,25 @@ spatial grids; arXiv 2606.21784, 1507.04047, 2105.00039).
 
 Cost: no longer bit-identical to Geb; equivalence must be shown statistically (Channon
 classification, D and complexity curves on the reference configurations already run).
-Recommendation: build it as a second engine behind a flag, keep the asynchronous engine as the
-reference, validate, then use the synchronous engine for all large runs.
+
+Option C (recommended): keep the asynchronous random-order semantics and parallelise it
+order-equivalently. Generalised problem: execute a fixed sequence of local updates on shared state
+in parallel with a result identical to serial execution. Solved in other fields:
+- statistics: any fixed sequential (Gauss-Seidel) schedule has an exactly equivalent parallel
+  execution from a colouring of the dependency graph (GraphLab arXiv 1006.4990; chromatic MCMC
+  arXiv 1612.00595);
+- deterministic databases / blockchains: optimistic parallel execution against a preset serial
+  order, conflicting transactions re-executed in order (arXiv 2602.03444, 2602.21566);
+- parallel discrete-event simulation: speculative execution with rollback (Time Warp; PARSIR
+  arXiv 2410.00644; Warped2 arXiv 2507.18050).
+Here: agents farther apart than their interaction radius commute within a cycle, so the per-cycle
+random order is executed in parallel and any update whose read/write cells overlap an earlier,
+unfinished one is deferred or re-executed in order. Preconditions:
+1. Per-agent counter-based RNG keyed by (seed, cycle, agent id) replacing the single shared stream
+   (the only semantic change; distributionally identical; validated once statistically).
+2. Locality: replace the global random cell for births into a full world with a local rule
+   (or treat it as a serialising event), and bound group queries via D3.
+Result: bit-identical output for any thread count, Geb update semantics preserved.
 
 ### D2. Sensing index (no semantic change)
 Per cycle, each agent publishes its output values into a small table keyed by output-node prefix
