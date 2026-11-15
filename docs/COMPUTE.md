@@ -142,6 +142,16 @@ Statistical validation (queued): `crng_v6_s1..s3` (v6 rules, L20, 2M) vs `l3v6_s
 `crng_geb_s1..s2` (plain Geb, L20, 1M) vs `runs/resets_s1..s5`. Compare D (rule) and maximum
 individual complexity per 500k window.
 
+Result (v6 rules, L20; `docs/results/compute_crng_validation.md`): mean over the 1-2M windows,
+crng seeds 1-3 vs legacy `l3v6_s1..s3`:
+- maximum individual complexity 6.70 / 7.72 / 7.34 vs 7.71 / 7.18 / 7.53 (exact two-sided
+  permutation p = 0.7);
+- D (rule) 76 / 88 / 99 vs 119 / 86 / 88 (p = 0.7);
+- real D 8-15x its null in both.
+No detectable difference at n = 3 per condition (low power: differences of roughly one seed-to-seed
+standard deviation would not be detected). Plain-Geb check (`crng_geb_s1..s2` vs `runs/resets`)
+pending.
+
 ## Step 3: locality (analysis, 2026-11-15)
 
 What an agent update reads and writes, and what is non-local:
