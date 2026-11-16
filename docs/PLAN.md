@@ -136,6 +136,23 @@ A mismatch is reported as a result. It is not tuned away.
   automated purge triggers per DESIGN.md section 4.
 - M7: L4 co-evolved challenges; L5 self-modification.
 
+## Candidate directions (2026-11-16, after the v9 round; ranked by expected value for OEE / general intelligence)
+1. Evolvable genetic code (L1 + L5): each genome carries its own codon -> operation table on a fixed
+   minimal universal VM; then a heritable interpreter written in the creatures' own language; then
+   heritable variation operators. Revisits M5 (faithful BFF copying gave no variation or growth).
+   Test each step against a fixed-code control and a null, as in v9. Code runs only inside the VM (no
+   syscalls, no network, capped resources). Refs: arXiv 2603.08463 (evolvable interpreters as an open
+   question), 1105.1534 / 1108.1589 (evolvable languages, codon tables), Ofria et al. 2002 via 1309.0719.
+2. Other-agent modelling as an L4 environment: agents evolve to predict what other market participants
+   (or other agents) do next, on recorded data, scored against a null. A measurable route from complexity
+   to theory of mind. No money at risk; trading only after held-out and paper stages with human-held keys.
+3. Open-ended fuzzer (application): an ecology of input lineages with unexplored code regions as the
+   resource; target the plateau that coverage-guided fuzzers hit; first target our own genotype decoder
+   (also fills the missing fuzz targets of the containment plan). Refs: arXiv 2509.19349, 2505.22954,
+   2601.03335, 2604.02134.
+Not pursued: token issuance aimed at trend-chasers (harms late buyers; selection drifts to pump-and-dump);
+real-world resource acquisition without human control of spending.
+
 ## Verification (M1)
 - `cmake --preset release && ctest --preset release` passes. The same passes under the
   asan and tsan presets.
