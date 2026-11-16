@@ -46,6 +46,26 @@ using namespace oee::geb;
 namespace {
 
 constexpr int kStatsEvery = 100;
+
+// L3 v9 yoked control: the world length follows another run's log ("time: E<t>E length L" lines),
+// waiting while that run is behind; growth is then given, not earned. A truncated log (rescue) is reread.
+bool g_follow=false;  // print E lines in yoked runs too
+struct Follow{
+std::string path,dir;long off=0,last=-1;std::vector<std::pair<long,int>>s;
+bool over() const {return access((dir+"/exit_code").c_str(),F_OK)==0;}
+void refresh(){
+std::FILE*f=std::fopen(path.c_str(),"r");if(!f)return;
+std::fseek(f,0,SEEK_END);if(std::ftell(f)<off){off=0;s.clear();last=-1;}
+std::fseek(f,off,SEEK_SET);static char b[1<<16];long pos=off;
+while(std::fgets(b,sizeof b,f)){const std::size_t n=std::strlen(b);if(!n||b[n-1]!='\n')break;pos+=long(n);long t;int L;
+if(std::sscanf(b,"time: E%ldE\tlength %d",&t,&L)==2){s.emplace_back(t,L);last=t;}}
+off=pos;std::fclose(f);
+}
+int len(long t){
+for(;;){refresh();if(last>=t||over())break;sleep(30);}
+int L=0;for(auto&[a,b]:s)if(a<=t)L=b;return L;
+}
+};
 constexpr int kRulestatEvery = 1000;
 
 struct FileCloser {
@@ -166,6 +186,7 @@ void stats(const World& w) {
     std::fprintf(out, "time: G%ldG	groups %d largest %d mean_size %.3f bonded_fraction %.3f colonies %d largest_colony %d propagules %ld warrior_fraction %.3f groups_ge4 %d mixed %d\n",
                  w.time(), g.groups, g.largest, g.mean, g.bonded, g.colonies, g.largest_colony, w.propagules(),
                  g.warrior_fraction, g.large, g.mixed);
+    if((w.params().collectives&32)||g_follow)std::fprintf(out,"time: E%ldE\tlength %d neurons %d credit %ld collab_births %ld\n",w.time(),w.world_length(),w.params().max_num_nodes,w.credit(),w.collab());
   }
   std::fflush(out);
   if (num < 2) {
@@ -190,6 +211,7 @@ int main(int argc, char** argv) {
   long save_every = 0, archive_every = 0, freeze_exit = 0;
   bool akeep = false;  // compute step 5: keep archives at archive_every*2^k plus the newest two
   int reseed = 0;
+  std::unique_ptr<Follow> follow;
   int nthr = 1;  // compute step 4: worker threads (counter-RNG mode only; results unchanged)
   bool neurons_msg = false;
   for (int a = 1; a < argc;) {
@@ -263,6 +285,9 @@ int main(int argc, char** argv) {
     } else if (!std::strcmp(s, "-colony-reproduction")) {
       p.collectives |= 8;  // L3 v5: grown groups found colonies (use after -collectives*)
       ++a;
+    } else if(!std::strcmp(s,"-grow-follow")&&has){follow=std::make_unique<Follow>();g_follow=true;follow->path=argv[a+1];const auto k=follow->path.rfind('/');follow->dir=k==std::string::npos?".":follow->path.substr(0,k);a+=2;
+    } else if(!std::strcmp(s,"-earned-growth")){p.collectives|=8|32;++a;  // L3 v9: collective births buy space
+    } else if(!std::strcmp(s,"-neuron-cost")){p.collectives|=64;++a;  // L3 v9: per-neuron death hazard
     } else if (!std::strcmp(s, "-senescence")) {
       p.collectives |= 4;  // L3 v4: death after World::kMaxAge updates (use after -collectives*)
       ++a;
@@ -470,6 +495,15 @@ int main(int argc, char** argv) {
         if (target > world.world_length()) world.grow(static_cast<int>(target));
         if (grow_neurons_by)
           world.set_max_num_nodes(static_cast<int>(std::min<long>(grow_neurons_max, neurons0 + grow_neurons_by * (t / grow_every))));
+      }
+      // L3 v9: growth bought from the commons; neuron limit = start + grow_neurons_by per cell of length.
+      if(follow&&!(t%kStatsEvery)){
+        const int L=std::min(grow_max,follow->len(t));
+        if(L>world.world_length()){world.grow(L);if(grow_neurons_by)world.set_max_num_nodes(static_cast<int>(std::min<long>(grow_neurons_max,neurons0+long(grow_neurons_by)*(L-length0))));}
+      }
+      while(world.earned()&&world.world_length()<grow_max){
+        world.spend();world.grow(world.world_length()+1);
+        if(grow_neurons_by)world.set_max_num_nodes(static_cast<int>(std::min<long>(grow_neurons_max,neurons0+long(grow_neurons_by)*(world.world_length()-length0))));
       }
       if (stats_on && !(t % kStatsEvery)) stats(world);
       if (rulestat && !(t % kRulestatEvery)) rulestat->snapshot(world);

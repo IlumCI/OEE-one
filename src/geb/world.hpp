@@ -53,6 +53,10 @@ struct Params {
   // more often than reproduce (moving averages), else breeder. A group's combat power is
   // its size, doubled if it has >= kDolMin members and 25-75% warriors. An attack succeeds
   // only if the attacker's power is >= the victim's. Mixed groups win fights.
+  // 32 = L3 v9 earned growth (with 8): a birth whose parent's group has >= kDolMin members adds one
+  // credit to a commons; the world grows by one row and column when the commons holds kCellCost
+  // credits per existing cell (World::earned/spend; growth applied by the caller at a cycle boundary).
+  // 64 = L3 v9 neuron cost: after each update an agent dies with probability nodes/2^kHazShift.
   std::uint8_t collectives = 0;
   // Compute step 2 (docs/COMPUTE.md): 0 = Geb's single ran1 stream; 1 = counter streams keyed by
   // (seed, cycle, agent id), cycle order from a per-cycle permutation. Changes draws, not rules.
@@ -154,6 +158,12 @@ class World {
   static constexpr int kDolMin = 4;  // L3 v6: minimum group size for the mixed-role bonus
   static int combat_power(const std::vector<const Organism*>& g);  // L3 v5: minimum group size to found a colony
   long propagules() const { return propagules_; }
+  static constexpr int kCellCost=16384;  // v9: collective births per existing cell for +1 length
+  static constexpr int kHazShift=17;    // v9: death hazard per node per update = 2^-17
+  bool earned() const {return (p_.collectives&32)&&credit_>=long(kCellCost)*size_;}
+  void spend(){credit_-=long(kCellCost)*size_;}
+  long credit() const {return credit_;}
+  long collab() const {return collab_;}
   static constexpr int kMaxAge = 1000;  // L3 v4 senescence (collectives bit 2)  // a budded child joins the parent's group only below this size
 
   // Shadow population (genotypes only).
@@ -224,6 +234,8 @@ class World {
   std::vector<std::uint64_t> np_ids_;
   int num_not_processed_ = 0;
   long propagules_ = 0;
+  long credit_=0,collab_=0;  // v9 commons and cumulative collective births
+  void mortality(Organism*ind);
   mutable std::uint32_t bfs_gen_ = 0;  // group_size: current stamp
   mutable std::vector<const Organism*> bfs_stack_, bfs_seen_;  // group_size scratch  // L3 v5: colonies founded (cumulative, checkpointed when bit 8 set)
   // Step 4 parallel engine: phase a (sense, develop, network) runs on workers once every earlier

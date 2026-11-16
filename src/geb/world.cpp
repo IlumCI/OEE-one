@@ -346,6 +346,7 @@ void Organism::try_to_reproduce_with_organism_in_front() {
   }
   if (w.p_.collectives & 3) {
     const int gs = w.group_size(this);
+    if((w.p_.collectives&32)&&gs>=World::kDolMin){++w.credit_;++w.collab_;}
     int cs = 0;  // v5: members of the parent's colony (bonded or not)
     if (w.p_.collectives & 8)
       for (int c = 0; c < w.size_; ++c) cs += w.grid_[c] && w.grid_[c]->colony == colony;
@@ -780,12 +781,8 @@ void World::step() {
     ind->actions();
     ++ind->age;
     // L3 v4 senescence: agents die after kMaxAge of their own updates (Geb has no natural
-    // death, so protection from combat would otherwise mean immortality).
-    if ((p_.collectives & 4) && ind->age > kMaxAge && grid_[ind->at].get() == ind &&
-        num_individuals_ > p_.min_num_individuals) {
-      remove_real(ind->at).reset();
-      --num_individuals_;
-    }
+    // death, so protection from combat would otherwise mean immortality). v9: neuron cost.
+    mortality(ind);
   }
   --num_not_processed_;
   if (num_not_processed_) {
@@ -843,7 +840,14 @@ void World::pb(Organism*ind,const CRng&r1){
 R1_.c=r1;R2_.c.key(cseed_^0x5eed2ULL,ga_time_,ind->id);R3_.c.key(cseed_^0x5eed3ULL,ga_time_,ind->id);
 ind->actions();
 ++ind->age;
-if((p_.collectives&4)&&ind->age>kMaxAge&&grid_[ind->at].get()==ind&&num_individuals_>p_.min_num_individuals){remove_real(ind->at).reset();--num_individuals_;}
+mortality(ind);
+}
+
+void World::mortality(Organism*ind){
+if(grid_[ind->at].get()!=ind||num_individuals_<=p_.min_num_individuals)return;
+const bool old=(p_.collectives&4)&&ind->age>kMaxAge;
+const bool cost=!old&&(p_.collectives&64)&&R1_.random(1<<kHazShift)<ind->num_nodes();
+if(old||cost){remove_real(ind->at).reset();--num_individuals_;}
 }
 
 void World::work(){
@@ -1002,6 +1006,7 @@ void World::save(Writer& w) const {
   w.put_vec(np_ids_);
   w.put(num_not_processed_);
   if (p_.collectives & 8) w.put(propagules_);
+  if(p_.collectives&32){w.put(credit_);w.put(collab_);}
 }
 
 std::unique_ptr<World> World::load(Reader& r) {
@@ -1049,6 +1054,7 @@ std::unique_ptr<World> World::load(Reader& r) {
   w->np_ids_ = r.get_vec<std::uint64_t>();
   w->num_not_processed_ = r.get<int>();
   if (p.collectives & 8) w->propagules_ = r.get<long>();
+  if(p.collectives&32){w->credit_=r.get<long>();w->collab_=r.get<long>();}
   return w;
 }
 
