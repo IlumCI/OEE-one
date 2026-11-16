@@ -26,7 +26,7 @@ l3v5L40_s2 resets_v5 2 4000000 -length 40 -collectives -colony-reproduction -sen
 l3v6L40_s2 resets_v6 2 4000000 -length 40 -collectives -division-of-labour -senescence -second-shadow -presence presence
 l3v7_s1 resets_v7 1 4000000 -collectives -division-of-labour -senescence -grow-every 500000 -grow-by 4 -grow-max 52 -second-shadow -presence presence
 l3v7_s2 resets_v7 2 4000000 -collectives -division-of-labour -senescence -grow-every 500000 -grow-by 4 -grow-max 52 -second-shadow -presence presence
-l3v8_s1 resets_v10 1 5000000 -collectives -division-of-labour -senescence -grow-every 500000 -grow-by 4 -grow-max 52 -grow-neurons-by 8 -grow-neurons-max 84 -second-shadow -presence presence -crng -threads 3
+#paused for v9: l3v8_s1 resets_v10 1 5000000 -collectives -division-of-labour -senescence -grow-every 500000 -grow-by 4 -grow-max 52 -grow-neurons-by 8 -grow-neurons-max 84 -second-shadow -presence presence -crng -threads 3
 l3v8_s2 resets_v8 2 3000000 -collectives -division-of-labour -senescence -grow-every 500000 -grow-by 4 -grow-max 52 -grow-neurons-by 8 -grow-neurons-max 84 -second-shadow -presence presence
 l3v8_s3 resets_v8 3 3000000 -collectives -division-of-labour -senescence -grow-every 500000 -grow-by 4 -grow-max 52 -grow-neurons-by 8 -grow-neurons-max 84 -second-shadow -presence presence
 l3v8_s4 resets_v8 4 3000000 -collectives -division-of-labour -senescence -grow-every 500000 -grow-by 4 -grow-max 52 -grow-neurons-by 8 -grow-neurons-max 84 -second-shadow -presence presence
@@ -38,3 +38,10 @@ crng_v6_s2 resets_v9 2 2000000 -crng -collectives -division-of-labour -senescenc
 crng_v6_s3 resets_v9 3 2000000 -crng -collectives -division-of-labour -senescence -second-shadow -presence presence
 crng_geb_s1 resets_v9 1 1000000 -crng -second-shadow -presence presence
 crng_geb_s2 resets_v9 2 1000000 -crng -second-shadow -presence presence
+# L3 v9: earned growth (collective births buy space) + neuron cost; yoked controls follow the matching earned run's growth times
+l3v9_s1 resets_v11 1 3000000 -collectives -division-of-labour -senescence -earned-growth -neuron-cost -grow-neurons-by 2 -grow-neurons-max 84 -grow-max 52 -second-shadow -presence presence -crng -archive-keep-log
+y9_s1 resets_v11 1 3000000 -collectives -division-of-labour -senescence -neuron-cost -grow-neurons-by 2 -grow-neurons-max 84 -grow-max 52 -second-shadow -presence presence -crng -grow-follow /home/user/OEE-one/runs6/l3v9_s1/log.txt -archive-keep-log
+l3v9_s2 resets_v11 2 3000000 -collectives -division-of-labour -senescence -earned-growth -neuron-cost -grow-neurons-by 2 -grow-neurons-max 84 -grow-max 52 -second-shadow -presence presence -crng -archive-keep-log
+y9_s2 resets_v11 2 3000000 -collectives -division-of-labour -senescence -neuron-cost -grow-neurons-by 2 -grow-neurons-max 84 -grow-max 52 -second-shadow -presence presence -crng -grow-follow /home/user/OEE-one/runs6/l3v9_s2/log.txt -archive-keep-log
+l3v9_s3 resets_v11 3 3000000 -collectives -division-of-labour -senescence -earned-growth -neuron-cost -grow-neurons-by 2 -grow-neurons-max 84 -grow-max 52 -second-shadow -presence presence -crng -archive-keep-log
+y9_s3 resets_v11 3 3000000 -collectives -division-of-labour -senescence -neuron-cost -grow-neurons-by 2 -grow-neurons-max 84 -grow-max 52 -second-shadow -presence presence -crng -grow-follow /home/user/OEE-one/runs6/l3v9_s3/log.txt -archive-keep-log
