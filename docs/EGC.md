@@ -1,0 +1,39 @@
+# Evolvable genetic code (roadmap candidate 1, step 1)
+
+Goal: let lineages define the meaning of their own code, so that heredity can change what programs mean,
+not only what they contain (M5 found faithful BFF copying but no heritable variation or growth).
+
+arXiv check: interpreters are fixed in almost all ALife systems and whether they can evolve is an open
+question (arXiv 2603.08463); evolvable languages need mutation-robust encodings and a translation layer
+like the biological genetic code (1105.1534, 1108.1589; Ofria, Adami and Collier 2002 via 1309.0719).
+
+## Step 1: heritable codon table on the BFF soup (`oee_bff -egc 1|2`)
+
+- Each 64-byte program holds a codon table in its first 10 bytes: byte value `tape[k]` means instruction
+  k (order `[ ] + - . , < > { }`); every other value is a no-op.
+- The table region is data, never executed (like tRNA). Code at position p is decoded with the table of
+  the program that p belongs to, read live: running code can rewrite tables, and a copy that takes the
+  code without the table changes what the copy means.
+- Mode 1 (control): identical layout (54 executable bytes per program), table bytes inert, standard
+  fixed code. Mode 2: evolvable code. The two differ only in whether the table is used.
+- Mutation, pairing, epochs and the transition criterion are the paper's (131072 programs, mutation
+  2^-12 per byte, transition when high-order entropy reaches 1).
+- Checks (`tests/bff/test_egc.cpp`): with the standard code in both tables, mode 2 equals mode 1 on all
+  10514 of 20000 random tapes whose tables were not rewritten; a program in a non-standard code runs
+  under its own table and is inert under the standard one; checkpoints keep the mode. cubff equivalence
+  of the plain mode is unchanged.
+- Pilot (16384 programs, 1024 epochs, seed 3): executed instructions per interaction 49 (mode 1) vs 224
+  (mode 2), high-order entropy 0.12 vs 0.37; mode 2 runs about 2.5x slower.
+
+Questions:
+1. Do self-replicators still emerge with an evolvable code, and how often relative to the control?
+2. Do replicators carry their table (code co-copied with meaning), and do several codes ("dialects")
+   coexist, or does one code take over?
+3. Is post-transition diversity (distinct programs, high-order entropy) higher with an evolvable code?
+
+Measures: transition epoch and rate (as M3), self-replicator share, and `tools/bff/egc_codes.py` on
+checkpoints (distinct tables, top-table share, entropy of the table distribution, standard-code share,
+dialects held by >= 1% of the soup).
+
+Runs: `runs7/egc{1,2}_s{seed}`, launched by `tools/bff/egc_sweep.sh` lanes (seeds 0-4 in lane 1;
+lane 2 with seeds 5-9 once the v9 runs free cores); restarted by `tools/ensure_supervisors.sh`.

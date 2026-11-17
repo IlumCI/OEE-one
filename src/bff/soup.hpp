@@ -31,13 +31,21 @@ std::size_t evaluate(std::uint8_t* tape, std::size_t max_steps = kMaxSteps);
 // M5 coupling, where agents' genomes are tapes of evolving length.
 std::size_t evaluate_n(std::uint8_t* tape, int n, std::size_t max_steps);
 
+// Evolvable genetic code (docs/EGC.md). Each program's first kCodon bytes are its codon table:
+// byte tape[k] means instruction k (order [ ] + - . , < > { }); other byte values are no-ops. The
+// table region is data, never executed. Code at position p is decoded with the table of the program
+// p belongs to, read live (tables can be rewritten by running code). mode 1: same layout but fixed
+// standard code (table bytes inert) - the control; mode 2: evolvable code.
+constexpr int kCodon=10;
+std::size_t eval_egc(std::uint8_t* tape,int mode,std::size_t max_steps=kMaxSteps);
+
 // cubff CheckSelfRep: pair the program with 13 random noise tapes, run 5 generations
 // (each generation copies the right half to the left and refills the right with the
 // same noise), and count positions reproduced consistently. Returns min(left, right)
 // count; cubff treats >= kSelfrepThreshold as a self-replicator.
 constexpr std::size_t kSelfrepThreshold = 5;
 std::size_t selfrep_score(const std::uint8_t* program, std::uint64_t seed, std::size_t num_programs,
-                          std::size_t index);
+                          std::size_t index, int egc = 0);
 // Printable form (cubff convention): commands as themselves, 0 as '0', others as '.'-free
 // placeholders ('_').
 std::string to_text(const std::uint8_t* program, std::size_t n = kTape);
@@ -54,6 +62,7 @@ struct Params {
   // buffer replaces B; A is unchanged. Only programs that write a faithful copy of
   // themselves into the buffer leave lasting descendants.
   bool m5_protocol = false;
+  int egc = 0;  // 0: cubff BFF; 1: codon-table layout, fixed code (control); 2: evolvable code
 };
 
 struct Metrics {

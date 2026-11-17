@@ -62,6 +62,9 @@ target_include_directories(oee_bff_core PUBLIC src)
 target_link_libraries(oee_bff_core PUBLIC ${BROTLIENC} Threads::Threads)
 add_executable(oee_bff apps/oee_bff/main.cpp)
 target_link_libraries(oee_bff PRIVATE oee_bff_core)
+add_executable(test_egc tests/bff/test_egc.cpp)
+target_link_libraries(test_egc PRIVATE oee_bff_core)
+add_test(NAME bff_egc COMMAND test_egc)
 add_test(NAME bff_cubff_equivalence
   COMMAND sh -c "$<TARGET_FILE:oee_bff> -seed 10248 -epochs 256 -interval 64 -threads 2 -cubff-log -log bff_eq.txt && diff -u ${CMAKE_SOURCE_DIR}/tests/golden/bff/cubff_bff_noheads_seed10248.txt bff_eq.txt")
 add_test(NAME bff_resume
