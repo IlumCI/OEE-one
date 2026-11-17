@@ -5,10 +5,11 @@
 ./ck.archive.250000
 ./ck.archive.500000
 ./ck.archive.750000
-./ck.archive.750000.prev
 ./ck.prev
+./lease
 ./log.txt
 ./pid
+./presence
 ./rulestat
 ./rulestat.verifier
 ./stderr.txt

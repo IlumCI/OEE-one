@@ -2,13 +2,14 @@
 ./SHADOWrulestat.verifier
 ./ck
 ./ck.archive.1000000
+./ck.archive.1250000
 ./ck.archive.250000
 ./ck.archive.500000
-./ck.archive.750000
 ./ck.prev
-./exit_code
+./lease
 ./log.txt
 ./pid
+./presence
 ./rulestat
 ./rulestat.verifier
 ./stderr.txt
