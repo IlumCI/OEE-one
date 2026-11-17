@@ -32,6 +32,23 @@ MAX_PROCS="${MAX_PROCS:-4}"   # concurrent simulations; runs start in runs.txt o
 HOST="${HOST:-$(hostname)}"
 LEASE="${LEASE:-900}"
 lease_ok(){ local f="$1/lease" h ts;[ -f "$f" ]||return 0;read -r h ts <"$f";[ "$h" = "$HOST" ]&&return 0;[ $(( $(date +%s)-${ts:-0} )) -gt "$LEASE" ];}
+AUTO_ARCHIVE="${AUTO_ARCHIVE:-1}"  # archive finished runs to branch run-data (tools/storage/archive_runs.sh)
+# Finished, not yet archived, and not followed by an unfinished yoked run (-grow-follow <dir>/log.txt).
+auto_archive(){
+local repo lk todo=() d f
+repo=$(git -C "$(dirname "$0")" rev-parse --show-toplevel 2>/dev/null)||return 0
+lk="$repo/.git/oee-archive.lock"
+flock -n "$lk" true 2>/dev/null||return 0
+for f in "$runs"/*/finished;do
+d=$(dirname "$f");[ -f "$d/ARCHIVED" ]&&continue
+grep -v '^#' "$runs/runs.txt"|grep -F -- "-grow-follow $d/log.txt"|while read -r n _;do [ -f "$runs/$n/finished" ]||echo x;done|grep -q x&&continue
+todo+=("$d")
+done
+[ ${#todo[@]} -eq 0 ]&&return 0
+mkdir -p "$runs/.arch_tmp"
+(cd "$repo"&&nohup ${ARCHIVER:-tools/storage/archive_runs.sh} "$runs/.arch_tmp" 400 "${todo[@]}" >>"$runs/archive.log" 2>&1 &)
+echo "$(date -u +%FT%TZ) auto-archive ${#todo[@]} run(s)" >> "$log"
+}
 lease(){ echo "$HOST $(date +%s)" > "$1/lease.tmp"&&mv "$1/lease.tmp" "$1/lease";}
 
 rescue() {  # $1 = run dir, $2 = seed
@@ -104,6 +121,7 @@ while true; do
     [ -n "$sim" ] && echo "$sim" > "$d/pid"
     echo "$(date -u +%FT%TZ) started $name ${resume[*]:-fresh}" >> "$log"
   done < "$runs/runs.txt"
+  [ "$AUTO_ARCHIVE" = 1 ] && auto_archive
   [ -n "${ONCE:-}" ] && break
   sleep "$interval"
 done

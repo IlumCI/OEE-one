@@ -12,6 +12,8 @@
 set -u
 T=$1;B=$2;shift 2
 repo=$(git rev-parse --show-toplevel);url=$(git -C "$repo" remote get-url origin)
+# One archiver at a time (manual or started by the supervisor); others wait here.
+exec 9>"$repo/.git/oee-archive.lock";flock 9
 R=;pending=();acc=0
 start(){
 R=$(mktemp -d "$T/rd.XXXX");git init -q "$R";cd "$R"||exit 1

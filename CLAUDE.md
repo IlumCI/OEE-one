@@ -34,7 +34,8 @@
 - Applies to new and edited code; existing code is not mass-reformatted.
 
 ## Storage
-- Finished runs are archived to branch `run-data` (tools/storage/archive_runs.sh) and replaced by a
-  stub (finished, exit_code, ARCHIVED). Restore before analysis or resume: tools/storage/restore_run.sh RUNDIR.
+- Finished runs are archived to branch `run-data` automatically by the supervisor (AUTO_ARCHIVE=1;
+  tools/storage/archive_runs.sh, log in <runs>/archive.log; a run followed by an unfinished yoked run waits)
+  and replaced by a stub (finished, exit_code, ARCHIVED). KEEP=1 uploads a copy without removing. Restore before analysis or resume: tools/storage/restore_run.sh RUNDIR.
 - presence of finished runs may be packed (presence.xz, tools/storage/pack_runs.sh); analysis reads both,
   unpack before resuming.
