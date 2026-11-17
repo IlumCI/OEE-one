@@ -1,0 +1,7 @@
+# Language statistics: the showcase pages embed animation frames as data and dwarf the source.
+site/** linguist-generated
+tools/showcase/brand/*.html linguist-generated
+# Original Geb v08b3 source, kept unmodified as the reference oracle.
+third_party/** linguist-vendored
+tests/golden/** linguist-generated
+docs/** linguist-documentation
