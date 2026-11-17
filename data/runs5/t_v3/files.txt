@@ -1,0 +1,5 @@
+./m3/err.txt
+./m3/log.txt
+./rnd/ck
+./rnd/err.txt
+./rnd/log.txt

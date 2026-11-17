@@ -1,0 +1,4 @@
+./ck
+./ck.prev
+./err.txt
+./log.txt

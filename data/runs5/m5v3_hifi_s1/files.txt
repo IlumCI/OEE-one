@@ -1,0 +1,12 @@
+./SHADOWrulestat
+./SHADOWrulestat.verifier
+./ck
+./ck.prev
+./exit_code
+./log.txt
+./pid
+./presence
+./rulestat
+./rulestat.verifier
+./stderr.txt
+./unrescuable
