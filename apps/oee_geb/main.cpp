@@ -293,6 +293,7 @@ int main(int argc, char** argv) {
     } else if(!std::strcmp(s,"-locks")){p.collectives|=128;++a;  // L4a: evolving locks on the land
     } else if(!std::strcmp(s,"-lock-frozen")){p.collectives|=128;lmode=1;++a;  // L4a control: locks never change
     } else if(!std::strcmp(s,"-lock-churn")){p.collectives|=128;lmode=2;++a;  // L4a control: random re-keying
+    } else if(!std::strcmp(s,"-lock-churn-rate")&&has){p.collectives|=128;lmode=2|(std::atoi(argv[a+1])<<4);a+=2;  // churn re-key chance per lock-window, per mille
     } else if(!std::strcmp(s,"-lock-frac")&&has){lfrac=std::atof(argv[a+1]);a+=2;
     } else if (!std::strcmp(s, "-senescence")) {
       p.collectives |= 4;  // L3 v4: death after World::kMaxAge updates (use after -collectives*)

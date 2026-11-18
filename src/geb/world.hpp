@@ -168,7 +168,7 @@ class World {
   // L4a locks.
   struct Lock{std::vector<Gene> key;std::vector<std::uint64_t> op;int idle=0;};
   static constexpr int kLockWin=1000,kLockMax=8,kLockIdle=5,kLockLen0=4;
-  void set_lock_mode(int m){lmode_=m;}  // 0 evolving (minimal criterion band), 1 frozen, 2 random churn
+  void set_lock_mode(int m){lmode_=m;}  // 0 evolving (minimal criterion band), 1 frozen, 2 random churn (| per mille << 4)
   void lock_init(double frac);
   struct LockStats{int locks=0,opened=0,maxlen=0;double meanlen=0;long born=0,dissolved=0,decayed=0;};
   LockStats lock_stats() const;

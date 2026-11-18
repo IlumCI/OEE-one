@@ -936,8 +936,8 @@ std::vector<int> born;
 for(int c=0;c<size_;++c){
 Lock&l=locks_[c];if(l.key.empty())continue;
 const int n=int(l.op.size());l.op.clear();
-if(lmode_==1)continue;
-if(lmode_==2){if(r.random(10)==0){l.key=rnd_key(r,int(l.key.size()));++lborn_;}continue;}
+if((lmode_&15)==1)continue;
+if((lmode_&15)==2){const int pm=(lmode_>>4)?(lmode_>>4):100;if(r.random(1000)<pm){l.key=rnd_key(r,int(l.key.size()));++lborn_;}continue;}  // churn: per mille per window (lmode_>>4, default 100)
 if(n>kLockMax){l.key.clear();l.idle=0;++ldiss_;continue;}
 if(n==0){if(++l.idle>=kLockIdle){l.key.clear();l.idle=0;++ldecay_;}continue;}
 l.idle=0;born.push_back(c);
