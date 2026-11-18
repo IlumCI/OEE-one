@@ -256,8 +256,9 @@ seeds 0-9 of the original arms.
 | 7 | 1.62, 5,313 | 0.32 | 57.8% | collapsed (by H; not inspected) |
 | 2 | 1.56, 3,457 | 0.09 | 60.8% | collapsed (by H; not inspected) |
 | 8 | 1.45, 1,281 | 0.27 | 55.2% | collapsed (by H; not inspected) |
+| 9 | 1.54, 3,713 | 0.27 | 55.7% | collapsed (by H; not inspected) |
 
-- 7/7 transitioned (plain BFF: 3/7 on these seeds: 0, 2, 8; seed 8 collapsed there too), but 1/7 held.
+- 8/8 transitioned (plain BFF: 3/8 on these seeds: 0, 2, 8; seed 8 collapsed there too), but 1/8 held.
 - With random codes, transitions come easily but rarely last. The one that held is the one whose code
   swept the soup, which supports the race hypothesis above.
 - The standard-start arm transitions less often (4/8) but held 2/4, including the codon-capture run.
