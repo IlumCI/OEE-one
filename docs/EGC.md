@@ -54,3 +54,23 @@ its 10-byte table to keep its meaning.
 Third arm added (mode 3 = `-egc 2 -egc-std`): evolvable code, every program starting with the standard
 code. It asks the dialect question directly: once replicators exist in a shared language, do lineages
 drift into new codes, and do several coexist? Lane order per seed is now mode 1, 2, 3.
+
+## Table guard (after the standard-start arm)
+
+With every program starting at the standard code (arm 3, no guard), the standard code was gone by epoch
+~3,100 (share 0.0; 130,882 of 131,072 tables distinct). Cause: both heads start at position 0, A's table,
+so random '+', '-' and copy instructions rewrite tables from the first steps; in the fixed-code control
+those writes are harmless, here they scramble meaning. Small test (16384 programs, standard start, 512
+epochs), share still holding the standard code: no guard 2.1%; heads start after the table 5.0%; '+'/'-'
+cannot change tables 2.9%; both 5.0% (mutation alone would leave about 29%). Random copies remain the
+main scrambler.
+
+Literature (arXiv 0807.4749, 1110.5123, 0901.0181, 2510.10871): the biological code is a frozen accident
+held by the cost of change, altered rarely and one codon at a time (codon capture, ambiguous
+intermediate), and sits near an error-minimising optimum. Mapped back: tables should change only by
+heredity (copying) and mutation, not by arbitrary arithmetic.
+
+Guard 3 (`-egc-guard 3`): heads start after A's table and '+'/'-' cannot change table bytes; copies still
+can, so replicators can pass their table on. The guard is stored in checkpoints.
+Arms per seed from now: 1 fixed code; 2 evolvable, random tables, no guard (seeds 0-1 done);
+4 evolvable, random tables, guard 3; 5 evolvable, standard start, guard 3. Arm 3 is kept for seed 0 only.

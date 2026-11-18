@@ -38,7 +38,8 @@ int main(int argc, char** argv) {
     else if (s == "-interval") interval = std::strtoull(next(), nullptr, 10);
     else if (s == "-threads") p.threads = std::atoi(next());
     else if (s == "-m5-protocol") p.m5_protocol = true;
-    else if(s=="-egc-std")p.egc_std=true;  // start every table at the standard code
+    else if(s=="-egc-std")p.egc_std=true;
+    else if(s=="-egc-guard")p.egc_guard=std::atoi(next());  // start every table at the standard code
     else if(s=="-egc")p.egc=std::atoi(next());  // 1: codon layout, fixed code; 2: evolvable code
     else if (s == "-grid") { p.grid_w = std::atoi(next()); p.grid_h = std::atoi(next()); p.num_programs = std::size_t(p.grid_w) * p.grid_h; }
     else if (s == "-log") log_path = next();

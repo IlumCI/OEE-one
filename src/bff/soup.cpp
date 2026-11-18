@@ -89,7 +89,7 @@ std::size_t evaluate(std::uint8_t* tape, std::size_t max_steps) {
 namespace {
 constexpr Op kOrder[kCodon]={kLoopStart,kLoopEnd,kPlus,kMinus,kCopy01,kCopy10,kDec0,kInc0,kDec1,kInc1};
 struct Egc{
-std::uint8_t* t;int mode;Op lut[2][256];
+std::uint8_t* t;int mode,guard;Op lut[2][256];
 void build(int h){Op*l=lut[h];
 if(mode==1){for(int b=0;b<256;++b)l[b]=kOps.t[b]==kNull?kNoop:kOps.t[b];return;}
 for(int b=0;b<256;++b)l[b]=kNoop;
@@ -100,8 +100,12 @@ void wrote(int p){const int h=p>=kTape;if(mode==2&&(p-h*kTape)<kCodon)build(h);}
 }
 
 std::size_t eval_egc(std::uint8_t* tape,int mode,std::size_t max_steps){
-Egc e{tape,mode,{}};e.build(0);e.build(1);
-int pc=0,h0=kPair,h1=kPair;std::size_t skipped=0,i=0;
+// mode bits 0-3: 1 fixed code, 2 evolvable; bits 4-7 guard: 1 heads start after A's table,
+// 2 '+'/'-' cannot change table bytes (only copies write tables), 3 both.
+const int g=mode>>4;mode&=15;
+Egc e{tape,mode,g,{}};e.build(0);e.build(1);
+int pc=0,h0=(g&1)?kPair+kCodon:kPair,h1=h0;std::size_t skipped=0,i=0;
+auto tab=[](int p){return (p&(kTape-1))<kCodon;};
 for(;i<max_steps;++i){
 h0&=kPair-1;h1&=kPair-1;
 switch(e.at(pc)){
@@ -109,8 +113,8 @@ case kDec0:--h0;break;
 case kInc0:++h0;break;
 case kDec1:--h1;break;
 case kInc1:++h1;break;
-case kPlus:++tape[h0];e.wrote(h0);break;
-case kMinus:--tape[h0];e.wrote(h0);break;
+case kPlus:if(!((g&2)&&tab(h0))){++tape[h0];e.wrote(h0);}break;
+case kMinus:if(!((g&2)&&tab(h0))){--tape[h0];e.wrote(h0);}break;
 case kCopy01:tape[h1]=tape[h0];e.wrote(h1);break;
 case kCopy10:tape[h0]=tape[h1];e.wrote(h0);break;
 case kLoopStart:
@@ -294,7 +298,7 @@ void Soup::run_pairs(std::size_t begin, std::size_t end, std::uint64_t epoch_see
       const std::uint64_t r = splitmix64((n * epoch_seed + index) * kPair + i);
       if (((r >> 8) & ((1ULL << 30) - 1)) < p_.mutation_prob) tape[i] = static_cast<std::uint8_t>(r & 0xFF);
     }
-    if (index < active_pairs_) total += p_.egc?eval_egc(tape,p_.egc):evaluate(tape);
+    if (index < active_pairs_) total += p_.egc?eval_egc(tape,p_.egc|p_.egc_guard<<4):evaluate(tape);
     if (p_.m5_protocol) {
       std::memcpy(&soup_[std::size_t(b) * kTape], tape + kTape, kTape);
     } else {
@@ -356,7 +360,7 @@ void Soup::save(const std::string& path) const {
   const std::string tmp = path + ".tmp";
   std::FILE* f = std::fopen(tmp.c_str(), "wb");
   if (!f) throw std::runtime_error("cannot write " + tmp);
-  const std::uint64_t hdr[6] = {p_.egc?0x4f45454246460003ULL+std::uint64_t(p_.egc)*0x100:0x4f45454246460002ULL, p_.num_programs, p_.seed, p_.mutation_prob, epoch_,
+  const std::uint64_t hdr[6] = {p_.egc?0x4f45454246460003ULL+std::uint64_t(p_.egc)*0x100+std::uint64_t(p_.egc_guard)*0x1000:0x4f45454246460002ULL, p_.num_programs, p_.seed, p_.mutation_prob, epoch_,
                                 std::uint64_t(p_.grid_w) | std::uint64_t(p_.grid_h) << 24 | std::uint64_t(p_.radius) << 48 |
                                     std::uint64_t(p_.m5_protocol) << 63};
   bool ok = std::fwrite(hdr, sizeof hdr, 1, f) == 1 && std::fwrite(soup_.data(), 1, soup_.size(), f) == soup_.size();
@@ -369,7 +373,7 @@ Soup Soup::load(const std::string& path, int threads) {
   if (!f) throw std::runtime_error("cannot read " + path);
   std::uint64_t hdr[6] = {};
   if (std::fread(hdr, 8 * 5, 1, f) != 1 ||
-      (hdr[0] != 0x4f45454246460001ULL && hdr[0] != 0x4f45454246460002ULL && (hdr[0]&~0xF00ULL) != 0x4f45454246460003ULL) ||
+      (hdr[0] != 0x4f45454246460001ULL && hdr[0] != 0x4f45454246460002ULL && (hdr[0]&~0xFF00ULL) != 0x4f45454246460003ULL) ||
       (hdr[0] != 0x4f45454246460001ULL && std::fread(&hdr[5], 8, 1, f) != 1)) {
     std::fclose(f);
     throw std::runtime_error("bad checkpoint " + path);
@@ -381,7 +385,7 @@ Soup Soup::load(const std::string& path, int threads) {
   p.threads = threads;
   p.grid_w = static_cast<int>(hdr[5] & 0xFFFFFF);
   p.grid_h = static_cast<int>(hdr[5] >> 24 & 0xFFFFFF);
-  if((hdr[0]&~0xF00ULL)==0x4f45454246460003ULL)p.egc=int(hdr[0]>>8&0xF);
+  if((hdr[0]&~0xFF00ULL)==0x4f45454246460003ULL){p.egc=int(hdr[0]>>8&0xF);p.egc_guard=int(hdr[0]>>12&0xF);}
   if (hdr[0] != 0x4f45454246460001ULL) {
     p.radius = static_cast<int>(hdr[5] >> 48 & 0x7FFF);
     p.m5_protocol = hdr[5] >> 63;
