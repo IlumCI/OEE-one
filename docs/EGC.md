@@ -74,3 +74,16 @@ Guard 3 (`-egc-guard 3`): heads start after A's table and '+'/'-' cannot change 
 can, so replicators can pass their table on. The guard is stored in checkpoints.
 Arms per seed from now: 1 fixed code; 2 evolvable, random tables, no guard (seeds 0-1 done);
 4 evolvable, random tables, guard 3; 5 evolvable, standard start, guard 3. Arm 3 is kept for seed 0 only.
+
+## Seed 0, all arms
+
+| arm | transition | high-order entropy before/without transition | executed ops per interaction |
+|---|---|---|---|
+| 1 fixed code | epoch 10881 | ~0.05 | 30-50 |
+| 2 evolvable, random tables, no guard | none by 16384 | ~0.23 | ~235 |
+| 3 evolvable, standard start, no guard | none | ~0.24 (standard code lost by ~3,100) | ~250 |
+| 4 evolvable, random tables, guard 3 | none | ~0.01 | ~140 |
+
+Correction to the interim reading: the ~0.23 of the unguarded evolvable soups is not early structure from
+replication but compressible byte patterns produced by random writes into tables; with the guard the soup
+sits near the fixed-code control's pre-transition level (0.01 vs 0.05). Arm 5 (standard start, guard 3) next.
