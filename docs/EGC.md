@@ -279,9 +279,10 @@ seeds 0-9 of the original arms.
 | 3 | none (peak H 0.37) | none |
 | 4 | none (peak H 0.39) | none |
 | 9 | none (peak H 0.36) | none |
+| 10 | none (peak H 0.39) | 14,081, held |
 | 8 | none (peak H 0.41) | 3,585, collapsed |
 
-- Transitions: 4/10 in arm 10 against 4/10 in plain BFF; held to the end: arm 10 2/10, plain BFF 3/10.
+- Transitions: 4/11 in arm 10 against 5/11 in plain BFF; held to the end: arm 10 2/11, plain BFF 4/11.
 - Seeds 10-19 of both arms started in lanes 3-4, which gives 20 seeds per arm to compare with the 20-seed M3
   sweep.
 - Table mutation changes the random trajectory from the first epochs on, so seeds are not paired between
