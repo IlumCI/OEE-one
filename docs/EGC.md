@@ -254,8 +254,9 @@ seeds 0-9 of the original arms.
 | 5 | 4.90, 6,273 | 4.90 | 99.8% | held (98.7% self-replicators) |
 | 6 | 1.56, 6,465 | 0.22 | 61.5% | collapsed (0 self-replicators) |
 | 7 | 1.62, 5,313 | 0.32 | 57.8% | collapsed (by H; not inspected) |
+| 2 | 1.56, 3,457 | 0.09 | 60.8% | collapsed (by H; not inspected) |
 
-- 5/5 transitioned (plain BFF: 1/5 on these seeds, seed 0), but 1/5 held.
+- 6/6 transitioned (plain BFF: 2/6 on these seeds, seeds 0 and 2), but 1/6 held.
 - With random codes, transitions come easily but rarely last. The one that held is the one whose code
   swept the soup, which supports the race hypothesis above.
 - The standard-start arm transitions less often (2/4 so far) but held 1/2, including the codon-capture
@@ -270,7 +271,7 @@ seeds 0-9 of the original arms.
 | 2 | none (peak H 0.36) | 11,585, held |
 | 5 | ~700, collapsed | none |
 | 6 | none | none |
-| 7 | ~8,000, holding (H 5.0 at 9,793) | 12,481, held |
+| 7 | ~8,000, held (H 5.07 at 9,857, 92.6% self-replicators, standard code 99.4%) | 12,481, held |
 
 - Transitions: 4/6 in arm 10 against 3/6 in plain BFF. The seeds that transition differ in 4 of 6 cases.
 - Table mutation changes the random trajectory from the first epochs on, so seeds are not paired between
