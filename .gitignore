@@ -2,3 +2,4 @@ build/
 runs/
 runs*/
 __pycache__/
+egc_ck.bin
