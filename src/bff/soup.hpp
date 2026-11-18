@@ -90,6 +90,9 @@ class Soup {
   std::uint64_t epoch_seed(std::uint64_t e) const { return seed(e); }
 
   void save(const std::string& path) const;
+  // Switch the code mode of a running soup (e.g. a resumed fixed-code soup to the evolvable code); std
+  // writes the standard code into every program's table so existing programs keep their meaning.
+  void set_egc(int egc,int guard,bool std_tables);
   static Soup load(const std::string& path, int threads);
 
  private:

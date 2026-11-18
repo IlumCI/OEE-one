@@ -131,3 +131,18 @@ control that transitions early and holds.
 Seed 5 arm 2 (evolvable, no guard): no transition in 16,384 epochs (H 0.25), against the same seed's control
 transitioning at 1,281 to 97.5% self-replicators - the clearest contrast so far. Seed 3 control: no transition.
 Lane 3 added (seeds 10-12) on the core freed by the v9 runs.
+
+## Replicators first, then an evolvable code (option 1)
+
+Seed 5's fixed-code soup at epoch 3,329 (127,783 of 131,072 self-replicators) was switched to the evolvable
+code with the standard code written into every table (`-switch-egc M G`). 128 epochs later:
+guard 14 (no +/- on tables, aligned copies, slow table mutation): 0 self-replicators, 99.9% still standard;
+guard 8 (slow mutation only): 0, 5.8% standard; no guard: 0, 4.3% standard.
+BFF replicators start their heads at position 0 - the table region - and use those bytes as working memory
+(loop counters). Protecting the table breaks their loops; not protecting it lets them overwrite their own code
+within ~100 epochs. In this soup any code stored in addressable memory collides with program memory, which
+explains the whole sweep (no evolvable arm held replicators on any seed).
+Next design (option 2): keep each program's codon table outside the tape, unreachable by instructions, and
+let a program inherit the table of the program whose bytes it carries after an interaction (vertical
+transmission of the translation machinery), with rare table mutation. Lanes 3-4 stopped; lanes 1-2 finish
+seeds 0-9 of the original arms.

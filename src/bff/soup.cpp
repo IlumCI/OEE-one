@@ -359,6 +359,11 @@ Metrics Soup::metrics() const {
   return Metrics{epoch_, sz, h0, bpb, h0 - bpb, last_ops_per_run_};
 }
 
+void Soup::set_egc(int egc,int guard,bool std_tables){
+p_.egc=egc;p_.egc_guard=guard;
+if(std_tables)for(std::size_t i=0;i<p_.num_programs;++i)std::memcpy(&soup_[i*kTape],"[]+-.,<>{}",kCodon);
+}
+
 void Soup::save(const std::string& path) const {
   const std::string tmp = path + ".tmp";
   std::FILE* f = std::fopen(tmp.c_str(), "wb");

@@ -22,6 +22,7 @@ int main(int argc, char** argv) {
   Params p;
   std::size_t epochs = 16384, interval = 64, save_every = 0, dump_every = 0, dump_from = 0, dump_programs = 0;
   std::string log_path, save_path, resume_path, dump_dir;
+  int sw_egc=-1,sw_guard=0;std::size_t keep_every=0;
   bool cubff_log = false;
   double stop_entropy = -1;
   std::size_t stop_after = 0, transition_epoch = 0;
@@ -39,6 +40,8 @@ int main(int argc, char** argv) {
     else if (s == "-threads") p.threads = std::atoi(next());
     else if (s == "-m5-protocol") p.m5_protocol = true;
     else if(s=="-egc-std")p.egc_std=true;
+    else if(s=="-switch-egc"){sw_egc=std::atoi(next());sw_guard=std::atoi(next());}
+    else if(s=="-keep-every")keep_every=std::strtoull(next(),nullptr,10);  // also keep CK.<epoch> every K epochs
     else if(s=="-egc-guard")p.egc_guard=std::atoi(next());  // start every table at the standard code
     else if(s=="-egc")p.egc=std::atoi(next());  // 1: codon layout, fixed code; 2: evolvable code
     else if (s == "-grid") { p.grid_w = std::atoi(next()); p.grid_h = std::atoi(next()); p.num_programs = std::size_t(p.grid_w) * p.grid_h; }
@@ -56,6 +59,8 @@ int main(int argc, char** argv) {
     else { std::fprintf(stderr, "unknown option %s\n", s.c_str()); return 2; }
   }
   Soup soup = resume_path.empty() ? Soup(p) : Soup::load(resume_path, p.threads);
+  // -switch-egc M G: after resuming, change the code mode to M with guard G and the standard code in every table.
+  if(sw_egc>=0){soup.set_egc(sw_egc,sw_guard,true);std::fprintf(stderr,"switched to egc %d guard %d at epoch %zu\n",sw_egc,sw_guard,soup.epochs_done());}
   std::FILE* log = log_path.empty() ? stdout : std::fopen(log_path.c_str(), soup.epochs_done() ? "a" : "w");
   if (!log) { std::perror("log"); return 1; }
   if (!soup.epochs_done())
@@ -83,6 +88,7 @@ int main(int argc, char** argv) {
       }
     }
     if (!save_path.empty() && save_every && soup.epochs_done() % save_every == 0) soup.save(save_path);
+    if(!save_path.empty()&&keep_every&&soup.epochs_done()%keep_every==0)soup.save(save_path+"."+std::to_string(soup.epochs_done()));
     if (dump_every && !dump_dir.empty() && soup.epochs_done() >= dump_from && soup.epochs_done() % dump_every == 0) {
       char name[64];
       std::snprintf(name, sizeof name, "/soup_%010zu.bin", soup.epochs_done());
