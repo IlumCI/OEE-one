@@ -187,6 +187,7 @@ seeds 0-9 of the original arms.
 | egc10_s0 | standard | 16,384 | 0 | 87.5% | 87.5% (standard) | transition at 2,433, held |
 | egc11_s0 | random | 10,241 (transition ~8,200 + 2048) | 0 | 0% | 48.5% (evolved) | transition at 2,433, held |
 | egc11_s6 | random | 8,449 (transition ~6,400 + 2048) | 0 | 0% | 61.5% (evolved) | no transition |
+| egc10_s1 | standard | 16,384 (limit) | 129,256 (98.6%) | 47.9% | 51.9% (evolved, see below) | no transition |
 | egc10_s5 | standard | 2,753 (transition ~700 + 2048) | 147 (0.1%) | 98.7% | 98.7% (standard) | no transition |
 
 - Seed 5, random codes: the soup held. High-order entropy reached 4.90, and a single evolved code carries
@@ -215,3 +216,19 @@ seeds 0-9 of the original arms.
   - collapses (s0, s6): the top code climbed slowly (17% to 42%, 31% to 52%) while H fell below 0.8.
   This is consistent with the race hypothesis: the code must sweep faster than the replicators decay.
   The cause of the decay is not yet measured.
+
+### Seed 1, standard start: a codon reassignment invades a replicator soup
+
+- Transition at about epoch 14,300. The replicators run on the standard code, which reached 99.98% of
+  tables by 14,465. H was stable at about 2.5.
+- At about 15,800 a variant table appeared that encodes `]` as byte 74 (`J`) instead of 93, with the
+  other nine codons standard. It spread from 0 to 52% by 16,321, while H jumped a second time, from 2.5 to
+  4.4.
+- At the end (16,384 epochs): 68,036 variant tables and 62,761 standard ones, with 98.6% self-replicators.
+- This is the first case here of a code change invading an established replicator population. Programs
+  that use `J` for `]` are a separate lineage, and the second H jump suggests a new replicator type rather
+  than a neutral relabelling. Not yet checked: whether the variant lineage's programs contain byte 74 where
+  the standard lineage has 93.
+- Continued from the final checkpoint to 32,768 epochs in runs7/egc10_s1x, keeping a checkpoint every 1,024
+  epochs. This run is not managed by the lanes: after a container restart, resume it by hand with the
+  command in its stderr.txt header, or rerun it with `-resume`.
