@@ -258,6 +258,7 @@ seeds 0-9 of the original arms.
 | 8 | 1.45, 1,281 | 0.27 | 55.2% | collapsed (by H; not inspected) |
 | 9 | 1.54, 3,713 | 0.27 | 55.7% | collapsed (by H; not inspected) |
 | 4 | 3.51, 9,537 | 3.51 | 96.3% | held (63.7% self-replicators, H still rising) |
+| 15 | 1.89, 10,497 | 0.43 | 51.8% | collapsed (by H; not inspected) |
 
 - 9/9 transitioned (plain BFF: 3/9 on these seeds: 0, 2, 8; seed 8 collapsed there too), but 2/9 held. Both
   runs that held are the two in which one code passed 95% of the soup.
