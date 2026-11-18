@@ -2,11 +2,17 @@
 ./SHADOWrulestat.verifier
 ./ck
 ./ck.archive.1000000
+./ck.archive.1250000
+./ck.archive.1500000
+./ck.archive.1750000
 ./ck.archive.2000000
+./ck.archive.2250000
 ./ck.archive.250000
+./ck.archive.2500000
 ./ck.archive.2750000
 ./ck.archive.3000000
 ./ck.archive.500000
+./ck.archive.750000
 ./ck.prev
 ./exit_code
 ./finished
