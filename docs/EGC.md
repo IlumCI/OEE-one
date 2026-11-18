@@ -274,9 +274,10 @@ seeds 0-9 of the original arms.
 | 6 | none | none |
 | 7 | ~8,000, held (H 5.07 at 9,857, 92.6% self-replicators, standard code 99.4%) | 12,481, held |
 | 3 | none (peak H 0.37) | none |
+| 4 | none (peak H 0.39) | none |
 | 8 | none (peak H 0.41) | 3,585, collapsed |
 
-- Transitions: 4/8 in arm 10 against 4/8 in plain BFF; held to the end: arm 10 2/8, plain BFF 3/8.
+- Transitions: 4/9 in arm 10 against 4/9 in plain BFF; held to the end: arm 10 2/9, plain BFF 3/9.
 - Table mutation changes the random trajectory from the first epochs on, so seeds are not paired between
   arms. Only rates over many seeds can be compared, and six seeds cannot separate these rates.
 - Continuation (runs7/egc10_s1x), epochs 16,384 to 25,409:
