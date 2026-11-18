@@ -186,6 +186,7 @@ seeds 0-9 of the original arms.
 | egc11_s5 | random | 6,273 (transition + 2048) | 129,415 (98.7%) | 0% | 99.8% (evolved) | no transition |
 | egc10_s0 | standard | 16,384 | 0 | 87.5% | 87.5% (standard) | transition at 2,433, held |
 | egc11_s0 | random | 10,241 (transition ~8,200 + 2048) | 0 | 0% | 48.5% (evolved) | transition at 2,433, held |
+| egc11_s6 | random | 8,449 (transition ~6,400 + 2048) | 0 | 0% | 61.5% (evolved) | no transition |
 | egc10_s5 | standard | 2,753 (transition ~700 + 2048) | 147 (0.1%) | 98.7% | 98.7% (standard) | no transition |
 
 - Seed 5, random codes: the soup held. High-order entropy reached 4.90, and a single evolved code carries
@@ -201,3 +202,11 @@ seeds 0-9 of the original arms.
   - egc10_s5 peaked at 3.24 and ended at 0.75.
   This matches the collapses in plain BFF seeds 8, 11 and 16. Running tally for option 2: 3 of 4 runs
   transitioned, and 1 of 4 held.
+
+- egc11_s6 transitioned (peak H 1.56 at 6,465) and collapsed (0 self-replicators at the end).
+- All 3 random-code arms so far transitioned, including seeds 5 and 6, where plain BFF does not. Only the
+  run in which one code reached 99.8% held. In the two collapses the most common code covered only
+  49-62% of programs.
+- Working hypothesis, untested: coexisting codes make cross-code interactions copy garbage. A replicator
+  lineage survives only if its code sweeps the soup before that happens.
+- Test: share of the top code against replicator count over time in the held run and in the collapsed runs.
