@@ -279,3 +279,10 @@ seeds 0-9 of the original arms.
 - Transitions: 4/8 in arm 10 against 4/8 in plain BFF; held to the end: arm 10 2/8, plain BFF 3/8.
 - Table mutation changes the random trajectory from the first epochs on, so seeds are not paired between
   arms. Only rates over many seeds can be compared, and six seeds cannot separate these rates.
+- Continuation (runs7/egc10_s1x), epochs 16,384 to 25,409:
+  - The `J` variant rose to 83% by 24,449, then settled at about 78%. The standard code holds 18-19%.
+  - H rose from 4.4 to about 6.0 and plateaued.
+  - From about epoch 24,000, second-step variants built on the `J` table persist at 1-3% of the soup:
+    `,` on byte 24 (1,599 programs) and `-` on byte 157 (1,384 programs).
+  - Each codon change so far has been a single reassignment on the currently dominant table, so the code
+    evolves as a lineage.
