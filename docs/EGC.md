@@ -185,6 +185,8 @@ seeds 0-9 of the original arms.
 |---|---|---|---|---|---|---|
 | egc11_s5 | random | 6,273 (transition + 2048) | 129,415 (98.7%) | 0% | 99.8% (evolved) | no transition |
 | egc10_s0 | standard | 16,384 | 0 | 87.5% | 87.5% (standard) | transition at 2,433, held |
+| egc11_s0 | random | 10,241 (transition ~8,200 + 2048) | 0 | 0% | 48.5% (evolved) | transition at 2,433, held |
+| egc10_s5 | standard | 2,753 (transition ~700 + 2048) | 147 (0.1%) | 98.7% | 98.7% (standard) | no transition |
 
 - Seed 5, random codes: the soup held. High-order entropy reached 4.90, and a single evolved code carries
   nearly every program. This is the first soup in this project with replicators under a code that evolved
@@ -193,3 +195,9 @@ seeds 0-9 of the original arms.
   seed. Here there was no transition: peak H 0.37 at epoch 833, and the share of standard tables fell to
   87.5%. A plausible cause is that mixed codes break the early proto-replicators: a copy loop only works if
   partner programs read the copied bytes with the same code. Not tested; one seed per arm.
+
+- Seed 0 with random codes and seed 5 with the standard start both transitioned and then collapsed:
+  - egc11_s0 peaked at H 1.66 and ended at 0.24;
+  - egc10_s5 peaked at 3.24 and ended at 0.75.
+  This matches the collapses in plain BFF seeds 8, 11 and 16. Running tally for option 2: 3 of 4 runs
+  transitioned, and 1 of 4 held.
