@@ -117,3 +117,6 @@ they now run the full 16,384 epochs and replication is judged by the self-replic
 
 Seed 0 self-replicators at the end: arm 1 (fixed) 2,069 of 131,072 (1.6%; transition at 10,881 did not hold
 the M3 10% criterion); arm 2 (evolvable, no guard) 0; arm 8 (evolvable, random tables, guard 15) 0.
+Seed 0 arm 9 (standard start, guard 15), 16,384 epochs: code held (84.5% standard, 4,026 distinct tables,
+one dominant code) but no self-replicators (0 of 131,072); the fixed-code control of the same seed and layout
+transitioned at 10,881. One seed; seeds 1-4 run arms 1, 2, 8, 9.
