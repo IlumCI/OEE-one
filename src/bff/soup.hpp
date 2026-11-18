@@ -63,6 +63,7 @@ struct Params {
   // themselves into the buffer leave lasting descendants.
   bool m5_protocol = false;
   int egc = 0;  // 0: cubff BFF; 1: codon-table layout, fixed code (control); 2: evolvable code
+  bool egc_std = false;  // evolvable code, but every program starts with the standard code in its table
 };
 
 struct Metrics {

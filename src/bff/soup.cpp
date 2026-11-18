@@ -274,6 +274,7 @@ Soup::Soup(const Params& p) : p_(p), soup_(p.num_programs * kTape), order_(p.num
   for (std::uint64_t idx = 0; idx < n; ++idx)
     for (std::uint64_t i = 0; i < kTape; ++i)
       soup_[idx * kTape + i] = static_cast<std::uint8_t>(splitmix64(kTape * n * s0 + kTape * idx + i) % 256);
+  if(p_.egc&&p_.egc_std)for(std::uint64_t idx=0;idx<n;++idx)std::memcpy(&soup_[idx*kTape],"[]+-.,<>{}",kCodon);
 }
 
 void Soup::run_pairs(std::size_t begin, std::size_t end, std::uint64_t epoch_seed, std::uint64_t* ops) {
