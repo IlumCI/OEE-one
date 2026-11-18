@@ -133,8 +133,40 @@ if(++pc>=kPair){++i;break;}
 return i-skipped;
 }
 
+std::size_t eval_ext(std::uint8_t* tape,const std::uint8_t* ta,const std::uint8_t* tb,int wr[2],std::size_t max_steps){
+Op lut[2][256];
+for(int h=0;h<2;++h){Op*l=lut[h];for(int b=0;b<256;++b)l[b]=kNoop;const std::uint8_t*c=h?tb:ta;for(int k=kCodon-1;k>=0;--k)l[c[k]]=kOrder[k];}
+std::uint8_t au[kPair];for(int p=0;p<kPair;++p)au[p]=p>=kTape;  // last writer of each byte
+auto at=[&](int p){return lut[p>=kTape][tape[p]];};
+int pc=0,h0=0,h1=0;std::size_t skipped=0,i=0;
+for(;i<max_steps;++i){
+h0&=kPair-1;h1&=kPair-1;const std::uint8_t me=pc>=kTape;
+switch(at(pc)){
+case kDec0:--h0;break;
+case kInc0:++h0;break;
+case kDec1:--h1;break;
+case kInc1:++h1;break;
+case kPlus:++tape[h0];au[h0]=me;break;
+case kMinus:--tape[h0];au[h0]=me;break;
+case kCopy01:tape[h1]=tape[h0];au[h1]=me;break;
+case kCopy10:tape[h0]=tape[h1];au[h0]=me;break;
+case kLoopStart:
+if(tape[h0]==0){int d=1;++pc;for(;pc<kPair&&d>0;++pc){const Op o=at(pc);if(o==kLoopEnd)--d;if(o==kLoopStart)++d;}--pc;if(d!=0)pc=kPair;}
+break;
+case kLoopEnd:
+if(tape[h0]!=0){int d=1;--pc;for(;pc>=0&&d>0;--pc){const Op o=at(pc);if(o==kLoopEnd)++d;if(o==kLoopStart)--d;}++pc;if(d!=0)pc=-1;}
+break;
+default:++skipped;break;
+}
+if(pc<0){++i;break;}
+if(++pc>=kPair){++i;break;}
+}
+wr[0]=wr[1]=0;for(int p=0;p<kPair;++p){const int h=p>=kTape;wr[h]+=au[p]!=h;}
+return i-skipped;
+}
+
 std::size_t selfrep_score(const std::uint8_t* program, std::uint64_t seed, std::size_t num_programs,
-                          std::size_t index, int egc) {
+                          std::size_t index, int egc, const std::uint8_t* table) {
   constexpr std::size_t kIters = 13, kExtraGens = 4;
   std::uint8_t tapes[kIters][kPair] = {};
   const std::uint64_t local = splitmix64(num_programs * seed + index);
@@ -144,11 +176,12 @@ std::size_t selfrep_score(const std::uint8_t* program, std::uint64_t seed, std::
     std::uint8_t* t = tapes[i];
     std::memcpy(t, program, kTape);
     std::memcpy(t + kTape, noise, kTape);
-    egc?eval_egc(t,egc):evaluate(t);
+    int wr[2];
+    table?eval_ext(t,table,table,wr):egc?eval_egc(t,egc):evaluate(t);
     for (std::size_t g = 0; g < kExtraGens; ++g) {
       std::memcpy(t, t + kTape, kTape);
       std::memcpy(t + kTape, noise, kTape);
-      egc?eval_egc(t,egc):evaluate(t);
+      table?eval_ext(t,table,table,wr):egc?eval_egc(t,egc):evaluate(t);
     }
   }
   std::size_t res[2] = {};
@@ -280,13 +313,15 @@ Soup::Soup(const Params& p) : p_(p), soup_(p.num_programs * kTape), order_(p.num
   for (std::uint64_t idx = 0; idx < n; ++idx)
     for (std::uint64_t i = 0; i < kTape; ++i)
       soup_[idx * kTape + i] = static_cast<std::uint8_t>(splitmix64(kTape * n * s0 + kTape * idx + i) % 256);
+  if(p_.egc>=3){tabs_.resize(n*kCodon);for(std::uint64_t idx=0;idx<n;++idx)std::memcpy(&tabs_[idx*kCodon],"[]+-.,<>{}",kCodon);
+  if(!p_.egc_std&&p_.egc==4)for(std::uint64_t i=0;i<n*kCodon;++i)tabs_[i]=std::uint8_t(splitmix64(~(kCodon*n*s0+i))&0xFF);return;}
   if(p_.egc&&p_.egc_std)for(std::uint64_t idx=0;idx<n;++idx)std::memcpy(&soup_[idx*kTape],"[]+-.,<>{}",kCodon);
 }
 
-void Soup::run_pairs(std::size_t begin, std::size_t end, std::uint64_t epoch_seed, std::uint64_t* ops) {
+void Soup::run_pairs(std::size_t begin, std::size_t end, std::uint64_t epoch_seed, std::uint64_t* ops,std::uint64_t* inh) {
   std::uint8_t tape[kPair];
   const std::uint64_t n = p_.num_programs;
-  std::uint64_t total = 0;
+  std::uint64_t total = 0,inhc=0;
   for (std::size_t index = begin; index < end; ++index) {
     const std::uint32_t a = order_[2 * index], b = order_[2 * index + 1];
     std::memcpy(tape, &soup_[std::size_t(a) * kTape], kTape);
@@ -298,9 +333,18 @@ void Soup::run_pairs(std::size_t begin, std::size_t end, std::uint64_t epoch_see
     }
     for (std::uint64_t i = 0; i < kPair; ++i) {
       const std::uint64_t r = splitmix64((n * epoch_seed + index) * kPair + i);
-      const std::uint32_t mp=(p_.egc&&(p_.egc_guard&8)&&(i&(kTape-1))<std::uint64_t(kCodon))?p_.mutation_prob>>8:p_.mutation_prob;  // guard 8: tables mutate 256x slower
+      const std::uint32_t mp=(p_.egc&&p_.egc<3&&(p_.egc_guard&8)&&(i&(kTape-1))<std::uint64_t(kCodon))?p_.mutation_prob>>8:p_.mutation_prob;  // guard 8: tables mutate 256x slower
       if (((r >> 8) & ((1ULL << 30) - 1)) < mp) tape[i] = static_cast<std::uint8_t>(r & 0xFF);
     }
+    if(p_.egc>=3){
+    std::uint8_t*ta=&tabs_[std::size_t(a)*kCodon],*tb=&tabs_[std::size_t(b)*kCodon];
+    if(p_.egc==4)for(std::uint64_t i=0;i<2*kCodon;++i){const std::uint64_t r=splitmix64(~((n*epoch_seed+index)*kPair+i)^0x5ab1e5ULL);
+    if(((r>>8)&((1ULL<<30)-1))<(p_.mutation_prob>>p_.tab_shift))(i<kCodon?ta:tb)[i%kCodon]=std::uint8_t(r&0xFF);}
+    if(index<active_pairs_){int wr[2];total+=eval_ext(tape,ta,tb,wr);
+    if(p_.egc==4){const bool toA=wr[0]>kTape/2,toB=wr[1]>kTape/2;std::uint8_t c[kCodon];  // inherit the author's table
+    if(toA&&toB){std::memcpy(c,ta,kCodon);std::memcpy(ta,tb,kCodon);std::memcpy(tb,c,kCodon);}else if(toA)std::memcpy(ta,tb,kCodon);else if(toB)std::memcpy(tb,ta,kCodon);
+    inhc+=toA+toB;}}
+    }else
     if (index < active_pairs_) total += p_.egc?eval_egc(tape,p_.egc|p_.egc_guard<<4):evaluate(tape);
     if (p_.m5_protocol) {
       std::memcpy(&soup_[std::size_t(b) * kTape], tape + kTape, kTape);
@@ -309,7 +353,7 @@ void Soup::run_pairs(std::size_t begin, std::size_t end, std::uint64_t epoch_see
       std::memcpy(&soup_[std::size_t(b) * kTape], tape + kTape, kTape);
     }
   }
-  *ops = total;
+  *ops = total;*inh=inhc;
 }
 
 void Soup::epoch() {
@@ -327,17 +371,18 @@ void Soup::epoch() {
   const std::uint64_t es = seed(epoch_);
   const std::size_t pairs = n / 2;
   const int T = std::max(1, p_.threads);
-  std::vector<std::uint64_t> ops(T, 0);
+  std::vector<std::uint64_t> ops(T, 0),ih(T,0);
   if (T == 1) {
-    run_pairs(0, pairs, es, &ops[0]);
+    run_pairs(0, pairs, es, &ops[0],&ih[0]);
   } else {
     std::vector<std::thread> th;
     for (int t = 0; t < T; ++t)
-      th.emplace_back([&, t] { run_pairs(pairs * t / T, pairs * (t + 1) / T, es, &ops[t]); });
+      th.emplace_back([&, t] { run_pairs(pairs * t / T, pairs * (t + 1) / T, es, &ops[t],&ih[t]); });
     for (auto& x : th) x.join();
   }
   std::uint64_t tot = 0;
   for (auto o : ops) tot += o;
+  inh_=0;for(auto x:ih)inh_+=x;
   last_ops_per_run_ = active_pairs_ ? double(tot) / active_pairs_ : 0.0;
   ++epoch_;
 }
@@ -371,7 +416,7 @@ void Soup::save(const std::string& path) const {
   const std::uint64_t hdr[6] = {p_.egc?0x4f45454246460003ULL+std::uint64_t(p_.egc)*0x100+std::uint64_t(p_.egc_guard)*0x1000:0x4f45454246460002ULL, p_.num_programs, p_.seed, p_.mutation_prob, epoch_,
                                 std::uint64_t(p_.grid_w) | std::uint64_t(p_.grid_h) << 24 | std::uint64_t(p_.radius) << 48 |
                                     std::uint64_t(p_.m5_protocol) << 63};
-  bool ok = std::fwrite(hdr, sizeof hdr, 1, f) == 1 && std::fwrite(soup_.data(), 1, soup_.size(), f) == soup_.size();
+  bool ok = std::fwrite(hdr, sizeof hdr, 1, f) == 1 && std::fwrite(soup_.data(), 1, soup_.size(), f) == soup_.size()&&(tabs_.empty()||std::fwrite(tabs_.data(),1,tabs_.size(),f)==tabs_.size());
   ok = (std::fclose(f) == 0) && ok;
   if (!ok || std::rename(tmp.c_str(), path.c_str()) != 0) throw std::runtime_error("cannot save " + path);
 }
@@ -399,7 +444,7 @@ Soup Soup::load(const std::string& path, int threads) {
     p.m5_protocol = hdr[5] >> 63;
   }
   Soup s(p);
-  const bool ok = std::fread(s.soup_.data(), 1, s.soup_.size(), f) == s.soup_.size();
+  const bool ok = std::fread(s.soup_.data(), 1, s.soup_.size(), f) == s.soup_.size()&&(s.tabs_.empty()||std::fread(s.tabs_.data(),1,s.tabs_.size(),f)==s.tabs_.size());
   std::fclose(f);
   if (!ok) throw std::runtime_error("truncated checkpoint " + path);
   s.epoch_ = hdr[4];

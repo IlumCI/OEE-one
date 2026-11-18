@@ -11,16 +11,22 @@ echo $$ > runs7/lane$lane.pid
 # Arms: 1 fixed code; 2 evolvable, random tables, no guard; 8 evolvable, random tables, guard 15; 9 evolvable,
 # standard start, guard 15 (guard 15: heads after table, no +/- on tables, aligned copies only, tables
 # mutate 256x slower). Arms 3-7 (weaker guards) only where already started.
-for s in "$@";do for m in 1 2 3 4 5 6 7 8 9;do
+# Option 2 (external tables inherited by authorship; its control is plain BFF, docs/M3.md): 10 standard start,
+# 11 random start. ARMS (env or runs7/laneN.arms) picks the arms; default 1-9.
+[ -z "$ARMS" ]&&[ -f runs7/lane$lane.arms ]&&ARMS=$(cat runs7/lane$lane.arms)
+ARMS=${ARMS:-1 2 3 4 5 6 7 8 9}
+for s in "$@";do for m in $ARMS;do
+[ -f runs7/lane$lane.stop ]&&break 2
 case $m in 3|4|5|6|7)[ ! -d runs7/egc${m}_s$s ]&&continue;;esac
 d=runs7/egc${m}_s$s;mkdir -p $d
-case $m in 1)x=(-egc 1);;2)x=(-egc 2);;3)x=(-egc 2 -egc-std);;4)x=(-egc 2 -egc-guard 3);;5)x=(-egc 2 -egc-std -egc-guard 3);;6)x=(-egc 2 -egc-guard 7);;7)x=(-egc 2 -egc-std -egc-guard 7);;8)x=(-egc 2 -egc-guard 15);;9)x=(-egc 2 -egc-std -egc-guard 15);;esac
+case $m in 1)x=(-egc 1);;2)x=(-egc 2);;3)x=(-egc 2 -egc-std);;4)x=(-egc 2 -egc-guard 3);;5)x=(-egc 2 -egc-std -egc-guard 3);;6)x=(-egc 2 -egc-guard 7);;7)x=(-egc 2 -egc-std -egc-guard 7);;8)x=(-egc 2 -egc-guard 15);;9)x=(-egc 2 -egc-std -egc-guard 15);;10)x=(-egc 4 -egc-std);;11)x=(-egc 4);;esac
+b=$B;[ $m -ge 10 ]&&b=runs7/bin/oee_bff_egc7
 [ -f $d/exit_code ]&&continue
 r=();[ -f $d/ck ]&&r=(-resume $d/ck)
 # Standard-start arms (3, 5, 7, 9): identical tables alone add ~0.9 to high-order entropy, so the H >= 1
 # stop would fire without replicators; they run the full 16384 epochs (judge replication by selfrep share).
 st=(-stop-entropy 1 -stop-after 2048);case $m in 3|5|7|9)st=();;esac
-$B -seed $s "${x[@]}" -epochs 16384 -interval 64 -log $d/log.csv -save $d/ck -save-every 256 "${st[@]}" "${r[@]}" 2>>$d/stderr.txt
+$b -seed $s "${x[@]}" -epochs 16384 -interval 64 -log $d/log.csv -save $d/ck -save-every 256 "${st[@]}" "${r[@]}" 2>>$d/stderr.txt
 echo $? > $d/exit_code
 done;done
 rm -f runs7/lane$lane.pid

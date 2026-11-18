@@ -36,5 +36,18 @@ Soup s(p);for(int e=0;e<5;++e)s.epoch();
 s.save("egc_ck.bin");Soup r=Soup::load("egc_ck.bin",1);
 const int ck=r.params().egc==2&&r.epochs_done()==5&&r.data()==s.data();
 std::printf("checkpoint keeps mode: %s\n",ck?"yes":"no");
-return (bad||!same||!ck||!run_ok||!inert_ok)?1:0;
+// option 2: external standard tables reproduce plain BFF; a self-copy into B is authored by A.
+int xbad=0;for(std::uint64_t t=0;t<20000;++t){
+for(int i=0;i<kPair;++i)a[i]=std::uint8_t(splitmix64(~t*kPair+i));
+std::memcpy(b,a,kPair);int wr[2];evaluate(a);eval_ext(b,(const std::uint8_t*)kStd,(const std::uint8_t*)kStd,wr);xbad+=std::memcmp(a,b,kPair)!=0;}
+std::memset(a,0,kPair);{int wr[2];
+int p0=0;a[p0++]='{';for(int k=0;k<20;++k){a[p0++]='.';a[p0++]='>';a[p0++]='{';}  // code in A copies 20 bytes into B (127 down)
+(void)p0;eval_ext(a,(const std::uint8_t*)kStd,(const std::uint8_t*)kStd,wr);
+std::printf("option 2: %d differ from plain BFF; authored-by-A bytes in B: %d\n",xbad,wr[1]);
+xbad+=wr[1]<20;}
+Params q;q.num_programs=512;q.seed=7;q.egc=4;Soup s4(q);for(int e=0;e<5;++e)s4.epoch();
+s4.save("egc_ck.bin");Soup r4=Soup::load("egc_ck.bin",1);
+const int ck4=r4.params().egc==4&&r4.data()==s4.data()&&r4.tables()==s4.tables();
+std::printf("option 2 checkpoint keeps tables: %s\n",ck4?"yes":"no");
+return (bad||!same||!ck||!run_ok||!inert_ok||xbad||!ck4)?1:0;
 }

@@ -146,3 +146,23 @@ Next design (option 2): keep each program's codon table outside the tape, unreac
 let a program inherit the table of the program whose bytes it carries after an interaction (vertical
 transmission of the translation machinery), with rare table mutation. Lanes 3-4 stopped; lanes 1-2 finish
 seeds 0-9 of the original arms.
+
+## Option 2: tables outside the tape (`oee_bff -egc 3|4`)
+
+- Each program keeps a 10-byte table in a separate array; all 64 tape bytes are code and data, and no
+  instruction can address a table.
+- Each instruction is decoded with the table of the program it lies in.
+- Authorship: every write records whether the code that wrote the byte runs in A or B. After the
+  interaction, a program inherits the other's table if more than half of its bytes were last written by the
+  other program. A replicator that overwrites its partner therefore hands over its code with its bytes.
+- Table bytes mutate at `mutation >> tab_shift` (default 8) per byte per interaction, before execution.
+- Mode 3 keeps every table standard and fixed. It reproduces plain BFF bit for bit (test bff_egc, and an
+  8192-program soup log identical to cubff mode over 512 epochs), so the M3 seed sweep is its control.
+- Mode 4 is the evolvable code: arm 10 starts from the standard code (`-egc-std`), arm 11 from random tables.
+  Since the tables are not on the tape, they no longer inflate the high-order entropy, and the normal
+  H >= 1 transition stop applies to both arms.
+- Extra log columns: distinct tables, share of standard tables, share of the most common table, and the
+  number of tables passed by authorship in the last epoch.
+- Runs: lanes 3-4 (runs7/lane3, lane4; arms in laneN.arms), seeds 0 and 5 first, since the fixed-code
+  control transitioned on both. Lanes 1-2 were stopped after their current runs (args kept as `.paused`):
+  option 1's result is already clear from seeds 0-5.

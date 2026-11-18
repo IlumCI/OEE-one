@@ -186,6 +186,7 @@ void stats(const World& w) {
     std::fprintf(out, "time: G%ldG	groups %d largest %d mean_size %.3f bonded_fraction %.3f colonies %d largest_colony %d propagules %ld warrior_fraction %.3f groups_ge4 %d mixed %d\n",
                  w.time(), g.groups, g.largest, g.mean, g.bonded, g.colonies, g.largest_colony, w.propagules(),
                  g.warrior_fraction, g.large, g.mixed);
+    if(w.params().collectives&128){const auto k=w.lock_stats();std::fprintf(out,"time: K%ldK\tlocks %d opened %d meanlen %.3f maxlen %d born %ld dissolved %ld decayed %ld\n",w.time(),k.locks,k.opened,k.meanlen,k.maxlen,k.born,k.dissolved,k.decayed);}
     if((w.params().collectives&32)||g_follow)std::fprintf(out,"time: E%ldE\tlength %d neurons %d credit %ld collab_births %ld\n",w.time(),w.world_length(),w.params().max_num_nodes,w.credit(),w.collab());
   }
   std::fflush(out);
@@ -213,6 +214,7 @@ int main(int argc, char** argv) {
   int reseed = 0;
   std::unique_ptr<Follow> follow;
   int nthr = 1;  // compute step 4: worker threads (counter-RNG mode only; results unchanged)
+  int lmode=0;double lfrac=0.25;  // L4a lock mode and initial locked share
   bool neurons_msg = false;
   for (int a = 1; a < argc;) {
     const char* s = argv[a];
@@ -288,6 +290,10 @@ int main(int argc, char** argv) {
     } else if(!std::strcmp(s,"-grow-follow")&&has){follow=std::make_unique<Follow>();g_follow=true;follow->path=argv[a+1];const auto k=follow->path.rfind('/');follow->dir=k==std::string::npos?".":follow->path.substr(0,k);a+=2;
     } else if(!std::strcmp(s,"-earned-growth")){p.collectives|=8|32;++a;  // L3 v9: collective births buy space
     } else if(!std::strcmp(s,"-neuron-cost")){p.collectives|=64;++a;  // L3 v9: per-neuron death hazard
+    } else if(!std::strcmp(s,"-locks")){p.collectives|=128;++a;  // L4a: evolving locks on the land
+    } else if(!std::strcmp(s,"-lock-frozen")){p.collectives|=128;lmode=1;++a;  // L4a control: locks never change
+    } else if(!std::strcmp(s,"-lock-churn")){p.collectives|=128;lmode=2;++a;  // L4a control: random re-keying
+    } else if(!std::strcmp(s,"-lock-frac")&&has){lfrac=std::atof(argv[a+1]);a+=2;
     } else if (!std::strcmp(s, "-senescence")) {
       p.collectives |= 4;  // L3 v4: death after World::kMaxAge updates (use after -collectives*)
       ++a;
@@ -349,6 +355,7 @@ int main(int argc, char** argv) {
     }
   } else {
     world_ptr = std::make_unique<World>(p);
+    world_ptr->set_lock_mode(lmode);world_ptr->lock_init(lfrac);
     if (!founders_path.empty()) {
       std::vector<Genotype> pool;
       auto add_bytes = [&](const std::vector<unsigned char>& bytes) {
@@ -382,6 +389,7 @@ int main(int argc, char** argv) {
   }
   World& world = *world_ptr;
   if(p.rng_mode&&!world.params().rng_mode){world.to_crng();std::fprintf(stderr,"Switched to counter RNG streams at time %ld\n",world.time());}
+  if((world.params().collectives&128)&&!world.params().rng_mode){std::fprintf(stderr,"-locks requires -crng\n");return 2;}
   world.set_threads(nthr);
 
   File log, rs, srs, rv, srv, dict, pres;

@@ -311,7 +311,7 @@ void Organism::try_to_reproduce_with_organism_in_front() {
   int child_at = w.forward1(other->at_x_64, other->at_y_64, direction_deg);
   int cx64, cy64;
   bool replace = false;
-  if (w.grid_[child_at] || w.num_individuals_ == w.p_.max_num_individuals) {
+  if (w.grid_[child_at] || w.num_individuals_ == w.p_.max_num_individuals || (w.locked(child_at) && !w.unlock(this, child_at))) {
     child_at = other_at;
     if (other->pen_colour == 2) return;  // disallow_reproduction_into_killer
     cx64 = other->at_x_64;
@@ -422,6 +422,7 @@ void Organism::try_to_move_forward(int distance_64) {
     to_y_64 -= L64;
   const int to_x = to_x_64 >> 6, to_y = to_y_64 >> 6;
   const int to = to_x + to_y * w.length_;
+  if (to != at && !w.grid_[to] && w.locked(to) && !w.unlock(this, to)) return;  // L4a: locked land
   if (to == at || !w.grid_[to]) {
     if (to != at) {
       w.grid_[to] = std::move(w.grid_[at]);
@@ -750,6 +751,7 @@ std::unique_ptr<Organism> World::reproduce(Organism* a, Organism* b, int cx64, i
 
 void World::reset_not_processed() {
   ++ga_time_;
+  if((p_.collectives&128)&&ga_time_>0&&ga_time_%kLockWin==0)lock_step();
   num_not_processed_ = 0;
   for (int at = 0; at < size_; ++at)
     if (grid_[at]) {
@@ -904,6 +906,62 @@ for(int s=0;s<shadow_count();++s)if(shadow_birth_times_[s]!=ga_time_)++shadow_ag
 reset_not_processed();
 }
 
+// ---------------------------------------------------------------------------
+// L4a locks (docs/L4.md).
+
+std::vector<Gene> World::rnd_key(CRng&r,int n){std::vector<Gene> k(n);for(auto&b:k)b=Gene(r.random(2));return k;}
+
+void World::lock_init(double frac){
+if(!(p_.collectives&128))return;
+locks_.assign(size_,Lock{});
+CRng r;r.key(cseed_,~0ULL-1,~0ULL-7);
+for(int c=0;c<size_;++c)if(r.random(1000)<int(frac*1000))locks_[c].key=rnd_key(r,kLockLen0);
+}
+
+bool World::unlock(Organism*o,int c){
+Lock&l=locks_[c];
+const GeneSpan k{l.key.data(),0,int(l.key.size())-1};
+if(o->action_output(k)<=kTA)return false;
+if(std::find(l.op.begin(),l.op.end(),o->id)==l.op.end()&&l.op.size()<=std::size_t(kLockMax))l.op.push_back(o->id);
+return true;
+}
+
+void World::lock_step(){
+// Minimal criterion band (MCC/POET): a lock opened by 1..kLockMax distinct agents in the window reproduces into
+// a free neighbouring cell with a mutated key; one opened by more dissolves (too easy); one unopened for
+// kLockIdle windows decays (too hard). Frozen: nothing changes. Churn: random re-keying at a matched rate.
+CRng r;r.key(cseed_,std::uint64_t(ga_time_),~0ULL-7);
+const int L=length_;
+std::vector<int> born;
+for(int c=0;c<size_;++c){
+Lock&l=locks_[c];if(l.key.empty())continue;
+const int n=int(l.op.size());l.op.clear();
+if(lmode_==1)continue;
+if(lmode_==2){if(r.random(10)==0){l.key=rnd_key(r,int(l.key.size()));++lborn_;}continue;}
+if(n>kLockMax){l.key.clear();l.idle=0;++ldiss_;continue;}
+if(n==0){if(++l.idle>=kLockIdle){l.key.clear();l.idle=0;++ldecay_;}continue;}
+l.idle=0;born.push_back(c);
+}
+for(int c:born){
+const int x=c%L,y=c/L,d=r.random(8),dx[8]={-1,0,1,-1,1,-1,0,1},dy[8]={-1,-1,-1,0,0,1,1,1};
+const int t=(x+dx[d]+L)%L+((y+dy[d]+L)%L)*L;
+if(!locks_[t].key.empty())continue;
+std::vector<Gene> k=locks_[c].key;
+const int m=r.random(3);
+if(m==0)k[r.random(int(k.size()))]^=1;
+else if(m==1)k.insert(k.begin()+r.random(int(k.size())+1),Gene(r.random(2)));
+else if(k.size()>2)k.erase(k.begin()+r.random(int(k.size())));
+locks_[t].key=std::move(k);++lborn_;
+}
+}
+
+World::LockStats World::lock_stats() const{
+LockStats s;s.born=lborn_;s.dissolved=ldiss_;s.decayed=ldecay_;
+if(!(p_.collectives&128))return s;
+long tl=0;for(const auto&l:locks_)if(!l.key.empty()){++s.locks;tl+=long(l.key.size());s.maxlen=std::max(s.maxlen,int(l.key.size()));s.opened+=!l.op.empty();}
+s.meanlen=s.locks?double(tl)/s.locks:0;return s;
+}
+
 void World::grow(int L) {
   if (L <= length_) return;
   const int old = length_;
@@ -914,6 +972,13 @@ void World::grow(int L) {
       grid_[c]->at = nc;
       g[nc] = std::move(grid_[c]);
     }
+  if(p_.collectives&128){
+  std::vector<Lock> nl(static_cast<std::size_t>(L)*L);
+  for(int c=0;c<size_;++c)nl[(c%old)+(c/old)*L]=std::move(locks_[c]);
+  CRng r;r.key(cseed_,std::uint64_t(ga_time_),~0ULL-7);
+  for(int y=0;y<L;++y)for(int x=0;x<L;++x)if(x>=old||y>=old)nl[x+y*L].key=rnd_key(r,kLockLen0);  // new land arrives locked
+  locks_.swap(nl);
+  }
   if (p_.max_num_individuals == size_) p_.max_num_individuals = L * L;
   length_ = L;
   size_ = L * L;
@@ -1007,6 +1072,8 @@ void World::save(Writer& w) const {
   w.put(num_not_processed_);
   if (p_.collectives & 8) w.put(propagules_);
   if(p_.collectives&32){w.put(credit_);w.put(collab_);}
+  if(p_.collectives&128){w.put(lmode_);w.put(lborn_);w.put(ldiss_);w.put(ldecay_);
+  for(const auto&l:locks_){w.put_vec(l.key);w.put_vec(l.op);w.put(l.idle);}}
 }
 
 std::unique_ptr<World> World::load(Reader& r) {
@@ -1055,6 +1122,8 @@ std::unique_ptr<World> World::load(Reader& r) {
   w->num_not_processed_ = r.get<int>();
   if (p.collectives & 8) w->propagules_ = r.get<long>();
   if(p.collectives&32){w->credit_=r.get<long>();w->collab_=r.get<long>();}
+  if(p.collectives&128){w->lmode_=r.get<int>();w->lborn_=r.get<long>();w->ldiss_=r.get<long>();w->ldecay_=r.get<long>();
+  w->locks_.assign(w->size_,Lock{});for(auto&l:w->locks_){l.key=r.get_vec<Gene>();l.op=r.get_vec<std::uint64_t>();l.idle=r.get<int>();}}
   return w;
 }
 

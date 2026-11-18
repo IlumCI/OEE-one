@@ -57,6 +57,8 @@ struct Params {
   // credit to a commons; the world grows by one row and column when the commons holds kCellCost
   // credits per existing cell (World::earned/spend; growth applied by the caller at a cycle boundary).
   // 64 = L3 v9 neuron cost: after each update an agent dies with probability nodes/2^kHazShift.
+  // 128 = L4a locks (docs/L4.md): cells may carry a lock with a bit-string key; an agent enters a locked
+  // cell (move or birth) only while action_output(key) > kTA. Requires counter RNG streams.
   std::uint8_t collectives = 0;
   // Compute step 2 (docs/COMPUTE.md): 0 = Geb's single ran1 stream; 1 = counter streams keyed by
   // (seed, cycle, agent id), cycle order from a per-cycle permutation. Changes draws, not rules.
@@ -163,6 +165,13 @@ class World {
   bool earned() const {return (p_.collectives&32)&&credit_>=long(kCellCost)*size_;}
   void spend(){credit_-=long(kCellCost)*size_;}
   long credit() const {return credit_;}
+  // L4a locks.
+  struct Lock{std::vector<Gene> key;std::vector<std::uint64_t> op;int idle=0;};
+  static constexpr int kLockWin=1000,kLockMax=8,kLockIdle=5,kLockLen0=4;
+  void set_lock_mode(int m){lmode_=m;}  // 0 evolving (minimal criterion band), 1 frozen, 2 random churn
+  void lock_init(double frac);
+  struct LockStats{int locks=0,opened=0,maxlen=0;double meanlen=0;long born=0,dissolved=0,decayed=0;};
+  LockStats lock_stats() const;
   long collab() const {return collab_;}
   static constexpr int kMaxAge = 1000;  // L3 v4 senescence (collectives bit 2)  // a budded child joins the parent's group only below this size
 
@@ -235,6 +244,11 @@ class World {
   int num_not_processed_ = 0;
   long propagules_ = 0;
   long credit_=0,collab_=0;  // v9 commons and cumulative collective births
+  std::vector<Lock> locks_;int lmode_=0;long lborn_=0,ldiss_=0,ldecay_=0;
+  bool locked(int c) const {return (p_.collectives&128)&&!locks_[c].key.empty();}
+  bool unlock(Organism*o,int c);  // true if o may enter c (records the opener)
+  void lock_step();
+  std::vector<Gene> rnd_key(CRng&r,int n);
   void mortality(Organism*ind);
   mutable std::uint32_t bfs_gen_ = 0;  // group_size: current stamp
   mutable std::vector<const Organism*> bfs_stack_, bfs_seen_;  // group_size scratch  // L3 v5: colonies founded (cumulative, checkpointed when bit 8 set)
