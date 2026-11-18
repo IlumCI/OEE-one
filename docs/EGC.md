@@ -109,3 +109,11 @@ the biological code mutates far more slowly than the genes it reads. Guard bit 8
 1/256 of the code rate. Small test (standard start, 2048 epochs): guard 7 0.6% standard (16,190 of 16,384
 distinct), guard 15 98.0% standard (302 distinct): a near-frozen shared code with rare variants.
 Arms from now: 8 (random tables, guard 15), 9 (standard start, guard 15). Arm 7 seed 0 stopped at ~8,800.
+
+Scoring note: with every program starting at the standard code, identical tables alone put high-order
+entropy at ~0.9 (arm 9, epoch 513), so the H >= 1 transition stop is not valid for standard-start arms;
+they now run the full 16,384 epochs and replication is judged by the self-replicator count
+(`bff_inspect CK`, now egc-aware: decodes with the checkpoint's code mode and guard).
+
+Seed 0 self-replicators at the end: arm 1 (fixed) 2,069 of 131,072 (1.6%; transition at 10,881 did not hold
+the M3 10% criterion); arm 2 (evolvable, no guard) 0; arm 8 (evolvable, random tables, guard 15) 0.

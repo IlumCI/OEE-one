@@ -17,7 +17,10 @@ d=runs7/egc${m}_s$s;mkdir -p $d
 case $m in 1)x=(-egc 1);;2)x=(-egc 2);;3)x=(-egc 2 -egc-std);;4)x=(-egc 2 -egc-guard 3);;5)x=(-egc 2 -egc-std -egc-guard 3);;6)x=(-egc 2 -egc-guard 7);;7)x=(-egc 2 -egc-std -egc-guard 7);;8)x=(-egc 2 -egc-guard 15);;9)x=(-egc 2 -egc-std -egc-guard 15);;esac
 [ -f $d/exit_code ]&&continue
 r=();[ -f $d/ck ]&&r=(-resume $d/ck)
-$B -seed $s "${x[@]}" -epochs 16384 -interval 64 -log $d/log.csv -save $d/ck -save-every 256 -stop-entropy 1 -stop-after 2048 "${r[@]}" 2>>$d/stderr.txt
+# Standard-start arms (3, 5, 7, 9): identical tables alone add ~0.9 to high-order entropy, so the H >= 1
+# stop would fire without replicators; they run the full 16384 epochs (judge replication by selfrep share).
+st=(-stop-entropy 1 -stop-after 2048);case $m in 3|5|7|9)st=();;esac
+$B -seed $s "${x[@]}" -epochs 16384 -interval 64 -log $d/log.csv -save $d/ck -save-every 256 "${st[@]}" "${r[@]}" 2>>$d/stderr.txt
 echo $? > $d/exit_code
 done;done
 rm -f runs7/lane$lane.pid
