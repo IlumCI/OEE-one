@@ -230,5 +230,5 @@ seeds 0-9 of the original arms.
   than a neutral relabelling. Not yet checked: whether the variant lineage's programs contain byte 74 where
   the standard lineage has 93.
 - Continued from the final checkpoint to 32,768 epochs in runs7/egc10_s1x, keeping a checkpoint every 1,024
-  epochs. This run is not managed by the lanes: after a container restart, resume it by hand with the
-  command in its stderr.txt header, or rerun it with `-resume`.
+  epochs. This run is not managed by the lanes: after a container restart, resume it by hand:
+  `runs7/bin/oee_bff_egc7 -epochs 32768 -interval 64 -log runs7/egc10_s1x/log.csv -save runs7/egc10_s1x/ck -save-every 256 -keep-every 1024 -resume runs7/egc10_s1x/ck`.
