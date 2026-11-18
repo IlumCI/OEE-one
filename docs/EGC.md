@@ -87,3 +87,14 @@ Arms per seed from now: 1 fixed code; 2 evolvable, random tables, no guard (seed
 Correction to the interim reading: the ~0.23 of the unguarded evolvable soups is not early structure from
 replication but compressible byte patterns produced by random writes into tables; with the guard the soup
 sits near the fixed-code control's pre-transition level (0.01 vs 0.05). Arm 5 (standard start, guard 3) next.
+
+## Guard 7: aligned copying
+
+At full size with guard 3 the standard code was gone by epoch 4,353 (131,066 of 131,072 tables distinct):
+random copy instructions alone dissolve the code long before replicators appear (~10k epochs in the
+control). Guard bit 4: a copy may write a table byte only from the same table position of a program
+(aligned copying, which a replicator copying its whole tape does; random copies almost never align).
+Small test (standard start, 512 epochs): guard 3 5.0% still standard, guard 7 28.5% (7,821 of 16,384
+distinct) - the mutation-only expectation is ~29%, so random scrambling is removed and the code changes
+only by mutation and faithful copying. Arms from now: 6 (random tables, guard 7) and 7 (standard start,
+guard 7). The guard-3 standard-start run for seed 0 was stopped at epoch 4,353 (code already lost).

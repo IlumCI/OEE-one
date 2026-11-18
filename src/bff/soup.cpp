@@ -101,7 +101,8 @@ void wrote(int p){const int h=p>=kTape;if(mode==2&&(p-h*kTape)<kCodon)build(h);}
 
 std::size_t eval_egc(std::uint8_t* tape,int mode,std::size_t max_steps){
 // mode bits 0-3: 1 fixed code, 2 evolvable; bits 4-7 guard: 1 heads start after A's table,
-// 2 '+'/'-' cannot change table bytes (only copies write tables), 3 both.
+// 2 '+'/'-' cannot change table bytes (only copies write tables), 3 both; 4 a copy may write a table
+// byte only from the same table position of a program (aligned copying, as a replicator does); 7 all.
 const int g=mode>>4;mode&=15;
 Egc e{tape,mode,g,{}};e.build(0);e.build(1);
 int pc=0,h0=(g&1)?kPair+kCodon:kPair,h1=h0;std::size_t skipped=0,i=0;
@@ -115,8 +116,8 @@ case kDec1:--h1;break;
 case kInc1:++h1;break;
 case kPlus:if(!((g&2)&&tab(h0))){++tape[h0];e.wrote(h0);}break;
 case kMinus:if(!((g&2)&&tab(h0))){--tape[h0];e.wrote(h0);}break;
-case kCopy01:tape[h1]=tape[h0];e.wrote(h1);break;
-case kCopy10:tape[h0]=tape[h1];e.wrote(h0);break;
+case kCopy01:if(!((g&4)&&tab(h1)&&!(tab(h0)&&((h0^h1)&(kTape-1))==0))){tape[h1]=tape[h0];e.wrote(h1);}break;
+case kCopy10:if(!((g&4)&&tab(h0)&&!(tab(h1)&&((h0^h1)&(kTape-1))==0))){tape[h0]=tape[h1];e.wrote(h0);}break;
 case kLoopStart:
 if(tape[h0]==0){int d=1;++pc;for(;pc<kPair&&d>0;++pc){const Op o=e.at(pc);if(o==kLoopEnd)--d;if(o==kLoopStart)++d;}--pc;if(d!=0)pc=kPair;}
 break;

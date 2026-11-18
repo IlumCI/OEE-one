@@ -64,7 +64,7 @@ struct Params {
   bool m5_protocol = false;
   int egc = 0;  // 0: cubff BFF; 1: codon-table layout, fixed code (control); 2: evolvable code
   bool egc_std = false;
-  int egc_guard = 0;  // 1: heads start after A's table; 2: '+'/'-' cannot change tables; 3: both  // evolvable code, but every program starts with the standard code in its table
+  int egc_guard = 0;  // bits: 1 heads start after A's table; 2 '+'/'-' cannot change tables; 4 aligned copies only  // evolvable code, but every program starts with the standard code in its table
 };
 
 struct Metrics {
