@@ -232,3 +232,15 @@ seeds 0-9 of the original arms.
 - Continued from the final checkpoint to 32,768 epochs in runs7/egc10_s1x, keeping a checkpoint every 1,024
   epochs. This run is not managed by the lanes: after a container restart, resume it by hand:
   `runs7/bin/oee_bff_egc7 -epochs 32768 -interval 64 -log runs7/egc10_s1x/log.csv -save runs7/egc10_s1x/ck -save-every 256 -keep-every 1024 -resume runs7/egc10_s1x/ck`.
+- Check of the variant lineage (final checkpoint of egc10_s1), mean bytes per program:
+
+  | table | programs | byte 74 (`J`) | byte 93 (`]`) |
+  |---|---|---|---|
+  | standard | 62,761 | 2.32 | 1.95 |
+  | variant | 68,036 | 3.19 | 0.03 |
+
+  - In the variant lineage, byte 93 has almost disappeared (it is a no-op there), and `J` takes its place
+    as loop end. So the reassignment is used, not neutral.
+  - The standard lineage already carries about 2.3 `J` bytes per program as inert data. Reassigning `]` to
+    an existing inert byte turns those bytes into loop ends at once, so this looks like codon capture.
+  - In both lineages the most common program covers only 0.1-0.2%, so each lineage is diverse.
