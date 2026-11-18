@@ -18,6 +18,8 @@ program soups, fraternal transitions) and measures every step against null contr
 | M2, measurement | Multi-scale path divergence (arXiv 2606.17091) and a calibrated real-vs-null test | [M2](docs/M2.md) |
 | M3, L1 chemistry | BFF soup reproduced (20 seeds, 2D spatial version, replicator fronts) | [M3](docs/M3.md) |
 | M5, L1 in L2 | BFF code as Geb heredity: faithful copying, no variation or growth; paused | [M5](docs/M5.md) |
+| L4a challenges | Evolving locks on the land (minimal criterion band), with frozen, random-churn and no-lock controls; running | [L4](docs/L4.md) |
+| EGC | Evolvable genetic code in BFF: tables on the tape fail (code/memory collision); tables outside the tape, inherited by authorship, running | [EGC](docs/EGC.md) |
 | L3 transitions | Kin colonies (v4), colony reproduction (v5), division of labour (v6), growing world (v7), world and brain growing together (v8), earned growth with a neuron cost (v9) | [L3](docs/L3.md) |
 
 Main findings so far:
@@ -28,7 +30,7 @@ Main findings so far:
 - v9 (3 seeds complete, 2 running): space earned by collective reproduction brings the complexity
   rise forward; a yoked control that receives the same space at the same times ends higher.
 
-Not built yet: L0 physics, L4 co-evolved challenges, L5 self-modification, the outer meta-search.
+Not built yet: L0 physics, L4b-c (temporal and cooperative locks), L5 self-modification, the outer meta-search.
 
 ## Layout
 
@@ -68,6 +70,7 @@ build/rel/oee_geb_resets -seed 1 -stats -rulestat -log log.txt -second-shadow -p
 | `-random-selection` | GebR negative control |
 | `-collectives`, `-collectives-random`, `-senescence`, `-colony-reproduction`, `-division-of-labour` | L3 rules v4-v6 and their controls |
 | `-grow-every -grow-by -grow-max -grow-neurons-by -grow-neurons-max` | scheduled growth of world and neuron limit (v7, v8) |
+| `-locks`, `-lock-frozen`, `-lock-churn`, `-lock-frac F` | L4a evolving locks and their controls (needs `-crng`) |
 | `-earned-growth`, `-neuron-cost`, `-grow-follow LOG` | v9: growth bought by collective births, per-neuron death hazard, yoked control |
 | `-crng` | per-agent counter RNG streams (also switches a resumed legacy run) |
 | `-threads N` | order-equivalent parallel engine, byte-identical to 1 thread (counter-RNG mode) |
