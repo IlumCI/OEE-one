@@ -98,3 +98,14 @@ Small test (standard start, 512 epochs): guard 3 5.0% still standard, guard 7 28
 distinct) - the mutation-only expectation is ~29%, so random scrambling is removed and the code changes
 only by mutation and faithful copying. Arms from now: 6 (random tables, guard 7) and 7 (standard start,
 guard 7). The guard-3 standard-start run for seed 0 was stopped at epoch 4,353 (code already lost).
+
+## Guard 15: slow table mutation (error threshold)
+
+Seed 0, arm 6 (random tables, guard 7): no transition, H ~0.04. Arm 7 (standard start, guard 7): standard code
+gone by epoch ~8,800 (131,071 of 131,072 distinct). With random scrambling removed, background mutation
+alone (10 table bytes x 2^-12 per epoch, about 0.24% of tables per epoch) erases a shared code over
+thousands of epochs, before replicators appear (~10k epochs in the control): an error-threshold problem;
+the biological code mutates far more slowly than the genes it reads. Guard bit 8: table bytes mutate at
+1/256 of the code rate. Small test (standard start, 2048 epochs): guard 7 0.6% standard (16,190 of 16,384
+distinct), guard 15 98.0% standard (302 distinct): a near-frozen shared code with rare variants.
+Arms from now: 8 (random tables, guard 15), 9 (standard start, guard 15). Arm 7 seed 0 stopped at ~8,800.

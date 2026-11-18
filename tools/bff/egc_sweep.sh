@@ -6,15 +6,15 @@
 # resume from their checkpoint.  Usage: tools/bff/egc_sweep.sh LANE SEED...
 cd "$(dirname "$0")/../.." || exit 1
 lane=$1;shift
-B=runs7/bin/oee_bff_egc4
+B=runs7/bin/oee_bff_egc5
 echo $$ > runs7/lane$lane.pid
-# Arms: 1 fixed code; 2 evolvable, random tables, no guard; 6 evolvable, random tables, guard 7; 7 evolvable,
-# standard start, guard 7 (guard 7: heads after table, no +/- on tables, aligned copies only). Arms 3-5 (no
-# guard / guard 3 variants) only where already started (seed 0).
-for s in "$@";do for m in 1 2 3 4 5 6 7;do
-case $m in 3|4|5)[ ! -d runs7/egc${m}_s$s ]&&continue;;esac
+# Arms: 1 fixed code; 2 evolvable, random tables, no guard; 8 evolvable, random tables, guard 15; 9 evolvable,
+# standard start, guard 15 (guard 15: heads after table, no +/- on tables, aligned copies only, tables
+# mutate 256x slower). Arms 3-7 (weaker guards) only where already started.
+for s in "$@";do for m in 1 2 3 4 5 6 7 8 9;do
+case $m in 3|4|5|6|7)[ ! -d runs7/egc${m}_s$s ]&&continue;;esac
 d=runs7/egc${m}_s$s;mkdir -p $d
-case $m in 1)x=(-egc 1);;2)x=(-egc 2);;3)x=(-egc 2 -egc-std);;4)x=(-egc 2 -egc-guard 3);;5)x=(-egc 2 -egc-std -egc-guard 3);;6)x=(-egc 2 -egc-guard 7);;7)x=(-egc 2 -egc-std -egc-guard 7);;esac
+case $m in 1)x=(-egc 1);;2)x=(-egc 2);;3)x=(-egc 2 -egc-std);;4)x=(-egc 2 -egc-guard 3);;5)x=(-egc 2 -egc-std -egc-guard 3);;6)x=(-egc 2 -egc-guard 7);;7)x=(-egc 2 -egc-std -egc-guard 7);;8)x=(-egc 2 -egc-guard 15);;9)x=(-egc 2 -egc-std -egc-guard 15);;esac
 [ -f $d/exit_code ]&&continue
 r=();[ -f $d/ck ]&&r=(-resume $d/ck)
 $B -seed $s "${x[@]}" -epochs 16384 -interval 64 -log $d/log.csv -save $d/ck -save-every 256 -stop-entropy 1 -stop-after 2048 "${r[@]}" 2>>$d/stderr.txt

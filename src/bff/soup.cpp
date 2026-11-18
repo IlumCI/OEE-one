@@ -102,7 +102,8 @@ void wrote(int p){const int h=p>=kTape;if(mode==2&&(p-h*kTape)<kCodon)build(h);}
 std::size_t eval_egc(std::uint8_t* tape,int mode,std::size_t max_steps){
 // mode bits 0-3: 1 fixed code, 2 evolvable; bits 4-7 guard: 1 heads start after A's table,
 // 2 '+'/'-' cannot change table bytes (only copies write tables), 3 both; 4 a copy may write a table
-// byte only from the same table position of a program (aligned copying, as a replicator does); 7 all.
+// byte only from the same table position of a program (aligned copying, as a replicator does); 8 table
+// bytes mutate at 1/256 of the code rate (applied in run_pairs); 15 all.
 const int g=mode>>4;mode&=15;
 Egc e{tape,mode,g,{}};e.build(0);e.build(1);
 int pc=0,h0=(g&1)?kPair+kCodon:kPair,h1=h0;std::size_t skipped=0,i=0;
@@ -297,7 +298,8 @@ void Soup::run_pairs(std::size_t begin, std::size_t end, std::uint64_t epoch_see
     }
     for (std::uint64_t i = 0; i < kPair; ++i) {
       const std::uint64_t r = splitmix64((n * epoch_seed + index) * kPair + i);
-      if (((r >> 8) & ((1ULL << 30) - 1)) < p_.mutation_prob) tape[i] = static_cast<std::uint8_t>(r & 0xFF);
+      const std::uint32_t mp=(p_.egc&&(p_.egc_guard&8)&&(i&(kTape-1))<std::uint64_t(kCodon))?p_.mutation_prob>>8:p_.mutation_prob;  // guard 8: tables mutate 256x slower
+      if (((r >> 8) & ((1ULL << 30) - 1)) < mp) tape[i] = static_cast<std::uint8_t>(r & 0xFF);
     }
     if (index < active_pairs_) total += p_.egc?eval_egc(tape,p_.egc|p_.egc_guard<<4):evaluate(tape);
     if (p_.m5_protocol) {
