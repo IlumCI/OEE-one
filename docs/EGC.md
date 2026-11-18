@@ -257,8 +257,10 @@ seeds 0-9 of the original arms.
 | 2 | 1.56, 3,457 | 0.09 | 60.8% | collapsed (by H; not inspected) |
 | 8 | 1.45, 1,281 | 0.27 | 55.2% | collapsed (by H; not inspected) |
 | 9 | 1.54, 3,713 | 0.27 | 55.7% | collapsed (by H; not inspected) |
+| 4 | 3.51, 9,537 | 3.51 | 96.3% | held (63.7% self-replicators, H still rising) |
 
-- 8/8 transitioned (plain BFF: 3/8 on these seeds: 0, 2, 8; seed 8 collapsed there too), but 1/8 held.
+- 9/9 transitioned (plain BFF: 3/9 on these seeds: 0, 2, 8; seed 8 collapsed there too), but 2/9 held. Both
+  runs that held are the two in which one code passed 95% of the soup.
 - With random codes, transitions come easily but rarely last. The one that held is the one whose code
   swept the soup, which supports the race hypothesis above.
 - The standard-start arm transitions less often (4/8) but held 2/4, including the codon-capture run.
@@ -275,9 +277,12 @@ seeds 0-9 of the original arms.
 | 7 | ~8,000, held (H 5.07 at 9,857, 92.6% self-replicators, standard code 99.4%) | 12,481, held |
 | 3 | none (peak H 0.37) | none |
 | 4 | none (peak H 0.39) | none |
+| 9 | none (peak H 0.36) | none |
 | 8 | none (peak H 0.41) | 3,585, collapsed |
 
-- Transitions: 4/9 in arm 10 against 4/9 in plain BFF; held to the end: arm 10 2/9, plain BFF 3/9.
+- Transitions: 4/10 in arm 10 against 4/10 in plain BFF; held to the end: arm 10 2/10, plain BFF 3/10.
+- Seeds 10-19 of both arms started in lanes 3-4, which gives 20 seeds per arm to compare with the 20-seed M3
+  sweep.
 - Table mutation changes the random trajectory from the first epochs on, so seeds are not paired between
   arms. Only rates over many seeds can be compared, and six seeds cannot separate these rates.
 - Continuation (runs7/egc10_s1x), epochs 16,384 to 25,409:
