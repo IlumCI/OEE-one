@@ -260,3 +260,18 @@ seeds 0-9 of the original arms.
   swept the soup, which supports the race hypothesis above.
 - The standard-start arm transitions less often (2/4 so far) but held 1/2, including the codon-capture
   run.
+
+### Standard-start tally (arm 10), seeds 0, 1, 2, 5, 6, 7
+
+| seed | arm 10 | plain BFF (M3) |
+|---|---|---|
+| 0 | none (peak H 0.37) | 2,433, held |
+| 1 | ~14,300, held (codon capture), continuing | none |
+| 2 | none (peak H 0.36) | 11,585, held |
+| 5 | ~700, collapsed | none |
+| 6 | none | none |
+| 7 | ~8,000, holding (H 5.0 at 9,793) | 12,481, held |
+
+- Transitions: 4/6 in arm 10 against 3/6 in plain BFF. The seeds that transition differ in 4 of 6 cases.
+- Table mutation changes the random trajectory from the first epochs on, so seeds are not paired between
+  arms. Only rates over many seeds can be compared, and six seeds cannot separate these rates.
