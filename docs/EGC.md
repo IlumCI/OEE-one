@@ -292,3 +292,14 @@ seeds 0-9 of the original arms.
     `,` on byte 24 (1,599 programs) and `-` on byte 157 (1,384 programs).
   - Each codon change so far has been a single reassignment on the currently dominant table, so the code
     evolves as a lineage.
+- From epoch 27,000 the standard code is winning back ground. Its share went from 18% (27,009) to 37%
+  (28,545), and the `J` share fell from 79% to 62%. H stayed at about 6.0, and the second-step variants
+  fell back to about 1%.
+- So the two codes are not on a one-way sweep, which fits two coexisting lineages under frequency-dependent
+  selection. Two possible mechanisms:
+  - each lineage may overwrite the other's programs, so that whoever authors the bytes passes on its
+    table;
+  - inert bytes may have different effects in each lineage, `]` in the `J` lineage and `J` in the standard
+    one.
+  The kept checkpoints (every 1,024 epochs) allow per-lineage replicator counts and cross-lineage overwrite
+  rates. That analysis is the next step once the run ends at 32,768.
