@@ -244,3 +244,19 @@ seeds 0-9 of the original arms.
   - The standard lineage already carries about 2.3 `J` bytes per program as inert data. Reassigning `]` to
     an existing inert byte turns those bytes into loop ends at once, so this looks like codon capture.
   - In both lineages the most common program covers only 0.1-0.2%, so each lineage is diverse.
+
+### Random-code tally (arm 11), seeds 0, 1, 5, 6, 7
+
+| seed | transition (peak H, epoch) | end H | top code at end | outcome |
+|---|---|---|---|---|
+| 0 | 1.66, 8,257 | 0.24 | 48.5% | collapsed (0 self-replicators) |
+| 1 | 1.34, 10,241 | 0.30 | 58.7% | collapsed (by H; not inspected) |
+| 5 | 4.90, 6,273 | 4.90 | 99.8% | held (98.7% self-replicators) |
+| 6 | 1.56, 6,465 | 0.22 | 61.5% | collapsed (0 self-replicators) |
+| 7 | 1.62, 5,313 | 0.32 | 57.8% | collapsed (by H; not inspected) |
+
+- 5/5 transitioned (plain BFF: 1/5 on these seeds, seed 0), but 1/5 held.
+- With random codes, transitions come easily but rarely last. The one that held is the one whose code
+  swept the soup, which supports the race hypothesis above.
+- The standard-start arm transitions less often (2/4 so far) but held 1/2, including the codon-capture
+  run.
