@@ -166,3 +166,15 @@ seeds 0-9 of the original arms.
 - Runs: lanes 3-4 (runs7/lane3, lane4; arms in laneN.arms), seeds 0 and 5 first, since the fixed-code
   control transitioned on both. Lanes 1-2 were stopped after their current runs (args kept as `.paused`):
   option 1's result is already clear from seeds 0-5.
+
+### Interim: seed 5, random tables (arm 11)
+
+- Transition at about epoch 4,400. One non-standard table, [110, 236, 36, 160, 41, 159, 195, 72, 104, 228],
+  went from 0.4% of programs (epoch 3,969) to 95.6% (epoch 4,737). Tables passed by authorship rose from
+  about 10 to about 140 per epoch.
+- Inspect at epoch 4,608: 12,092 self-replicators (9.2%), scored under each program's own table.
+- High-order entropy peaked at 1.52 and is falling (0.89 at 4,737). Collapse or hold is decided by the end
+  of the run.
+- First evolvable-code arm with replicators. Its code spread with its replicators, as option 2 intends.
+- Plain BFF seed 5 (the mode-3 control, docs/results/m3/sweep.md) has no transition in 16,384 epochs. One
+  seed, so no rate claim yet.
