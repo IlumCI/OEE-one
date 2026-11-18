@@ -210,3 +210,8 @@ seeds 0-9 of the original arms.
 - Working hypothesis, untested: coexisting codes make cross-code interactions copy garbage. A replicator
   lineage survives only if its code sweeps the soup before that happens.
 - Test: share of the top code against replicator count over time in the held run and in the collapsed runs.
+- Logs, epochs after H first passes 0.6:
+  - held run (s5): the top code went from 30% to 95% within 256 epochs, and H then rose to 4.9;
+  - collapses (s0, s6): the top code climbed slowly (17% to 42%, 31% to 52%) while H fell below 0.8.
+  This is consistent with the race hypothesis: the code must sweep faster than the replicators decay.
+  The cause of the decay is not yet measured.
