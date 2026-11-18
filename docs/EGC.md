@@ -124,3 +124,7 @@ Seed 1 arm 8 (random tables, guard 15): no transition (H 0.02). Arm 9 (standard 
 self-replicators; code held at 83.0% standard (4,297 distinct) and a second code reached >= 1% of the soup -
 the first dialect, spread by aligned copying among non-replicating programs (the seed-1 fixed-code control
 did not transition either).
+Seed 2: control no transition; arm 2 none; arm 8 none (H 0.02); arm 9 none (84.5% standard, 4,015 distinct, 0 selfrep).
+Seed 5 control (arm 1): transition at epoch 1,281; at 3,329, 127,783 of 131,072 programs are self-replicators
+(97.5%, 8,992 distinct) - the strongest control so far, and the first seed where the evolvable arms face a
+control that transitions early and holds.
