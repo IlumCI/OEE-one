@@ -37,3 +37,20 @@ dialects held by >= 1% of the soup).
 
 Runs: `runs7/egc{1,2}_s{seed}`, launched by `tools/bff/egc_sweep.sh` lanes (seeds 0-4 in lane 1;
 lane 2 with seeds 5-9 once the v9 runs free cores); restarted by `tools/ensure_supervisors.sh`.
+
+## Interim (seeds 0-1)
+
+| seed | fixed code (mode 1) | evolvable code (mode 2) |
+|---|---|---|
+| 0 | transition at epoch 10881 | no transition by 16384; H 0.23 |
+| 1 | no transition (H 0.05) | no transition; H 0.22 |
+
+In both evolvable soups the executed instructions per interaction stay high (about 230-245) while
+high-order entropy falls below its random start (0.35 -> 0.22) and no codon table spreads (130,913 of
+131,072 distinct at the end of seed 0). Two misses are within chance (about half of fixed-code soups
+transition in this window), but consistent with replication being harder when a copy must also carry
+its 10-byte table to keep its meaning.
+
+Third arm added (mode 3 = `-egc 2 -egc-std`): evolvable code, every program starting with the standard
+code. It asks the dialect question directly: once replicators exist in a shared language, do lineages
+drift into new codes, and do several coexist? Lane order per seed is now mode 1, 2, 3.
