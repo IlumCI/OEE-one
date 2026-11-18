@@ -128,3 +128,6 @@ Seed 2: control no transition; arm 2 none; arm 8 none (H 0.02); arm 9 none (84.5
 Seed 5 control (arm 1): transition at epoch 1,281; at 3,329, 127,783 of 131,072 programs are self-replicators
 (97.5%, 8,992 distinct) - the strongest control so far, and the first seed where the evolvable arms face a
 control that transitions early and holds.
+Seed 5 arm 2 (evolvable, no guard): no transition in 16,384 epochs (H 0.25), against the same seed's control
+transitioning at 1,281 to 97.5% self-replicators - the clearest contrast so far. Seed 3 control: no transition.
+Lane 3 added (seeds 10-12) on the core freed by the v9 runs.
