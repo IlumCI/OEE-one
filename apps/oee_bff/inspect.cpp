@@ -24,7 +24,7 @@ int main(int argc, char** argv) {
   for (int t = 0; t < T; ++t)
     th.emplace_back([&, t] {
       for (std::size_t i = n * t / T; i < n * (t + 1) / T; ++i)
-        score[i] = selfrep_score(&s.data()[i * kTape], seed, n, i, s.params().egc|s.params().egc_guard<<4);
+        score[i] = selfrep_score(&s.data()[i * kTape], seed, n, i, s.params().egc<3?s.params().egc|s.params().egc_guard<<4:0,s.params().egc>=3?&s.tables()[i*kCodon]:nullptr);
     });
   for (auto& x : th) x.join();
   std::size_t reps = 0;
