@@ -120,3 +120,7 @@ the M3 10% criterion); arm 2 (evolvable, no guard) 0; arm 8 (evolvable, random t
 Seed 0 arm 9 (standard start, guard 15), 16,384 epochs: code held (84.5% standard, 4,026 distinct tables,
 one dominant code) but no self-replicators (0 of 131,072); the fixed-code control of the same seed and layout
 transitioned at 10,881. One seed; seeds 1-4 run arms 1, 2, 8, 9.
+Seed 1 arm 8 (random tables, guard 15): no transition (H 0.02). Arm 9 (standard start, guard 15): no
+self-replicators; code held at 83.0% standard (4,297 distinct) and a second code reached >= 1% of the soup -
+the first dialect, spread by aligned copying among non-replicating programs (the seed-1 fixed-code control
+did not transition either).
