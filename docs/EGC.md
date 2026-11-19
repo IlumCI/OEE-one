@@ -333,3 +333,15 @@ seeds 0-9 of the original arms.
   under weak or no selection. It mostly marks lineages. Getting selection on the code itself would need
   codes that differ in function, for example a cost per distinct instruction, or new instructions available
   only to some codes.
+
+### Seed 15, standard start: replicators arise on a variant code
+
+- At epoch 10,241 the standard code covered 97.3% of tables. By 10,625 it covered 0%, and a variant with
+  `-` encoded as byte 89 (`Y`) instead of 45 covered 92.9%. At the same time H jumped from 1.23 to 3.59, so
+  the replicators that took over carried the variant code. The code changed as part of the transition, not
+  after it.
+- End (13,825, transition + 2048): H 5.37, variant 92.2%. A second reassignment of `-`, to byte 240, holds
+  6.6%. `+`=71 on the `Y` background holds 1.0%.
+- Plain BFF seed 15 transitioned at 5,953 and held.
+- Second seed in arm 10 whose dominant replicators use a non-standard code, after seed 1. Both cases are
+  single reassignments of one instruction.
