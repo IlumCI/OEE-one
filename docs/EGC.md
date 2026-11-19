@@ -266,6 +266,8 @@ seeds 0-9 of the original arms.
 | 17 | 1.72, 8,385 | 0.14 | 47.7% | collapsed (by H; not inspected) |
 | 18 | 4.80, 6,529 | 4.80 | 99.7% | held (98.2% self-replicators) |
 | 19 | 1.61, 1,025 | 0.41 | 56.1% | collapsed (by H; not inspected) |
+| 13 | 1.39, 1,025 | 0.19 | 52.4% | collapsed (by H; not inspected) |
+| 3 | 2.59, 3,777 | 2.49 | 99.97% | not held: code swept, but only 4.4% self-replicators (5,776; 40,962 distinct) |
 | 14 | 4.41, 6,273 | 4.41 | 99.97% | held (98.3% self-replicators); predicted from top share 99.8% at H 3.9 |
 
 - 9/9 transitioned (plain BFF: 3/9 on these seeds: 0, 2, 8; seed 8 collapsed there too), but 2/9 held. Both
@@ -294,10 +296,13 @@ seeds 0-9 of the original arms.
 | 16 | none (peak H 0.39) | 5,377, collapsed |
 | 14 | none | none |
 | 18 | none (peak H 0.37) | none |
+| 19 | none | none |
 | 13 | ~7,400, held (H 5.22, 98.5% self-replicators; `]`=142 variant 71.9%, standard 27.3%) | none |
 | 8 | none (peak H 0.41) | 3,585, collapsed |
 
-- Transitions: 8/18 in arm 10 against 9/18 in plain BFF; held to the end: arm 10 6/18, plain BFF 6/18.
+- Final, 20 seeds: transitions 8/20 in arm 10 against 9/20 in plain BFF; held to the end 6/20 in each.
+  Three of the six arm-10 holds run on an evolved code (seeds 1, 13, 15). Random start (arm 11): 20/20
+  transitioned, 4 held (seeds 4, 5, 14, 18).
 - Seeds 10-19 of both arms started in lanes 3-4, which gives 20 seeds per arm to compare with the 20-seed M3
   sweep.
 - Table mutation changes the random trajectory from the first epochs on, so seeds are not paired between
@@ -419,3 +424,9 @@ instruction or a no-op). A mutation changes one entry.
   - the checkpoint keeps the maps.
 - New log columns: `top_coding` (coding entries in the most common map) and `mean_coding`.
 - Runs: lane 3, seeds 0-9, arm 12 (standard start) and arm 13 (random start).
+- Correction (seeds 3 and 13 had been left out of the tally): random start, 20 seeds, 20/20 transitioned,
+  4/20 held.
+- Seed 3 is a counterexample to "code sweep implies hold". The top code reached 99.97%, and H stayed at
+  2.5, but only 4.4% of programs were self-replicators at the end.
+- Revised rule: a sweep above 95% is necessary for a hold (it held in all 4 cases, and none of the 15
+  others without a sweep held) but not sufficient (seed 3).
