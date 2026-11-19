@@ -566,3 +566,30 @@ where arm 15 (independent random maps) never does (0/4).
 - Lanes 3 and 4 switch to arms 14 and 16 (arm 15 dropped) once their current runs end. The exit codes of
   the two orphaned runs (egc14_s2, egc14_s11) are written as 0, so read their outcome from the logs.
 - egc14_s2: a second instance resumed from the ~15,900 checkpoint while the orphaned first one was finishing (both lanes were restarted by one waiter). Its log has duplicate rows near the end; dedupe by epoch before analysis. Outcome unaffected: no transition (peak H about 0.37).
+
+### Why random maps rarely transition: missing instructions
+
+Instruction counts in the dominant map at the end of each run:
+
+| run | outcome | missing instructions |
+|---|---|---|
+| egc16_s0 (shared random, 3b) | none | `+` `.` `{` `}` |
+| egc16_s10 (shared random, 3b) | none | `]` `+` `.` `{` `}` |
+| egc16_s11 (shared random, 3b) | running | `-` `,` `<` |
+| egc13_s11 (random, option 3) | held | `,` only (`.` copies) |
+| egc13_s13 (random, option 3) | held | none |
+| egc12_s1 (standard, option 3) | held | none |
+| egc12_s10 (standard, option 3) | held | none |
+
+- A random 256-entry map has about one entry per instruction (Poisson), so each instruction is missing with
+  probability 1/e. All ten are present in only about 1% of random maps.
+- Replication needs at least one copy instruction (`.` or `,`), both heads movable and working loops.
+  egc16_s0 and egc16_s10 lack copy and every head-1 move, so their soups cannot replicate under any
+  dynamics.
+- This replaces the shared-code hypothesis. What random-code transitions need is a complete code. Option 2
+  tables always encode all ten instructions (one byte each), which is why random tables transitioned 20/20
+  there. In option 3 under authorship, the rare complete maps could spread by overwriting before
+  replication. Under 3b, where maps spread only by copies, an incomplete map can never be replaced, so arm 15
+  went 0/4.
+- The shared-map arm is still useful: egc16_s11's map has `.`, `{`, `}` and `>`, enough to copy, so it is a
+  test of a complete-enough shared random code.
