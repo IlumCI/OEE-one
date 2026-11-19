@@ -506,3 +506,20 @@ above. Arms 14 (standard start) and 15 (random) are queued for seeds 0-9, after 
 - Together with seed 11 (random maps; 16 coding entries, with synonyms on head moves and copy), this is the
   first sign that replicators favour codes with synonyms. It is not yet separated from founder effects or
   from the overwriter bias: this arm uses plain authorship inheritance, not 3b.
+
+### Option 3 results so far (seeds 0, 1, 10, 11)
+
+| run | map start | outcome | self-replicators | top map (coding entries, share) | plain BFF |
+|---|---|---|---|---|---|
+| egc12_s0 | standard | none | - | standard (10), 72% | 2,433, held |
+| egc13_s0 | random | none, soup became inert (H about 0, overwriter maps) | - | 13.1 mean | 2,433, held |
+| egc12_s1 | standard | ~9,700, held | 96.2% | standard + 2 synonyms (12), 83% | none |
+| egc12_s10 | standard | ~500, held | 38.1% at transition + 2048 | standard (10), 98% | 14,081, held |
+| egc13_s10 | random | none | - | 23% | 14,081, held |
+| egc12_s11 | standard | none | - | standard (10), 67% | 2,305, collapsed |
+| egc13_s11 | random | ~1,000, held | 81.8% | evolved (16), 99% | 2,305, collapsed |
+
+- In both runs that held on a non-standard map, the map has more than 10 coding entries: 12 and 16. No held
+  run sits on a map with fewer than 10.
+- Mean coding entries are above 10 only in soups with replicators or overwriters. In soups without
+  either, they stay at 10.0-10.6.
