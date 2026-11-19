@@ -447,3 +447,22 @@ instruction or a no-op). A mutation changes one entry.
   programs execute more instructions, so they write more bytes, author more partners and pass the map on.
   That is selection on the code, but for write activity. A check: correlate a map's coding count with the
   number of tables it passes on in each epoch.
+- Check, on the epoch-14,465 checkpoint of seed 0 (random maps), with 4,000 sampled pairs run under their
+  own maps (Python reimplementation):
+
+  | coding entries | bytes written into the partner (mean) |
+  |---|---|
+  | 0-8 | 0.14 |
+  | 9-11 | 0.18 |
+  | 12-15 | 0.26 |
+  | 16+ | 0.36 |
+
+  - The correlation is 0.14. Maps with more coding bytes do write more into partners.
+  - A map is inherited only when more than 32 bytes are overwritten. That happens in about 1-30 of 65,536
+    interactions per epoch (log column `inherited`), so it is rare, but over about 14,000 epochs it moves
+    map frequencies.
+  - Over the same time, ops per run fell from 62 to 15 and H fell to about 0. The coding-rich maps that
+    spread are associated with a soup that becomes less structured and less active.
+  - Reading: authorship inheritance selects maps that overwrite, not maps that replicate or are robust. This
+    is a design flaw of authorship inheritance when codes differ in function. A replicator check should be
+    made before a map is passed on.
