@@ -9,7 +9,7 @@
   (idempotent), i.e.:
   (runs3: all L80 runs paused at checkpoints; uncomment in runs3/runs.txt and start
    MAX_PROCS=1 nohup tools/supervise_runs.sh runs3 runs3/bin 60 to resume)
-  (MAX_PROCS=4 nohup tools/supervise_runs.sh runs6 runs6/bin 60 >> runs6/supervisor.out 2>&1 &)
+  (MAX_PROCS=5 nohup tools/supervise_runs.sh runs6 runs6/bin 60 >> runs6/supervisor.out 2>&1 &)
 - Keep working between events; do not idle.
 
 ## Commits
