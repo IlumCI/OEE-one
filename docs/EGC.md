@@ -265,6 +265,7 @@ seeds 0-9 of the original arms.
 | 12 | 1.27, 10,049 | 0.28 | 62.1% | collapsed (by H; not inspected) |
 | 17 | 1.72, 8,385 | 0.14 | 47.7% | collapsed (by H; not inspected) |
 | 18 | 4.80, 6,529 | 4.80 | 99.7% | held (98.2% self-replicators) |
+| 19 | 1.61, 1,025 | 0.41 | 56.1% | collapsed (by H; not inspected) |
 | 14 | 4.41, 6,273 | 4.41 | 99.97% | held (98.3% self-replicators); predicted from top share 99.8% at H 3.9 |
 
 - 9/9 transitioned (plain BFF: 3/9 on these seeds: 0, 2, 8; seed 8 collapsed there too), but 2/9 held. Both
@@ -376,3 +377,5 @@ seeds 0-9 of the original arms.
   self-replicators). Random-code tally 17/17 transitioned, 4/17 held. All 4 holds have top share > 95%; none
   of the 13 non-holds reached 82%. Plain BFF on these 17 seeds held 6 times, so random codes hold less
   often, but every hold sits on an evolved, non-standard code.
+- Seed 19 (random codes): transitioned and collapsed, top share 56.1%. Random-code tally: 18/18 transitioned,
+  4/18 held. The rule still separates them.
