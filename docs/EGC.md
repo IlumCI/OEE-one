@@ -430,3 +430,20 @@ instruction or a no-op). A mutation changes one entry.
   2.5, but only 4.4% of programs were self-replicators at the end.
 - Revised rule: a sweep above 95% is necessary for a hold (it held in all 4 cases, and none of the 15
   others without a sweep held) but not sufficient (seed 3).
+
+### Option 3 interim: coding entries rise before any transition (seed 0, random maps)
+
+| epoch | mean coding entries | coding entries in top map | top map share |
+|---|---|---|---|
+| 1 | 10.00 | - | 0.00% |
+| 1,025 | 10.17 | 16 | 0.13% |
+| 3,073 | 10.54 | 20 | 0.46% |
+| 5,121 | 11.18 | 20 | 1.53% |
+
+- The mean is above the neutral 10 and rises steadily. The commonest maps carry 16-20 coding entries. H is
+  still 0.2-0.26, so there are no replicators yet.
+- Seed 10 (random maps) stays flat at 10.2.
+- A likely cause, untested, is authorship bias, not robustness. A map with more coding bytes makes its
+  programs execute more instructions, so they write more bytes, author more partners and pass the map on.
+  That is selection on the code, but for write activity. A check: correlate a map's coding count with the
+  number of tables it passes on in each epoch.
