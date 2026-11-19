@@ -409,3 +409,13 @@ instruction or a no-op). A mutation changes one entry.
   - whether lineages with more synonyms displace others. Selection on the code would show as a sweep that
     is not explained by hitchhiking.
 - Control: the same map but frozen at the standard code (equivalent to plain BFF).
+- Built (`-egc 5`, binary runs7/bin/oee_bff_egc8). A mutated entry becomes an instruction with chance 10/256
+  and a no-op otherwise, so the neutral expectation is about 10 coding entries per map. Mean coding entries
+  above that would mean synonyms are being selected.
+- Checks (test bff_egc):
+  - a frozen standard map reproduces plain BFF over 20,000 random tapes;
+  - an 8192-program soup log over 300 epochs is identical to plain BFF;
+  - a synonym executes as its instruction;
+  - the checkpoint keeps the maps.
+- New log columns: `top_coding` (coding entries in the most common map) and `mean_coding`.
+- Runs: lane 3, seeds 0-9, arm 12 (standard start) and arm 13 (random start).

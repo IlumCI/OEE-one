@@ -49,5 +49,17 @@ Params q;q.num_programs=512;q.seed=7;q.egc=4;Soup s4(q);for(int e=0;e<5;++e)s4.e
 s4.save("egc_ck.bin");Soup r4=Soup::load("egc_ck.bin",1);
 const int ck4=r4.params().egc==4&&r4.data()==s4.data()&&r4.tables()==s4.tables();
 std::printf("option 2 checkpoint keeps tables: %s\n",ck4?"yes":"no");
-return (bad||!same||!ck||!run_ok||!inert_ok||xbad||!ck4)?1:0;
+// option 3: a standard 256-entry map reproduces plain BFF; a synonym (second byte for '>') also moves the head.
+std::uint8_t sm[kMap]={};for(int k=0;k<kCodon;++k)sm[std::uint8_t(kStd[k])]=std::uint8_t(k+1);
+int mbad=0;for(std::uint64_t t=0;t<20000;++t){
+for(int i=0;i<kPair;++i)a[i]=std::uint8_t(splitmix64(t*7+i));
+std::memcpy(b,a,kPair);int wr[2];evaluate(a);eval_ext(b,sm,sm,wr,kMaxSteps,kMap);mbad+=std::memcmp(a,b,kPair)!=0;}
+std::uint8_t syn[kMap];std::memcpy(syn,sm,kMap);syn[200]=sm[std::uint8_t('>')];
+std::memset(a,0,kPair);for(int k=0;k<6;++k)a[k]=200;a[6]='+';{int wr[2];eval_ext(a,syn,syn,wr,kMaxSteps,kMap);}
+const int syn_ok=a[6]=='+'+1;  // h0 moved 6 cells by the synonym, then '+' incremented tape[6]
+Params q5;q5.num_programs=512;q5.seed=7;q5.egc=5;Soup s5(q5);for(int e=0;e<5;++e)s5.epoch();
+s5.save("egc_ck.bin");Soup r5=Soup::load("egc_ck.bin",1);
+const int ck5=r5.params().egc==5&&r5.tables().size()==512u*kMap&&r5.tables()==s5.tables()&&r5.data()==s5.data();
+std::printf("option 3: %d differ from plain BFF; synonym works %s; checkpoint keeps maps %s\n",mbad,syn_ok?"yes":"no",ck5?"yes":"no");
+return (bad||!same||!ck||!run_ok||!inert_ok||xbad||!ck4||mbad||!syn_ok||!ck5)?1:0;
 }

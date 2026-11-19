@@ -42,7 +42,10 @@ std::size_t eval_egc(std::uint8_t* tape,int mode,std::size_t max_steps=kMaxSteps
 // table is addressable memory. ta, tb: the two programs' tables (kCodon bytes each, same meaning as above).
 // Each instruction is decoded with the table of the program it lies in. wr[h] returns how many bytes of
 // half h were last written by code running in the other half (authorship).
-std::size_t eval_ext(std::uint8_t* tape,const std::uint8_t* ta,const std::uint8_t* tb,int wr[2],std::size_t max_steps=kMaxSteps);
+constexpr int kMap=256;  // option 3 (mode 5): a 256-entry map per program, entry = instruction index + 1, 0 = no-op
+// A mutated map entry is an instruction with chance 10/256 (as for a random byte), else a no-op.
+inline std::uint8_t map_entry(std::uint64_t r){const int v=int(r&0xFF);return std::uint8_t(v<kCodon?v+1:0);}
+std::size_t eval_ext(std::uint8_t* tape,const std::uint8_t* ta,const std::uint8_t* tb,int wr[2],std::size_t max_steps=kMaxSteps,int tl=kCodon);
 
 // cubff CheckSelfRep: pair the program with 13 random noise tapes, run 5 generations
 // (each generation copies the right half to the left and refills the right with the
@@ -50,7 +53,7 @@ std::size_t eval_ext(std::uint8_t* tape,const std::uint8_t* ta,const std::uint8_
 // count; cubff treats >= kSelfrepThreshold as a self-replicator.
 constexpr std::size_t kSelfrepThreshold = 5;
 std::size_t selfrep_score(const std::uint8_t* program, std::uint64_t seed, std::size_t num_programs,
-                          std::size_t index, int egc = 0, const std::uint8_t* table = nullptr);
+                          std::size_t index, int egc = 0, const std::uint8_t* table = nullptr,int tl=kCodon);
 // Printable form (cubff convention): commands as themselves, 0 as '0', others as '.'-free
 // placeholders ('_').
 std::string to_text(const std::uint8_t* program, std::size_t n = kTape);
@@ -68,7 +71,7 @@ struct Params {
   // themselves into the buffer leave lasting descendants.
   bool m5_protocol = false;
   int tab_shift = 8;  // modes 3, 4: table bytes mutate at mutation_prob >> tab_shift
-  int egc = 0;  // 3: external tables, standard and fixed; 4: external tables, evolvable, inherited by authorship. 0: cubff BFF; 1: codon-table layout, fixed code (control); 2: evolvable code
+  int egc = 0;  // 5: option 3, evolvable 256-entry maps (synonymous codons possible); 3: external tables, standard and fixed; 4: external tables, evolvable, inherited by authorship. 0: cubff BFF; 1: codon-table layout, fixed code (control); 2: evolvable code
   bool egc_std = false;
   int egc_guard = 0;  // bits: 1 heads start after A's table; 2 '+'/'-' cannot change tables; 4 aligned copies only; 8 slow table mutation  // evolvable code, but every program starts with the standard code in its table
 };

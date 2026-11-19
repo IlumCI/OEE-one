@@ -44,7 +44,7 @@ int main(int argc, char** argv) {
     else if(s=="-switch-egc"){sw_egc=std::atoi(next());sw_guard=std::atoi(next());}
     else if(s=="-keep-every")keep_every=std::strtoull(next(),nullptr,10);  // also keep CK.<epoch> every K epochs
     else if(s=="-egc-guard")p.egc_guard=std::atoi(next());  // start every table at the standard code
-    else if(s=="-egc")p.egc=std::atoi(next());  // 1: codon layout, fixed code; 2: evolvable code; 3, 4: external tables (option 2)
+    else if(s=="-egc")p.egc=std::atoi(next());  // 1: codon layout, fixed code; 2: evolvable code; 3, 4: external tables (option 2); 5: 256-entry maps (option 3)
     else if(s=="-tab-shift")p.tab_shift=std::atoi(next());  // modes 3, 4: table mutation rate = mutation >> this
     else if (s == "-grid") { p.grid_w = std::atoi(next()); p.grid_h = std::atoi(next()); p.num_programs = std::size_t(p.grid_w) * p.grid_h; }
     else if (s == "-log") log_path = next();
@@ -67,6 +67,7 @@ int main(int argc, char** argv) {
   if (!log) { std::perror("log"); return 1; }
   if (!soup.epochs_done())
     std::fprintf(log, cubff_log ? "epoch,brotli_size,soup_size,higher_entropy\n"
+                                : soup.params().egc==5?"epoch,brotli_size,soup_size,higher_entropy,h0,brotli_bpb,ops_per_run,tables,std_share,top_share,inherited,top_coding,mean_coding\n"
                                 : soup.params().egc>=3?"epoch,brotli_size,soup_size,higher_entropy,h0,brotli_bpb,ops_per_run,tables,std_share,top_share,inherited\n"
                                 : "epoch,brotli_size,soup_size,higher_entropy,h0,brotli_bpb,ops_per_run\n");
   // cubff: metrics after the epoch with index e when e % interval == 0, reported as e + 1;
@@ -80,11 +81,15 @@ int main(int argc, char** argv) {
         std::fprintf(log, "%zu,%zu,%zu,%f\n", m.epoch, m.brotli_size, soup.params().num_programs, m.higher_entropy);
       else
       if(soup.params().egc>=3){
+      const int tl=soup.params().egc==5?kMap:kCodon;
       std::unordered_map<std::string,std::size_t> c;const auto&t=soup.tables();const std::size_t n=soup.params().num_programs;
-      for(std::size_t i=0;i<n;++i)++c[std::string(reinterpret_cast<const char*>(&t[i*kCodon]),kCodon)];
-      std::size_t top=0;for(auto&kv:c)top=std::max(top,kv.second);const auto it=c.find("[]+-.,<>{}");
-      std::fprintf(log,"%zu,%zu,%zu,%f,%f,%f,%.2f,%zu,%f,%f,%zu\n",m.epoch,m.brotli_size,n,m.higher_entropy,m.h0,m.brotli_bpb,m.ops_per_run,
+      for(std::size_t i=0;i<n;++i)++c[std::string(reinterpret_cast<const char*>(&t[i*tl]),tl)];
+      std::string sk="[]+-.,<>{}";if(tl==kMap){sk.assign(kMap,'\0');for(int k=0;k<kCodon;++k)sk[std::uint8_t("[]+-.,<>{}"[k])]=char(k+1);}
+      std::size_t top=0;std::string tk;for(auto&kv:c)if(kv.second>top){top=kv.second;tk=kv.first;}const auto it=c.find(sk);
+      std::fprintf(log,"%zu,%zu,%zu,%f,%f,%f,%.2f,%zu,%f,%f,%zu",m.epoch,m.brotli_size,n,m.higher_entropy,m.h0,m.brotli_bpb,m.ops_per_run,
       c.size(),it==c.end()?0.0:double(it->second)/n,double(top)/n,soup.inherited());
+      if(tl==kMap){int tc=0;for(char x:tk)tc+=x!=0;double mc=0;for(std::size_t i=0;i<n*kMap;++i)mc+=t[i]!=0;std::fprintf(log,",%d,%.2f",tc,mc/n);}  // coding entries: top map, mean
+      std::fprintf(log,"\n");
       }else
         std::fprintf(log, "%zu,%zu,%zu,%f,%f,%f,%.2f\n", m.epoch, m.brotli_size, soup.params().num_programs,
                      m.higher_entropy, m.h0, m.brotli_bpb, m.ops_per_run);
