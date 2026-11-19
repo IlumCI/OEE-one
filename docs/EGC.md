@@ -546,3 +546,13 @@ above. Arms 14 (standard start) and 15 (random) are queued for seeds 0-9, after 
 - Seed 1 is the first paired test. The option-3 transition there did not reappear under 3b. One seed only,
   but it suggests the synonym-map transition depended on authorship spread: the overwriter route seeded the
   winning map. Remaining 3b seeds decide.
+- 3b update: egc14_s10 (standard) transitioned at about 500 and held on the standard map, the same as option 3.
+  egc15_s1 and egc15_s10 (random maps) ended with no transition and no map spread (top share at most
+  0.02%), and egc15_s11 has none at 10k.
+- Reading so far: with faithful-copy inheritance, random maps never homogenise, and no replicator appears.
+  Partners read each other's bytes with different codes. In options 2 and 3 the random-code transitions
+  (20/20 in option 2) were preceded by authorship spread of one code, so a shared code came before
+  replicators. Hypothesis: a common code must exist before replication can start, and authorship spread
+  (horizontal code transfer) supplied it. This matches the view that early life shared codes through
+  horizontal transfer before vertical descent took over (Vetsigian, Woese and Goldenfeld 2006,
+  "Collective evolution and the genetic code").
