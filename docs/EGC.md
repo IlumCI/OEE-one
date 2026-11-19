@@ -523,3 +523,4 @@ above. Arms 14 (standard start) and 15 (random) are queued for seeds 0-9, after 
   run sits on a map with fewer than 10.
 - Mean coding entries are above 10 only in soups with replicators or overwriters. In soups without
   either, they stay at 10.0-10.6.
+- Lane 3 switched to option 3b (arms 14, 15) on seeds 0-9 after the overwriter pattern recurred on seed 12 (random maps: mean coding 14.4, H about 0). Option 3 arms 12/13 for seeds 1 (random) and 2-9 are paused; egc13_s1 resumes from its checkpoint when re-queued.
