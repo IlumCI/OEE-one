@@ -532,3 +532,17 @@ above. Arms 14 (standard start) and 15 (random) are queued for seeds 0-9, after 
   mean coding 13.8). Replicators then appeared on a 15-entry map and held: 73.0% self-replicators and
   H 4.91 at the end, a seed where plain BFF never transitions. Option 3 held runs: three on evolved maps
   with 12, 15 and 16 coding entries, and one on the standard map (seed 10).
+
+### Option 3b so far (faithful-copy inheritance)
+
+| run | map start | outcome | option 3 (authorship) on the same seed |
+|---|---|---|---|
+| egc14_s0 | standard | none | none |
+| egc15_s0 | random | none; no map spread (top share 0.02%), coding 10.0 | none, overwriter state |
+| egc14_s1 | standard | none (peak H 0.37), coding 10.0 | ~9,700 transition on a 12-entry synonym map, held |
+
+- With faithful-copy inheritance, maps spread only through actual copies, and coding entries stay at 10.0
+  where there are no replicators. This is the intended null.
+- Seed 1 is the first paired test. The option-3 transition there did not reappear under 3b. One seed only,
+  but it suggests the synonym-map transition depended on authorship spread: the overwriter route seeded the
+  winning map. Remaining 3b seeds decide.
