@@ -61,3 +61,7 @@ l4a_s3 resets_v12 3 3000000 -collectives -division-of-labour -senescence -grow-e
 l4f_s3 resets_v12 3 3000000 -collectives -division-of-labour -senescence -grow-every 500000 -grow-by 4 -grow-max 52 -grow-neurons-by 8 -grow-neurons-max 84 -second-shadow -presence presence -crng -lock-frozen
 l4r_s3 resets_v13 3 3000000 -collectives -division-of-labour -senescence -grow-every 500000 -grow-by 4 -grow-max 52 -grow-neurons-by 8 -grow-neurons-max 84 -second-shadow -presence presence -crng -lock-churn-rate 280
 l4n_s3 resets_v12 3 3000000 -collectives -division-of-labour -senescence -grow-every 500000 -grow-by 4 -grow-max 52 -grow-neurons-by 8 -grow-neurons-max 84 -second-shadow -presence presence -crng
+# L4a2: evolving locks with archive floor (docs/L4.md)
+l4b_s1 resets_v14 1 3000000 -collectives -division-of-labour -senescence -grow-every 500000 -grow-by 4 -grow-max 52 -grow-neurons-by 8 -grow-neurons-max 84 -second-shadow -presence presence -crng -locks -lock-floor
+l4b_s2 resets_v14 2 3000000 -collectives -division-of-labour -senescence -grow-every 500000 -grow-by 4 -grow-max 52 -grow-neurons-by 8 -grow-neurons-max 84 -second-shadow -presence presence -crng -locks -lock-floor
+l4b_s3 resets_v14 3 3000000 -collectives -division-of-labour -senescence -grow-every 500000 -grow-by 4 -grow-max 52 -grow-neurons-by 8 -grow-neurons-max 84 -second-shadow -presence presence -crng -locks -lock-floor

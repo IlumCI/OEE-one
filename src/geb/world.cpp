@@ -938,8 +938,8 @@ Lock&l=locks_[c];if(l.key.empty())continue;
 const int n=int(l.op.size());l.op.clear();
 if((lmode_&15)==1)continue;
 if((lmode_&15)==2){const int pm=(lmode_>>4)?(lmode_>>4):100;if(r.random(1000)<pm){l.key=rnd_key(r,int(l.key.size()));++lborn_;}continue;}  // churn: per mille per window (lmode_>>4, default 100)
-if(n>kLockMax){l.key.clear();l.idle=0;++ldiss_;continue;}
-if(n==0){if(++l.idle>=kLockIdle){l.key.clear();l.idle=0;++ldecay_;}continue;}
+if(n>kLockMax){if(lmode_&kFloor)arch(l.key);l.key.clear();l.idle=0;++ldiss_;continue;}
+if(n==0){if(++l.idle>=kLockIdle){if(lmode_&kFloor)arch(l.key);l.key.clear();l.idle=0;++ldecay_;}continue;}
 l.idle=0;born.push_back(c);
 }
 for(int c:born){
@@ -953,10 +953,23 @@ else if(m==1)k.insert(k.begin()+r.random(int(k.size())+1),Gene(r.random(2)));
 else if(k.size()>2)k.erase(k.begin()+r.random(int(k.size())));
 locks_[t].key=std::move(k);++lborn_;
 }
+// L4a2 floor (POET-style archive): below size/kFloorDiv locks, archived keys (dissolved or decayed) are
+// placed back on random lock-free cells, each with one bit insertion, so the challenge population cannot go
+// extinct between growth events. An empty archive gives fresh random keys of kLockLen0 bits.
+if(!(lmode_&kFloor)||(lmode_&15))return;
+int cnt=0;for(const auto&l:locks_)cnt+=!l.key.empty();
+for(int tries=0;cnt<size_/kFloorDiv&&tries<4*size_;++tries){
+const int t=r.random(size_);if(!locks_[t].key.empty())continue;
+std::vector<Gene> k=larch_.empty()?rnd_key(r,kLockLen0):larch_[r.random(int(larch_.size()))];
+k.insert(k.begin()+r.random(int(k.size())+1),Gene(r.random(2)));
+locks_[t].key=std::move(k);++cnt;++lrefill_;
+}
 }
 
+void World::arch(const std::vector<Gene>&k){if(int(larch_.size())<kArch)larch_.push_back(k);else larch_[larch_pos_++%kArch]=k;}
+
 World::LockStats World::lock_stats() const{
-LockStats s;s.born=lborn_;s.dissolved=ldiss_;s.decayed=ldecay_;
+LockStats s;s.born=lborn_;s.dissolved=ldiss_;s.decayed=ldecay_;s.refilled=lrefill_;
 if(!(p_.collectives&128))return s;
 long tl=0;for(const auto&l:locks_)if(!l.key.empty()){++s.locks;tl+=long(l.key.size());s.maxlen=std::max(s.maxlen,int(l.key.size()));s.opened+=!l.op.empty();}
 s.meanlen=s.locks?double(tl)/s.locks:0;return s;
@@ -1073,7 +1086,8 @@ void World::save(Writer& w) const {
   if (p_.collectives & 8) w.put(propagules_);
   if(p_.collectives&32){w.put(credit_);w.put(collab_);}
   if(p_.collectives&128){w.put(lmode_);w.put(lborn_);w.put(ldiss_);w.put(ldecay_);
-  for(const auto&l:locks_){w.put_vec(l.key);w.put_vec(l.op);w.put(l.idle);}}
+  for(const auto&l:locks_){w.put_vec(l.key);w.put_vec(l.op);w.put(l.idle);}
+  if(lmode_&kFloor){w.put(lrefill_);w.put(larch_pos_);w.put(int(larch_.size()));for(const auto&k:larch_)w.put_vec(k);}}
 }
 
 std::unique_ptr<World> World::load(Reader& r) {
@@ -1123,7 +1137,8 @@ std::unique_ptr<World> World::load(Reader& r) {
   if (p.collectives & 8) w->propagules_ = r.get<long>();
   if(p.collectives&32){w->credit_=r.get<long>();w->collab_=r.get<long>();}
   if(p.collectives&128){w->lmode_=r.get<int>();w->lborn_=r.get<long>();w->ldiss_=r.get<long>();w->ldecay_=r.get<long>();
-  w->locks_.assign(w->size_,Lock{});for(auto&l:w->locks_){l.key=r.get_vec<Gene>();l.op=r.get_vec<std::uint64_t>();l.idle=r.get<int>();}}
+  w->locks_.assign(w->size_,Lock{});for(auto&l:w->locks_){l.key=r.get_vec<Gene>();l.op=r.get_vec<std::uint64_t>();l.idle=r.get<int>();}
+  if(w->lmode_&kFloor){w->lrefill_=r.get<long>();w->larch_pos_=r.get<int>();const int na=r.get<int>();w->larch_.resize(na);for(auto&k:w->larch_)k=r.get_vec<Gene>();}}
   return w;
 }
 

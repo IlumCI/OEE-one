@@ -186,7 +186,7 @@ void stats(const World& w) {
     std::fprintf(out, "time: G%ldG	groups %d largest %d mean_size %.3f bonded_fraction %.3f colonies %d largest_colony %d propagules %ld warrior_fraction %.3f groups_ge4 %d mixed %d\n",
                  w.time(), g.groups, g.largest, g.mean, g.bonded, g.colonies, g.largest_colony, w.propagules(),
                  g.warrior_fraction, g.large, g.mixed);
-    if(w.params().collectives&128){const auto k=w.lock_stats();std::fprintf(out,"time: K%ldK\tlocks %d opened %d meanlen %.3f maxlen %d born %ld dissolved %ld decayed %ld\n",w.time(),k.locks,k.opened,k.meanlen,k.maxlen,k.born,k.dissolved,k.decayed);}
+    if(w.params().collectives&128){const auto k=w.lock_stats();std::fprintf(out,"time: K%ldK\tlocks %d opened %d meanlen %.3f maxlen %d born %ld dissolved %ld decayed %ld refilled %ld\n",w.time(),k.locks,k.opened,k.meanlen,k.maxlen,k.born,k.dissolved,k.decayed,k.refilled);}
     if((w.params().collectives&32)||g_follow)std::fprintf(out,"time: E%ldE\tlength %d neurons %d credit %ld collab_births %ld\n",w.time(),w.world_length(),w.params().max_num_nodes,w.credit(),w.collab());
   }
   std::fflush(out);
@@ -294,6 +294,7 @@ int main(int argc, char** argv) {
     } else if(!std::strcmp(s,"-lock-frozen")){p.collectives|=128;lmode=1;++a;  // L4a control: locks never change
     } else if(!std::strcmp(s,"-lock-churn")){p.collectives|=128;lmode=2;++a;  // L4a control: random re-keying
     } else if(!std::strcmp(s,"-lock-churn-rate")&&has){p.collectives|=128;lmode=2|(std::atoi(argv[a+1])<<4);a+=2;  // churn re-key chance per lock-window, per mille
+    } else if(!std::strcmp(s,"-lock-floor")){p.collectives|=128;lmode|=World::kFloor;++a;  // L4a2: archive refill below size/32 locks
     } else if(!std::strcmp(s,"-lock-frac")&&has){lfrac=std::atof(argv[a+1]);a+=2;
     } else if (!std::strcmp(s, "-senescence")) {
       p.collectives |= 4;  // L3 v4: death after World::kMaxAge updates (use after -collectives*)

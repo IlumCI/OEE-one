@@ -167,10 +167,10 @@ class World {
   long credit() const {return credit_;}
   // L4a locks.
   struct Lock{std::vector<Gene> key;std::vector<std::uint64_t> op;int idle=0;};
-  static constexpr int kLockWin=1000,kLockMax=8,kLockIdle=5,kLockLen0=4;
+  static constexpr int kLockWin=1000,kLockMax=8,kLockIdle=5,kLockLen0=4,kFloor=1<<30,kFloorDiv=32,kArch=256;
   void set_lock_mode(int m){lmode_=m;}  // 0 evolving (minimal criterion band), 1 frozen, 2 random churn (| per mille << 4)
   void lock_init(double frac);
-  struct LockStats{int locks=0,opened=0,maxlen=0;double meanlen=0;long born=0,dissolved=0,decayed=0;};
+  struct LockStats{int locks=0,opened=0,maxlen=0;double meanlen=0;long born=0,dissolved=0,decayed=0,refilled=0;};
   LockStats lock_stats() const;
   long collab() const {return collab_;}
   static constexpr int kMaxAge = 1000;  // L3 v4 senescence (collectives bit 2)  // a budded child joins the parent's group only below this size
@@ -244,7 +244,9 @@ class World {
   int num_not_processed_ = 0;
   long propagules_ = 0;
   long credit_=0,collab_=0;  // v9 commons and cumulative collective births
-  std::vector<Lock> locks_;int lmode_=0;long lborn_=0,ldiss_=0,ldecay_=0;
+  std::vector<Lock> locks_;int lmode_=0;long lborn_=0,ldiss_=0,ldecay_=0,lrefill_=0;
+  std::vector<std::vector<Gene>> larch_;int larch_pos_=0;  // L4a2 archive of dissolved/decayed keys
+  void arch(const std::vector<Gene>&k);
   bool locked(int c) const {return (p_.collectives&128)&&!locks_[c].key.empty();}
   bool unlock(Organism*o,int c);  // true if o may enter c (records the opener)
   void lock_step();
