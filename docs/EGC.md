@@ -351,3 +351,14 @@ seeds 0-9 of the original arms.
 - Plain BFF seed 15 transitioned at 5,953 and held.
 - Second seed in arm 10 whose dominant replicators use a non-standard code, after seed 1. Both cases are
   single reassignments of one instruction.
+
+### Seed 13, standard start: a second `]` reassignment (interim)
+
+- The transition happened on the standard code: at epoch 7,553 the standard code covered 100% of tables
+  and H was 3.23.
+- By 7,937 a variant encoding `]` as byte 142 already held 42.1% (55,119 tables). H jumped a second time,
+  from 3.27 to 4.23, the same pattern as seed 1 (there `]` became byte 74).
+- This is the third arm-10 soup with a codon change in a replicator population (seeds 1, 13, 15). Two of
+  the three reassign `]`, the loop end.
+- A possible reason, untested: `]` is the only instruction whose meaning depends on matching. Moving it
+  changes which loops close, so the variant can rewrite loop structure in one step.
