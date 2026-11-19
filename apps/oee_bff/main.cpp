@@ -41,6 +41,7 @@ int main(int argc, char** argv) {
     else if (s == "-threads") p.threads = std::atoi(next());
     else if (s == "-m5-protocol") p.m5_protocol = true;
     else if(s=="-egc-std")p.egc_std=true;
+    else if(s=="-egc-shared")p.egc_shared=true;  // mode 5: one random map shared by all programs
     else if(s=="-switch-egc"){sw_egc=std::atoi(next());sw_guard=std::atoi(next());}
     else if(s=="-keep-every")keep_every=std::strtoull(next(),nullptr,10);  // also keep CK.<epoch> every K epochs
     else if(s=="-egc-guard")p.egc_guard=std::atoi(next());  // start every table at the standard code

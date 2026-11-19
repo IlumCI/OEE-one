@@ -556,3 +556,12 @@ above. Arms 14 (standard start) and 15 (random) are queued for seeds 0-9, after 
   (horizontal code transfer) supplied it. This matches the view that early life shared codes through
   horizontal transfer before vertical descent took over (Vetsigian, Woese and Goldenfeld 2006,
   "Collective evolution and the genetic code").
+
+### Option 3c test: one shared random map (`-egc-shared`, arm 16, runs7/bin/oee_bff_egc10)
+
+This tests the shared-code hypothesis directly: every program starts with the same random map, under
+faithful-copy inheritance. If a shared code is what random-code transitions need, arm 16 should transition
+where arm 15 (independent random maps) never does (0/4).
+- Smoke run (8192 programs, seed 2, 193 epochs): it runs; one map holds 99.7%, with 16 coding entries.
+- Lanes 3 and 4 switch to arms 14 and 16 (arm 15 dropped) once their current runs end. The exit codes of
+  the two orphaned runs (egc14_s2, egc14_s11) are written as 0, so read their outcome from the logs.

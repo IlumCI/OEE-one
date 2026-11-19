@@ -12,15 +12,15 @@ echo $$ > runs7/lane$lane.pid
 # standard start, guard 15 (guard 15: heads after table, no +/- on tables, aligned copies only, tables
 # mutate 256x slower). Arms 3-7 (weaker guards) only where already started.
 # Option 2 (external tables inherited by authorship; its control is plain BFF, docs/M3.md): 10 standard start,
-# 11 random start. Option 3 (256-entry maps, synonymous codons): 12 standard start, 13 random; 14/15 the same with faithful-copy inheritance (3b). ARMS (env or runs7/laneN.arms) picks the arms; default 1-9.
+# 11 random start. Option 3 (256-entry maps, synonymous codons): 12 standard start, 13 random; 14/15 the same with faithful-copy inheritance (3b); 16 3b with one shared random map. ARMS (env or runs7/laneN.arms) picks the arms; default 1-9.
 [ -z "$ARMS" ]&&[ -f runs7/lane$lane.arms ]&&ARMS=$(cat runs7/lane$lane.arms)
 ARMS=${ARMS:-1 2 3 4 5 6 7 8 9}
 for s in "$@";do for m in $ARMS;do
 [ -f runs7/lane$lane.stop ]&&break 2
 case $m in 3|4|5|6|7)[ ! -d runs7/egc${m}_s$s ]&&continue;;esac
 d=runs7/egc${m}_s$s;mkdir -p $d
-case $m in 1)x=(-egc 1);;2)x=(-egc 2);;3)x=(-egc 2 -egc-std);;4)x=(-egc 2 -egc-guard 3);;5)x=(-egc 2 -egc-std -egc-guard 3);;6)x=(-egc 2 -egc-guard 7);;7)x=(-egc 2 -egc-std -egc-guard 7);;8)x=(-egc 2 -egc-guard 15);;9)x=(-egc 2 -egc-std -egc-guard 15);;10)x=(-egc 4 -egc-std);;11)x=(-egc 4);;12)x=(-egc 5 -egc-std);;13)x=(-egc 5);;14)x=(-egc 5 -egc-std -egc-guard 1);;15)x=(-egc 5 -egc-guard 1);;esac
-b=$B;[ $m -ge 10 ]&&b=runs7/bin/oee_bff_egc7;[ $m -ge 12 ]&&b=runs7/bin/oee_bff_egc8;[ $m -ge 14 ]&&b=runs7/bin/oee_bff_egc9
+case $m in 1)x=(-egc 1);;2)x=(-egc 2);;3)x=(-egc 2 -egc-std);;4)x=(-egc 2 -egc-guard 3);;5)x=(-egc 2 -egc-std -egc-guard 3);;6)x=(-egc 2 -egc-guard 7);;7)x=(-egc 2 -egc-std -egc-guard 7);;8)x=(-egc 2 -egc-guard 15);;9)x=(-egc 2 -egc-std -egc-guard 15);;10)x=(-egc 4 -egc-std);;11)x=(-egc 4);;12)x=(-egc 5 -egc-std);;13)x=(-egc 5);;14)x=(-egc 5 -egc-std -egc-guard 1);;15)x=(-egc 5 -egc-guard 1);;16)x=(-egc 5 -egc-shared -egc-guard 1);;esac
+b=$B;[ $m -ge 10 ]&&b=runs7/bin/oee_bff_egc7;[ $m -ge 12 ]&&b=runs7/bin/oee_bff_egc8;[ $m -ge 14 ]&&b=runs7/bin/oee_bff_egc9;[ $m -ge 16 ]&&b=runs7/bin/oee_bff_egc10
 [ -f $d/exit_code ]&&continue
 r=();[ -f $d/ck ]&&r=(-resume $d/ck)
 # Standard-start arms (3, 5, 7, 9): identical tables alone add ~0.9 to high-order entropy, so the H >= 1

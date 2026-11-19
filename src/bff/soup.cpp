@@ -321,6 +321,7 @@ Soup::Soup(const Params& p) : p_(p), soup_(p.num_programs * kTape), order_(p.num
   if(p_.egc==5){tabs_.assign(n*kMap,0);  // option 3: 256-entry translation maps
   if(p_.egc_std){for(std::uint64_t idx=0;idx<n;++idx)for(int k=0;k<kCodon;++k)tabs_[idx*kMap+std::uint8_t("[]+-.,<>{}"[k])]=std::uint8_t(k+1);}
   else for(std::uint64_t i=0;i<n*kMap;++i)tabs_[i]=map_entry(splitmix64(~(kMap*n*s0+i)));
+  if(p_.egc_shared)for(std::uint64_t idx=1;idx<n;++idx)std::memcpy(&tabs_[idx*kMap],&tabs_[0],kMap);  // one random map for all programs
   return;}
   if(p_.egc>=3){tabs_.resize(n*kCodon);for(std::uint64_t idx=0;idx<n;++idx)std::memcpy(&tabs_[idx*kCodon],"[]+-.,<>{}",kCodon);
   if(!p_.egc_std&&p_.egc==4)for(std::uint64_t i=0;i<n*kCodon;++i)tabs_[i]=std::uint8_t(splitmix64(~(kCodon*n*s0+i))&0xFF);return;}

@@ -73,6 +73,7 @@ struct Params {
   int tab_shift = 8;  // modes 3, 4: table bytes mutate at mutation_prob >> tab_shift
   int egc = 0;  // 5: option 3, evolvable 256-entry maps (synonymous codons possible); 3: external tables, standard and fixed; 4: external tables, evolvable, inherited by authorship. 0: cubff BFF; 1: codon-table layout, fixed code (control); 2: evolvable code
   bool egc_std = false;
+  bool egc_shared = false;  // mode 5: every program starts with the same random map (initial state only)
   int egc_guard = 0;  // mode 5: bit 1 = map passes only with a faithful copy (option 3b). modes 1-2 bits: 1 heads start after A's table; 2 '+'/'-' cannot change tables; 4 aligned copies only; 8 slow table mutation  // evolvable code, but every program starts with the standard code in its table
 };
 
