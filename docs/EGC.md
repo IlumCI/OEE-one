@@ -265,6 +265,7 @@ seeds 0-9 of the original arms.
 | 12 | 1.27, 10,049 | 0.28 | 62.1% | collapsed (by H; not inspected) |
 | 17 | 1.72, 8,385 | 0.14 | 47.7% | collapsed (by H; not inspected) |
 | 18 | 4.80, 6,529 | 4.80 | 99.7% | held (98.2% self-replicators) |
+| 14 | 4.41, 6,273 | 4.41 | 99.97% | held (98.3% self-replicators); predicted from top share 99.8% at H 3.9 |
 
 - 9/9 transitioned (plain BFF: 3/9 on these seeds: 0, 2, 8; seed 8 collapsed there too), but 2/9 held. Both
   runs that held are the two in which one code passed 95% of the soup.
@@ -291,10 +292,11 @@ seeds 0-9 of the original arms.
 | 15 | ~10,300, held (H 5.37, 96.1% self-replicators, variant code `-`=89) | 5,953, held |
 | 16 | none (peak H 0.39) | 5,377, collapsed |
 | 14 | none | none |
+| 18 | none (peak H 0.37) | none |
 | 13 | ~7,400, held (H 5.22, 98.5% self-replicators; `]`=142 variant 71.9%, standard 27.3%) | none |
 | 8 | none (peak H 0.41) | 3,585, collapsed |
 
-- Transitions: 8/17 in arm 10 against 9/17 in plain BFF; held to the end: arm 10 6/17, plain BFF 6/17.
+- Transitions: 8/18 in arm 10 against 9/18 in plain BFF; held to the end: arm 10 6/18, plain BFF 6/18.
 - Seeds 10-19 of both arms started in lanes 3-4, which gives 20 seeds per arm to compare with the 20-seed M3
   sweep.
 - Table mutation changes the random trajectory from the first epochs on, so seeds are not paired between
@@ -370,3 +372,7 @@ seeds 0-9 of the original arms.
   race hypothesis predicted a hold. It held (98.2% self-replicators, H 4.80). Random-code tally: 16/16
   transitioned and 3/16 held. All 3 that held have a top code above 95%. All 13 that did not stayed between
   48% and 81%.
+- Seed 14 (random codes) was predicted to hold from its top share (99.8% at H 3.9), and it held (98.3%
+  self-replicators). Random-code tally 17/17 transitioned, 4/17 held. All 4 holds have top share > 95%; none
+  of the 13 non-holds reached 82%. Plain BFF on these 17 seeds held 6 times, so random codes hold less
+  often, but every hold sits on an evolved, non-standard code.
