@@ -593,3 +593,4 @@ Instruction counts in the dominant map at the end of each run:
   went 0/4.
 - The shared-map arm is still useful: egc16_s11's map has `.`, `{`, `}` and `>`, enough to copy, so it is a
   test of a complete-enough shared random code.
+- Prediction check: egc16_s11, whose shared map can copy, transitioned (H 3.11 at 6,529, map 99.9%). egc16_s0 and egc16_s10, which cannot copy, never did. The complete-code explanation predicted all three.
