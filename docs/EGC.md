@@ -518,6 +518,9 @@ above. Arms 14 (standard start) and 15 (random) are queued for seeds 0-9, after 
 | egc13_s10 | random | none | - | 23% | 14,081, held |
 | egc12_s11 | standard | none | - | standard (10), 67% | 2,305, collapsed |
 | egc13_s11 | random | ~1,000, held | 81.8% | evolved (16), 99% | 2,305, collapsed |
+| egc12_s12 | standard | none | - | standard (10), 71% | 11,585, held |
+| egc13_s12 | random | none, overwriter state (mean coding 14.6, H about 0) | - | 41% | 11,585, held |
+| egc13_s13 | random | overwriter state (coding 13.8, H 0.22), then ~9,800 transition, held | 73.0% | evolved (15), 95% | none |
 
 - In both runs that held on a non-standard map, the map has more than 10 coding entries: 12 and 16. No held
   run sits on a map with fewer than 10.
@@ -525,3 +528,7 @@ above. Arms 14 (standard start) and 15 (random) are queued for seeds 0-9, after 
   either, they stay at 10.0-10.6.
 - Lane 3 switched to option 3b (arms 14, 15) on seeds 0-9 after the overwriter pattern recurred on seed 12 (random maps: mean coding 14.4, H about 0). Option 3 arms 12/13 for seeds 1 (random) and 2-9 are paused; egc13_s1 resumes from its checkpoint when re-queued.
 - Lane 4 switched to option 3b (arms 15, 14) on seeds 10-19 after egc13_s13 ends: plain option 3 with random maps entered the overwriter state on seeds 0, 12 and 13.
+- Seed 13 (random maps, plain option 3): the soup went through the overwriter state first (H down to 0.22,
+  mean coding 13.8). Replicators then appeared on a 15-entry map and held: 73.0% self-replicators and
+  H 4.91 at the end, a seed where plain BFF never transitions. Option 3 held runs: three on evolved maps
+  with 12, 15 and 16 coding entries, and one on the standard map (seed 10).
