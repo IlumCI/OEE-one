@@ -379,3 +379,33 @@ seeds 0-9 of the original arms.
   often, but every hold sits on an evolved, non-standard code.
 - Seed 19 (random codes): transitioned and collapsed, top share 56.1%. Random-code tally: 18/18 transitioned,
   4/18 held. The rule still separates them.
+
+## Next design: a code that can be selected (option 3, planned)
+
+Problem: in option 2 every table maps exactly one byte to each instruction, so all codes are functionally
+equivalent. A reassignment only relabels bytes, and selection cannot act on the code itself (seed 1
+lineages, above).
+
+Prior work:
+- Interplay of Fidelity and Diversity in the Evolution of the Genetic Code (arXiv 2510.10871, 2025). Code
+  optimality is a trade-off between translation-error minimisation (fidelity) and matching the composition
+  of what is encoded (diversity).
+- Neutral emergence of error minimisation through code expansion (PMC4500140). Robust codes can arise from
+  codon duplication without direct selection.
+- Computational Life (2406.19108): the BFF base.
+- Avida instruction-set studies (langev.com/pdf/ofria02ieee.pdf): instruction sets differ in evolvability,
+  so the encoding matters.
+
+Mapping to BFF: replace the 10-byte table with a 256-entry translation map, one entry per byte value (an
+instruction or a no-op). A mutation changes one entry.
+- An instruction may then be encoded by several bytes (synonymous codons). Byte mutations between synonyms
+  are neutral, so fidelity, that is robustness to the 1/2^12 per-byte mutation, becomes selectable.
+- More no-op entries give more bytes free for data, which is the diversity side.
+- Inheritance by authorship is unchanged.
+- Measures:
+  - degeneracy per instruction over time;
+  - the robustness of the dominant replicator to point mutations under its own code against under
+    shuffled codes;
+  - whether lineages with more synonyms displace others. Selection on the code would show as a sweep that
+    is not explained by hitchhiking.
+- Control: the same map but frozen at the standard code (equivalent to plain BFF).
