@@ -487,3 +487,22 @@ instruction or a no-op). A mutation changes one entry.
 A map passes from A to B only if more than 32 of B's bytes end up equal to A's bytes at the same offset
 before the interaction, that is, B was overwritten by a copy of A. This removes the overwriter bias found
 above. Arms 14 (standard start) and 15 (random) are queued for seeds 0-9, after the option-3 lanes.
+
+### Seed 1, standard map (option 3): the transition comes on maps with added synonyms (interim)
+
+- At epoch 9,665 the standard map covered 83.3% of tables (10 coding entries). By 9,729 it covered 0%, and H
+  jumped from 1.29 to 3.79.
+- The maps that swept are the standard map plus extra synonyms. Checkpoint 9,728, top four:
+
+  | tables | coding entries | change from the standard map |
+  |---|---|---|
+  | 94,094 | 12 | byte 141 = `-`, byte 193 = `,` |
+  | 18,236 | 11 | byte 70 = `+` |
+  | 13,383 | 12 | byte 141 = `+`, byte 183 = `}` |
+  | 4,537 | 11 | byte 141 = `+` |
+
+- None of the four lost an original codon. Each only gained synonyms, and the mean coding count rose from
+  10.17 to 11.84 within 64 epochs.
+- Together with seed 11 (random maps; 16 coding entries, with synonyms on head moves and copy), this is the
+  first sign that replicators favour codes with synonyms. It is not yet separated from founder effects or
+  from the overwriter bias: this arm uses plain authorship inheritance, not 3b.
