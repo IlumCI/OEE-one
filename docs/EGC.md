@@ -264,6 +264,7 @@ seeds 0-9 of the original arms.
 | 16 | 1.79, 4,033 | 0.40 | 58.2% | collapsed (by H; not inspected) |
 | 12 | 1.27, 10,049 | 0.28 | 62.1% | collapsed (by H; not inspected) |
 | 17 | 1.72, 8,385 | 0.14 | 47.7% | collapsed (by H; not inspected) |
+| 18 | 4.80, 6,529 | 4.80 | 99.7% | held (98.2% self-replicators) |
 
 - 9/9 transitioned (plain BFF: 3/9 on these seeds: 0, 2, 8; seed 8 collapsed there too), but 2/9 held. Both
   runs that held are the two in which one code passed 95% of the soup.
@@ -363,3 +364,8 @@ seeds 0-9 of the original arms.
   the three reassign `]`, the loop end.
 - A possible reason, untested: `]` is the only instruction whose meaning depends on matching. Moving it
   changes which loops close, so the variant can rewrite loop structure in one step.
+
+- Prediction test (seed 18, random codes): one code was already at 99.3% when the transition started, so the
+  race hypothesis predicted a hold. It held (98.2% self-replicators, H 4.80). Random-code tally: 16/16
+  transitioned and 3/16 held. All 3 that held have a top code above 95%. All 13 that did not stayed between
+  48% and 81%.
