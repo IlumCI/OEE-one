@@ -565,3 +565,4 @@ where arm 15 (independent random maps) never does (0/4).
 - Smoke run (8192 programs, seed 2, 193 epochs): it runs; one map holds 99.7%, with 16 coding entries.
 - Lanes 3 and 4 switch to arms 14 and 16 (arm 15 dropped) once their current runs end. The exit codes of
   the two orphaned runs (egc14_s2, egc14_s11) are written as 0, so read their outcome from the logs.
+- egc14_s2: a second instance resumed from the ~15,900 checkpoint while the orphaned first one was finishing (both lanes were restarted by one waiter). Its log has duplicate rows near the end; dedupe by epoch before analysis. Outcome unaffected: no transition (peak H about 0.37).
