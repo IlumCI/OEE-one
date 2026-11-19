@@ -307,3 +307,28 @@ seeds 0-9 of the original arms.
     one.
   The kept checkpoints (every 1,024 epochs) allow per-lineage replicator counts and cross-lineage overwrite
   rates. That analysis is the next step once the run ends at 32,768.
+
+### Seed 1 lineages over time (`tools/bff/egc_lineages.py`, 512 programs sampled per table)
+
+| epoch | `J` lineage | standard | self-replicators, `J` / standard |
+|---|---|---|---|
+| 17,408 | 59.8% | 39.8% | 98% / 98% |
+| 20,480 | 70.1% | 29.7% | 97% / 97% |
+| 23,552 | 82.9% | 16.8% | 95% / 93% |
+| 25,600 | 79.2% | 18.2% | 87% / 88% |
+| 28,672 | 63.0% | 35.9% | 86% / 83% |
+| 30,720 | 79.1% | 19.6% | 89% / 88% |
+| 32,768 | 77.6% | 21.3% | 92% / 92% |
+
+- The two lineages have the same self-replicator share at every checkpoint. Neither code makes better
+  replicators.
+- The `J` share swings by 15-20 points within 1,000-2,000 epochs. In a population of 131,072 this is far too
+  fast for neutral drift of the tables alone. Because tables travel with the bytes, they most likely
+  hitchhike on program-level sweeps: whichever programs win the copying competition carry their code with
+  them. Not yet tested: the dominant program family per lineage around a swing.
+- Third tables come and go at about 1%, on both backgrounds (`J`+`,`=24, standard+`+`=98, standard+`<`=216),
+  all with the same replicator share.
+- Reading: in this soup the code is an evolvable, heritable trait that changes and diversifies, but it is
+  under weak or no selection. It mostly marks lineages. Getting selection on the code itself would need
+  codes that differ in function, for example a cost per distinct instruction, or new instructions available
+  only to some codes.
