@@ -350,7 +350,9 @@ void Soup::run_pairs(std::size_t begin, std::size_t end, std::uint64_t epoch_see
     std::uint8_t*ta=&tabs_[std::size_t(a)*tl],*tb=&tabs_[std::size_t(b)*tl];
     if(p_.egc>=4)for(std::uint64_t i=0;i<std::uint64_t(2*tl);++i){const std::uint64_t r=splitmix64(~((n*epoch_seed+index)*kPair+i)^0x5ab1e5ULL);
     if(((r>>8)&((1ULL<<30)-1))<(p_.mutation_prob>>p_.tab_shift))(i<std::uint64_t(tl)?ta:tb)[i%tl]=tl==kMap?map_entry(r):std::uint8_t(r&0xFF);}
+    std::uint8_t pre[kPair];const bool cc=p_.egc==5&&(p_.egc_guard&1);if(cc)std::memcpy(pre,tape,kPair);
     if(index<active_pairs_){int wr[2];total+=eval_ext(tape,ta,tb,wr,kMaxSteps,tl);
+    if(cc){int ma=0,mb=0;for(int i=0;i<kTape;++i){ma+=tape[i]==pre[kTape+i];mb+=tape[kTape+i]==pre[i];}if(ma<=kTape/2)wr[0]=0;if(mb<=kTape/2)wr[1]=0;}  // option 3b: pass a map on only with a faithful copy of the writer
     if(p_.egc>=4){const bool toA=wr[0]>kTape/2,toB=wr[1]>kTape/2;std::uint8_t c[kMap];  // inherit the author's table
     if(toA&&toB){std::memcpy(c,ta,tl);std::memcpy(ta,tb,tl);std::memcpy(tb,c,tl);}else if(toA)std::memcpy(ta,tb,tl);else if(toB)std::memcpy(tb,ta,tl);
     inhc+=toA+toB;}}

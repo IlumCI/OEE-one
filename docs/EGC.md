@@ -466,3 +466,24 @@ instruction or a no-op). A mutation changes one entry.
   - Reading: authorship inheritance selects maps that overwrite, not maps that replicate or are robust. This
     is a design flaw of authorship inheritance when codes differ in function. A replicator check should be
     made before a map is passed on.
+
+### Seed 11, random maps: replicators on a code with synonyms (interim)
+
+- Transition by epoch 1,601, with H 4.42. One map holds 99.8% of tables and has 16 coding entries:
+  - `[` on bytes 7 and 239;
+  - `.` on 62 and 72;
+  - `<` on 117 and 237;
+  - `>` on 189, 218 and 246;
+  - `{` on 57, 146 and 199;
+  - `]`, `+`, `-` and `}` on one byte each;
+  - `,` absent.
+- The synonyms are on the head moves and copy that replicators use most, and the unused second copy
+  instruction is missing.
+- A random map has about one entry per instruction, so this could be a lucky founder rather than selection.
+  Distinguishing them needs the map's coding count before the sweep (log `top_coding`) and more seeds.
+
+### Option 3b: faithful-copy inheritance (`-egc 5 -egc-guard 1`, runs7/bin/oee_bff_egc9)
+
+A map passes from A to B only if more than 32 of B's bytes end up equal to A's bytes at the same offset
+before the interaction, that is, B was overwritten by a copy of A. This removes the overwriter bias found
+above. Arms 14 (standard start) and 15 (random) are queued for seeds 0-9, after the option-3 lanes.
