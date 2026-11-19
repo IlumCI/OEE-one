@@ -25,7 +25,8 @@ cd "$repo"||exit 1
 }
 flush(){
 [ ${#pending[@]} -eq 0 ]&&return 0
-(cd "$R"&&git add data&&git commit -qm "archive runs"&&for i in 1 2 3 4;do git push -q origin run-data&&exit 0;sleep $((i*15));done;exit 1)||{ echo "PUSH FAIL (kept $R)";exit 1;}
+# identical parts already on run-data (a restored run archived again): nothing to commit, treat as done
+(cd "$R"&&git add data&&{ git diff --cached --quiet&&exit 0;git commit -qm "archive runs"; }&&for i in 1 2 3 4;do git push -q origin run-data&&exit 0;sleep $((i*15));done;exit 1)||{ echo "PUSH FAIL (kept $R)";exit 1;}
 for d in "${pending[@]}";do
 p="${d#"$repo"/}"
 [ -n "${KEEP:-}" ]&&{ echo "copied $p";continue;}
