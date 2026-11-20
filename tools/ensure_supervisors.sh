@@ -3,7 +3,7 @@
 # so that runs resume from checkpoints after a container restart.
 cd "$(dirname "$0")/.." || exit 0
 if ! pgrep -f "supervise_runs.sh runs6" >/dev/null; then
-  (MAX_PROCS=7 nohup tools/supervise_runs.sh runs6 runs6/bin 60 >> runs6/supervisor.out 2>&1 &)
+  (MAX_PROCS=11 nohup tools/supervise_runs.sh runs6 runs6/bin 60 >> runs6/supervisor.out 2>&1 &)
   echo "ensure_supervisors: started runs6 supervisor"
 fi
 # Evolvable genetic code sweep lanes (runs7/laneN.args holds the seeds; idempotent, resume from checkpoints).

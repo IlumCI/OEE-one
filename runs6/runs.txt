@@ -75,3 +75,8 @@ l4c_s3 resets_v15 3 3000000 -collectives -division-of-labour -senescence -grow-e
 # L4a seed 5: evolving vs matched no-lock
 l4a_s5 resets_v12 5 3000000 -collectives -division-of-labour -senescence -grow-every 500000 -grow-by 4 -grow-max 52 -grow-neurons-by 8 -grow-neurons-max 84 -second-shadow -presence presence -crng -locks
 l4n_s5 resets_v12 5 3000000 -collectives -division-of-labour -senescence -grow-every 500000 -grow-by 4 -grow-max 52 -grow-neurons-by 8 -grow-neurons-max 84 -second-shadow -presence presence -crng
+# L4 scale test: L52 -> L104 (4x area), N84 -> 188; evolving locks vs matched no-lock (arXiv 2510.18221 scale threshold)
+l4La_s1 resets_v12 1 4000000 -length 52 -neurons 84 -collectives -division-of-labour -senescence -grow-every 500000 -grow-by 8 -grow-max 104 -grow-neurons-by 16 -grow-neurons-max 188 -second-shadow -presence presence -crng -locks
+l4Ln_s1 resets_v12 1 4000000 -length 52 -neurons 84 -collectives -division-of-labour -senescence -grow-every 500000 -grow-by 8 -grow-max 104 -grow-neurons-by 16 -grow-neurons-max 188 -second-shadow -presence presence -crng
+l4La_s2 resets_v12 2 4000000 -length 52 -neurons 84 -collectives -division-of-labour -senescence -grow-every 500000 -grow-by 8 -grow-max 104 -grow-neurons-by 16 -grow-neurons-max 188 -second-shadow -presence presence -crng -locks
+l4Ln_s2 resets_v12 2 4000000 -length 52 -neurons 84 -collectives -division-of-labour -senescence -grow-every 500000 -grow-by 8 -grow-max 104 -grow-neurons-by 16 -grow-neurons-max 188 -second-shadow -presence presence -crng
