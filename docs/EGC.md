@@ -612,3 +612,4 @@ Instruction counts in the dominant map at the end of each run:
   (the standard share falls to about 75% by 16k epochs) and fragment, which blocks transitions.
 - EGC lanes 3 and 4 were paused here (args renamed to `.paused`) to free cores for L4b. egc16_s4 finishes
   as a prediction check; egc14_s15 was stopped at epoch 449.
+- egc16_s4 result: no transition (H never above 0), as predicted (no copy instruction). Shared-map tally: 1/10; the rule gets 10/10 since the refinement. Shared-map arm closed.
