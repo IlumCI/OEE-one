@@ -311,7 +311,8 @@ void Organism::try_to_reproduce_with_organism_in_front() {
   int child_at = w.forward1(other->at_x_64, other->at_y_64, direction_deg);
   int cx64, cy64;
   bool replace = false;
-  if (w.grid_[child_at] || w.num_individuals_ == w.p_.max_num_individuals || (w.locked(child_at) && !w.unlock(this, child_at))) {
+  const bool lk=w.locked(child_at);
+  if (w.grid_[child_at] || w.num_individuals_ == w.p_.max_num_individuals || (lk && !w.unlock(this, child_at))) {
     child_at = other_at;
     if (other->pen_colour == 2) return;  // disallow_reproduction_into_killer
     cx64 = other->at_x_64;
@@ -369,6 +370,12 @@ void Organism::try_to_reproduce_with_organism_in_front() {
     w.grid_[child_at] = std::move(child);
   }
   w.add_shadow(std::move(shadow_child));
+  // L4b fertile locks: a birth onto a lock the parent opened also places a twin on the next free cell
+  // forward (the design's "locked land is fertile"), so solving a lock pays in offspring.
+  if(lk&&!replace&&(w.lmode_&World::kFertile)&&w.num_individuals_<w.p_.max_num_individuals){
+  const int tw=w.forward1(w.grid_[child_at]->at_x_64,w.grid_[child_at]->at_y_64,direction_deg);
+  if(!w.grid_[tw]&&!w.locked(tw)){Genotype sh2;std::unique_ptr<Organism> t2=w.reproduce(pa,pb,((tw%w.length_)<<6)+32,((tw/w.length_)<<6)+32,sh2);
+  if(t2){if(w.p_.collectives&3)t2->colony=w.grid_[child_at]->colony;++w.num_individuals_;w.grid_[tw]=std::move(t2);w.add_shadow(std::move(sh2));++w.ltwin_;}}}
 }
 
 void Organism::try_to_kill_organism_in_front() {
@@ -969,7 +976,7 @@ locks_[t].key=std::move(k);++cnt;++lrefill_;
 void World::arch(const std::vector<Gene>&k){if(int(larch_.size())<kArch)larch_.push_back(k);else larch_[larch_pos_++%kArch]=k;}
 
 World::LockStats World::lock_stats() const{
-LockStats s;s.born=lborn_;s.dissolved=ldiss_;s.decayed=ldecay_;s.refilled=lrefill_;
+LockStats s;s.born=lborn_;s.dissolved=ldiss_;s.decayed=ldecay_;s.refilled=lrefill_;s.twins=ltwin_;
 if(!(p_.collectives&128))return s;
 long tl=0;for(const auto&l:locks_)if(!l.key.empty()){++s.locks;tl+=long(l.key.size());s.maxlen=std::max(s.maxlen,int(l.key.size()));s.opened+=!l.op.empty();}
 s.meanlen=s.locks?double(tl)/s.locks:0;return s;
@@ -1087,6 +1094,7 @@ void World::save(Writer& w) const {
   if(p_.collectives&32){w.put(credit_);w.put(collab_);}
   if(p_.collectives&128){w.put(lmode_);w.put(lborn_);w.put(ldiss_);w.put(ldecay_);
   for(const auto&l:locks_){w.put_vec(l.key);w.put_vec(l.op);w.put(l.idle);}
+  if(lmode_&kFertile)w.put(ltwin_);
   if(lmode_&kFloor){w.put(lrefill_);w.put(larch_pos_);w.put(int(larch_.size()));for(const auto&k:larch_)w.put_vec(k);}}
 }
 
@@ -1138,6 +1146,7 @@ std::unique_ptr<World> World::load(Reader& r) {
   if(p.collectives&32){w->credit_=r.get<long>();w->collab_=r.get<long>();}
   if(p.collectives&128){w->lmode_=r.get<int>();w->lborn_=r.get<long>();w->ldiss_=r.get<long>();w->ldecay_=r.get<long>();
   w->locks_.assign(w->size_,Lock{});for(auto&l:w->locks_){l.key=r.get_vec<Gene>();l.op=r.get_vec<std::uint64_t>();l.idle=r.get<int>();}
+  if(w->lmode_&kFertile)w->ltwin_=r.get<long>();
   if(w->lmode_&kFloor){w->lrefill_=r.get<long>();w->larch_pos_=r.get<int>();const int na=r.get<int>();w->larch_.resize(na);for(auto&k:w->larch_)k=r.get_vec<Gene>();}}
   return w;
 }
