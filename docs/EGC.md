@@ -605,3 +605,10 @@ Instruction counts in the dominant map at the end of each run:
 - egc16_s3 result: no transition (peak H -0.000027), as predicted: the map has no `]`. Shared-map tally 1/8; the rule now gets 8/8.
 - egc14_s14 (3b, standard map): no transition (peak H 0.38). Plain BFF has none on seed 14, but option 2 random held there. Prediction for egc16_s14 (6 coding entries, missing `[ - . , { }`): none.
 - egc14_s4 (3b, standard map): no transition (peak H 0.40; plain BFF none). Prediction for egc16_s4 (no copy instruction): none.
+- egc16_s14 result: no transition (H never above 0), as predicted. Shared-map tally: 1/9, and the rule gets 9/9 since the refinement.
+- 3b standard-map tally (seeds 0-4, 10-14): 1/10 transitioned and held (seed 10); seed 11 transitioned and
+  partly collapsed. Option 3 under authorship inheritance had 4/10 on the same seeds, and plain BFF 4/10.
+  With faithful-copy inheritance a mutated map can never be overwritten back to a working one, so maps drift
+  (the standard share falls to about 75% by 16k epochs) and fragment, which blocks transitions.
+- EGC lanes 3 and 4 were paused here (args renamed to `.paused`) to free cores for L4b. egc16_s4 finishes
+  as a prediction check; egc14_s15 was stopped at epoch 449.
