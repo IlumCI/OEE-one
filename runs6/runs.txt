@@ -72,3 +72,6 @@ l4n_s4 resets_v12 4 3000000 -collectives -division-of-labour -senescence -grow-e
 l4c_s1 resets_v15 1 3000000 -collectives -division-of-labour -senescence -grow-every 500000 -grow-by 4 -grow-max 52 -grow-neurons-by 8 -grow-neurons-max 84 -second-shadow -presence presence -crng -locks -lock-floor -lock-fertile
 l4c_s2 resets_v15 2 3000000 -collectives -division-of-labour -senescence -grow-every 500000 -grow-by 4 -grow-max 52 -grow-neurons-by 8 -grow-neurons-max 84 -second-shadow -presence presence -crng -locks -lock-floor -lock-fertile
 l4c_s3 resets_v15 3 3000000 -collectives -division-of-labour -senescence -grow-every 500000 -grow-by 4 -grow-max 52 -grow-neurons-by 8 -grow-neurons-max 84 -second-shadow -presence presence -crng -locks -lock-floor -lock-fertile
+# L4a seed 5: evolving vs matched no-lock
+l4a_s5 resets_v12 5 3000000 -collectives -division-of-labour -senescence -grow-every 500000 -grow-by 4 -grow-max 52 -grow-neurons-by 8 -grow-neurons-max 84 -second-shadow -presence presence -crng -locks
+l4n_s5 resets_v12 5 3000000 -collectives -division-of-labour -senescence -grow-every 500000 -grow-by 4 -grow-max 52 -grow-neurons-by 8 -grow-neurons-max 84 -second-shadow -presence presence -crng
