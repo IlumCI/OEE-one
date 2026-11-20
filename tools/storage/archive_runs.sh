@@ -20,13 +20,15 @@ R=$(mktemp -d "$T/rd.XXXX");git init -q "$R";cd "$R"||exit 1
 git config user.name ilumCI;git config user.email ilumbackup@gmail.com
 git remote add origin "$url";git symbolic-ref HEAD refs/heads/run-data
 if git fetch -q --depth=1 --filter=blob:none origin run-data 2>/dev/null;then git update-ref refs/heads/run-data FETCH_HEAD;git read-tree FETCH_HEAD
-else printf '# run-data\nArchived OEE-one run directories; restore with tools/storage/restore_run.sh on the main branch.\n'>README.md;git add README.md;fi
+elif [ -n "${NEW_BRANCH:-}" ];then printf '# run-data\nArchived OEE-one run directories; restore with tools/storage/restore_run.sh on the main branch.\n'>README.md;git add README.md
+else echo "FETCH FAIL: run-data not fetched, not starting a new branch (NEW_BRANCH=1 to create one)";exit 1;fi  # a failed fetch once replaced the branch
 cd "$repo"||exit 1
 }
 flush(){
 [ ${#pending[@]} -eq 0 ]&&return 0
+# --ignore-removal: the worktree holds only this batch; a plain 'git add data' would delete every other run.
 # identical parts already on run-data (a restored run archived again): nothing to commit, treat as done
-(cd "$R"&&git add data&&{ git diff --cached --quiet&&exit 0;git commit -qm "archive runs"; }&&for i in 1 2 3 4;do git push -q origin run-data&&exit 0;sleep $((i*15));done;exit 1)||{ echo "PUSH FAIL (kept $R)";exit 1;}
+(cd "$R"&&git add --ignore-removal data&&{ git diff --cached --quiet&&exit 0;git commit -qm "archive runs"; }&&for i in 1 2 3 4;do git push -q origin run-data&&exit 0;sleep $((i*15));done;exit 1)||{ echo "PUSH FAIL (kept $R)";exit 1;}
 for d in "${pending[@]}";do
 p="${d#"$repo"/}"
 [ -n "${KEEP:-}" ]&&{ echo "copied $p";continue;}
