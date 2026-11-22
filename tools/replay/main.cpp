@@ -113,6 +113,38 @@ int main(int argc, char** argv) {
     }
     return 0;
   }
+  if(argc>4&&std::string(argv[4])=="l4"){
+    // Raw bytes per recorded cycle: u32 time; u16 L; u16 n; n x (u8 x,u8 y,u8 colony 0-5,u8 flags as colonies);
+    // u16 m; m x (u16 i,u16 j) bonds; L*L u8 lock key length (0 = unlocked). L is per frame: the world grows.
+    const long end=w->time()+steps;
+    std::vector<unsigned char> rec,lk;std::vector<unsigned short> ed;
+    while(w->time()<end){
+      const long t0=w->time();w->step();
+      if(w->time()==t0||w->time()%every)continue;
+      const int L=w->world_length();rec.clear();ed.clear();lk.assign(w->world_size(),0);
+      std::vector<const Organism*> ls;
+      for(int c=0;c<w->world_size();++c){if(const Organism* o=w->at(c))ls.push_back(o);if(w->is_locked(c))lk[c]=1;}
+      std::unordered_map<std::uint64_t,int> ix;
+      for(int i=0;i<(int)ls.size();++i)ix[ls[i]->id]=i;
+      for(int i=0;i<(int)ls.size();++i){
+        const Organism* o=ls[i];
+        rec.push_back((unsigned char)o->at_x);rec.push_back((unsigned char)o->at_y);
+        rec.push_back((unsigned char)(mix(o->colony)%6));
+        rec.push_back((unsigned char)((o->warrior()?1:0)|((o->pen_colour+1)<<1)));
+        for(std::uint64_t id:o->bonds){
+          auto it=ix.find(id);if(it==ix.end()||it->second<=i)continue;
+          const Organism* q=ls[it->second];
+          const int dx=std::abs(q->at_x-o->at_x),dy=std::abs(q->at_y-o->at_y);
+          if(std::max(std::min(dx,L-dx),std::min(dy,L-dy))>World::kBondRange)continue;
+          ed.push_back((unsigned short)i);ed.push_back((unsigned short)it->second);
+        }
+      }
+      const std::uint32_t tt=(std::uint32_t)w->time();const unsigned short l=(unsigned short)L,nn=(unsigned short)ls.size(),m=(unsigned short)(ed.size()/2);
+      std::fwrite(&tt,4,1,stdout);std::fwrite(&l,2,1,stdout);std::fwrite(&nn,2,1,stdout);std::fwrite(rec.data(),1,rec.size(),stdout);
+      std::fwrite(&m,2,1,stdout);std::fwrite(ed.data(),2,ed.size(),stdout);std::fwrite(lk.data(),1,lk.size(),stdout);
+    }
+    return 0;
+  }
   std::printf("{\"L\":%d,\"t0\":%ld,\"every\":%ld,\"frames\":[", w->world_length(), w->time(), every);
   const long t_end = w->time() + steps;
   bool first = true;

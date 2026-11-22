@@ -172,6 +172,7 @@ class World {
   void lock_init(double frac);
   struct LockStats{int locks=0,opened=0,maxlen=0;double meanlen=0;long born=0,dissolved=0,decayed=0,refilled=0,twins=0;};
   LockStats lock_stats() const;
+  bool is_locked(int c) const{return locked(c);}
   long collab() const {return collab_;}
   static constexpr int kMaxAge = 1000;  // L3 v4 senescence (collectives bit 2)  // a budded child joins the parent's group only below this size
 
