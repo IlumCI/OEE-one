@@ -83,3 +83,10 @@ target_link_libraries(test_bff_evaluate_n PRIVATE oee_bff_core)
 add_test(NAME bff_evaluate_n_equivalence COMMAND test_bff_evaluate_n)
 add_executable(m5_heritability tools/m5/heritability.cpp)
 target_link_libraries(m5_heritability PRIVATE oee_geb_core)
+
+# L0: mass-conserving continuous CA with parameters carried by matter (MaCE transport + Flow-Lenia localisation).
+add_library(oee_l0_core src/l0/world.cpp)
+target_include_directories(oee_l0_core PUBLIC src)
+add_executable(test_l0 tests/l0/test_l0.cpp)
+target_link_libraries(test_l0 PRIVATE oee_l0_core)
+add_test(NAME l0_core COMMAND test_l0)
