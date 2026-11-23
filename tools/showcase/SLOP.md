@@ -37,3 +37,24 @@ world in "Now" and ladder-left + line-right in the goal (2), Class 3b line with 
 opacity/blur entrances on every element (5, 11), wordmark held 2.17 s at the end (6), void ground in 3 of 6 scenes (7),
 click on each lineage name and a hit on every cut over a flat corporate loop (13), feature-tour structure with
 near-equal beats (11). Passes: no invented numbers (14), every frame reviewed (15).
+
+## Claude-specific slop (the house style this agent falls into)
+Sources: Anthropic prompting guide (Opus 4.8, "Design and frontend defaults"), Anthropic frontend-aesthetics
+cookbook (via theadpharm), generativelabs, Kyle Chayka / New Yorker (via pxlnv), linkandth.ink "22 Claude cliches".
+- Default look: warm cream ground (~#F4F1EA), serif display (Georgia, Fraunces, Playfair), italic accent words,
+  terracotta/amber accent, tracked-out subheads, ticker-like bars, dashboards of rounded rectangles.
+  Underlying grammar: quiet field + dark ink + one saturated warm accent.
+- Its dark twin (what brag v1 and the brain test frames are): near-black ground + one warm amber/gold accent +
+  glow + monospace or pixel caps in tracked plates. Same grammar inverted. Counts as Claude slop.
+- "Escape" defaults are also slop: Space Grotesk as the upgrade, purple/indigo gradients, glassmorphism,
+  animated blobs, shadcn cards, one orchestrated load with staggered reveals, blur-in titles.
+- Telling it "don't use cream" swaps in another fixed palette (Anthropic's own docs). A colour swap does not escape
+  the grammar. Fix: a concrete positive spec (hexes, faces, radius, motion timings, density) derived from the subject,
+  or propose 4 distinct directions with one-line rationale and let the owner pick one.
+- Tool defaults are not neutral: the Hyperframes motion guide's suggested title entrance (blur 8px -> 0 in 0.2 s,
+  per-word stagger) is a house default too; using it unchanged reads as generated.
+- On-screen copy tells (from Claude prose): contrastive binary "not X but Y" / "X, not Y" (most frequent),
+  aphoristic one-line enders, colon reveals, mirrored-clause symmetry, stakes-raising, significance-signalling,
+  candor flags ("the honest answer"), spaced-dash asides, rule-of-three lists. Brag v1 used two of these
+  ("Open-ended evolution. The route to superintelligence." as an aphoristic ender; the planned "evolution, not
+  imitation" binary).
