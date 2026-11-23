@@ -1,6 +1,6 @@
 // Do Geb agents use their signalling channel? Replays a checkpoint and records, per agent per step,
 // what it heard and what it did.
-// Usage: signals CHECKPOINT STEPS [deaf 0|1] > out.tsv
+// Usage: signals CHECKPOINT STEPS [deaf 0|1|2] > out.tsv   (2: random half of agents deaf, by id)
 // Heard: 3 bits, one per signal class with a non-zero input (inputs listening for reproduce '01',
 //   attack '1..', bond/unbond '00..'; an input listens for neighbour outputs starting with its
 //   character minus the side bit, so the class is that remainder's action family).
@@ -43,7 +43,7 @@ int main(int argc,char** argv){
   std::fclose(f);b.resize(b.size()-8);
   Reader r(b.data(),b.size());r.get<std::uint64_t>();r.get_str();
   auto w=World::load(r);
-  const long steps=std::atol(argv[2]);const bool deaf=argc>3&&std::atoi(argv[3]);w->set_deaf(deaf);
+  const long steps=std::atol(argv[2]);const int deaf=argc>3?std::atoi(argv[3]):0;w->set_deaf(deaf);
   const long end=w->time()+steps;long births0=w->num_reproductions();
   while(w->time()<end){
     const long t0=w->time();w->step();if(w->time()==t0)continue;
@@ -54,7 +54,8 @@ int main(int argc,char** argv){
       for(const IoEntry& in:const_cast<Organism*>(o)->net_inputs()){if(!in.io_value)continue;const int k=listen_class(in.node->character);if(k>=0)heard|=1<<k;}
       const int rep=sum_prefix(*o,"01"),kil=sum_prefix(*o,"100"),tl=sum_prefix(*o,"101"),tr=sum_prefix(*o,"110"),mv=sum_prefix(*o,"111"),bd=sum_prefix(*o,"000");
       const int did=(rep>500)|((kil>500)<<1)|((mv>0)<<2)|((std::abs(std::max(tl,0)-std::max(tr,0))>0)<<3)|((bd>500)<<4);
-      std::printf("%ld\t%d\t%d\n",w->time(),heard,did);
+      int nin=0;for(const IoEntry& in:const_cast<Organism*>(o)->net_inputs()){(void)in;++nin;}
+      std::printf("%ld\t%d\t%d\t%d\t%d\n",w->time(),heard,did,(int)World::deaf_half(o->id),nin>0);
     }
     std::fprintf(stderr,"%ld\t%d\t%ld\t%d\n",w->time(),pop,w->num_reproductions()-births0,warriors);
   }

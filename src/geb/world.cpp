@@ -52,7 +52,7 @@ Organism::~Organism() {
 }
 
 void Organism::copy_net_inputs_from_neighbourhood() {
-  if(w_.deaf_){for(IoEntry& in:net_inputs())in.io_value=0;return;}
+  if(w_.deaf_==1||(w_.deaf_==2&&World::deaf_half(id))){for(IoEntry& in:net_inputs())in.io_value=0;return;}
   const int L = w_.length_;
   const int c = w_.p_.copy_to_length;
   struct In {

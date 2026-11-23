@@ -174,7 +174,8 @@ class World {
   LockStats lock_stats() const;
   bool is_locked(int c) const{return locked(c);}
   long collab() const {return collab_;}
-  void set_deaf(bool d){deaf_=d;}  // analysis only (not saved): agents sense nothing from neighbours
+  void set_deaf(int d){deaf_=d;}  // analysis only (not saved): 1 = no agent senses neighbours, 2 = random half (by id) deaf
+  static bool deaf_half(std::uint64_t id){id^=id>>33;id*=0xff51afd7ed558ccdULL;id^=id>>33;return id&1;}
   static constexpr int kMaxAge = 1000;  // L3 v4 senescence (collectives bit 2)  // a budded child joins the parent's group only below this size
 
   // Shadow population (genotypes only).
@@ -282,7 +283,7 @@ class World {
   void stop_pool();
   long ga_time_ = -1;
   long num_reproductions_ = 0;
-  bool deaf_=false;
+  int deaf_=0;
   int num_individuals_ = 0;
   std::uint64_t next_id_ = 1;
 
