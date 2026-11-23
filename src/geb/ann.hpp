@@ -111,6 +111,7 @@ class Ann {
   const std::vector<OutCache>& output_cache() const { return out_cache_; }
   // The entries of output_cache() with a non-zero value, in the same order.
   const std::vector<OutCache>& output_nonzero() const { return out_nz_; }
+  const std::list<Node>& nodes() const {return nodes_;}  // read-only, for visualisation tools
 
   void morphogenesis_step();
   void update_outputs(Rng& rng, const NetConstants& k);
