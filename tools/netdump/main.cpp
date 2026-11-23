@@ -51,7 +51,8 @@ int main(int argc,char** argv){
     std::vector<std::string> p,q;for(const Node& x:a.nodes())p.push_back(bits(x.character));for(const Node& x:h->nodes())q.push_back(bits(x.character));
     if(p==q){lim=L;break;}
   }
-  std::printf("{\"time\":%ld,\"L\":%d,\"population\":%zu,\"id\":%llu,\"age\":%d,\"used\":%d,\"nodes\":%d,\"limit\":%d,\"colony_member\":%d,",
+  std::printf("{\"x\":%d,\"y\":%d,",h->at_x,h->at_y);
+  std::printf("\"time\":%ld,\"L\":%d,\"population\":%zu,\"id\":%llu,\"age\":%d,\"used\":%d,\"nodes\":%d,\"limit\":%d,\"colony_member\":%d,",
     w->time(),w->world_length(),all.size(),(unsigned long long)hid,h->age,used(*h),h->num_nodes(),lim,(int)h->bonds.size());
   std::printf("\"rules\":[");bool fr=true;
   for(const Rule& x:h->rules()){std::printf("%s{\"pre\":\"%s\",\"rep\":\"%s\",\"new\":\"%s\",\"links\":\"%d%d%d%d%d%d\",\"used\":%d}",fr?"":",",
