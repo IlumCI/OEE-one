@@ -51,6 +51,14 @@ int main(){
     World a(q),b(q);a.seed_patches(6,8,.8);b.seed_patches(6,8,.8);for(int i=0;i<50;++i){a.step();b.step();}
     CHECK(a.hash()==b.hash(),"sample mode: deterministic");
   }
+  {  // neutral control: P cannot affect the physics -> two runs with different carried P have identical mass fields
+    Params q=p;q.sample=true;q.mut_p=.05;q.neutral=true;q.fixedP={.6,.3};World a(q),b(q);a.seed_patches(6,8,.8);b.seed_patches(6,8,.8);
+    for(std::size_t i=0;i<b.pars().size();++i)b.pars()[i]=(float)((i*7919)%997)/997.f;
+    const auto m0=a.total();for(int i=0;i<150;++i){a.step();b.step();}
+    CHECK(a.mass()==b.mass()&&a.total()==m0,"neutral: carried P has no effect on the mass dynamics");
+    Params r=q;r.neutral=false;World c(r);c.seed_patches(6,8,.8);for(int i=0;i<150;++i)c.step();
+    CHECK(c.mass()!=a.mass(),"non-neutral: carried P does change the dynamics");
+  }
   {  // drift: with beta>0 mass moves up a fixed affinity gradient (single-step check on a ramp)
     Params q;q.n=16;q.beta=8;q.bank={Kernel{}};World w(q);
     for(int c=0;c<16*16;++c){w.mass()[c]=kOne;w.pars()[c]=0.f;}

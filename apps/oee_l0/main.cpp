@@ -28,7 +28,7 @@ int main(int argc,char** argv){
     else if(!std::strcmp(s,"-muts"))p.mut_s=std::atof(v);else if(!std::strcmp(s,"-patches"))patches=std::atoi(v);
     else if(!std::strcmp(s,"-radius"))radius=std::atoi(v);else if(!std::strcmp(s,"-density"))density=std::atof(v);
     else if(!std::strcmp(s,"-every"))every=std::atoi(v);else if(!std::strcmp(s,"-dump"))dump=v;
-    else if(!std::strcmp(s,"-log"))logf=v;else if(!std::strcmp(s,"-sample"))p.sample=std::atoi(v)!=0;
+    else if(!std::strcmp(s,"-log"))logf=v;else if(!std::strcmp(s,"-sample"))p.sample=std::atoi(v)!=0;else if(!std::strcmp(s,"-neutral"))p.neutral=std::atoi(v)!=0;
     else if(!std::strcmp(s,"-qdump"))qdump=v;else if(!std::strcmp(s,"-qfrom"))qfrom=std::atol(v);else{std::fprintf(stderr,"unknown option %s\n",s);return 2;}
   }
   std::uint64_t rs=p.seed*0x2545F4914F6CDD1DULL+1;p.bank.clear();

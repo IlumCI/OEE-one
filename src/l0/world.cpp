@@ -76,6 +76,8 @@ void World::seed_patches(int count,int radius,double density){
 
 void World::affinity_(){
   const int n=p_.n,N=n*n,K=nk();
+  if(p_.neutral&&pbar_.empty()&&(int)p_.fixedP.size()==K)pbar_=p_.fixedP;
+  if(p_.neutral&&pbar_.empty()){pbar_.assign(K,0);double W=0;for(int c=0;c<N;++c){const double m=(double)m_[c];W+=m;for(int k=0;k<K;++k)pbar_[k]+=m*P_[(std::size_t)c*K+k];}if(W>0)for(double& v:pbar_)v/=W;}
   std::vector<double> fr(N),fi(N,0);
   for(int c=0;c<N;++c)fr[c]=(double)m_[c]/kOne;
   fft2(fr,fi,n,false);
@@ -86,7 +88,7 @@ void World::affinity_(){
     for(int c=0;c<N;++c){re[c]=fr[c]*kr[c]-fi[c]*ki[c];im[c]=fr[c]*ki[c]+fi[c]*kr[c];}
     fft2(re,im,n,true);
     const Kernel& kb=p_.bank[k];
-    for(int c=0;c<N;++c){const double d=re[c]-kb.mu;A_[c]+=P_[(std::size_t)c*K+k]*(2*std::exp(-d*d/(2*kb.sigma*kb.sigma))-1);}
+    for(int c=0;c<N;++c){const double d=re[c]-kb.mu;A_[c]+=(p_.neutral?pbar_[k]:P_[(std::size_t)c*K+k])*(2*std::exp(-d*d/(2*kb.sigma*kb.sigma))-1);}
   }
 }
 

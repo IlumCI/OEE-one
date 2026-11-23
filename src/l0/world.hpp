@@ -24,6 +24,9 @@ struct Params{
   double mut_s=0.05;      // mutation step (Gaussian sd), P clamped to [0,1]
   bool sample=false;      // incoming parameters: false = mass-weighted average (eq. 9), true = one source
                           // chosen with probability proportional to its incoming mass (eq. 10; no blending)
+  bool neutral=false;     // control: P is carried and mutated but the affinity uses a fixed shared vector
+                          // (the mass-weighted mean P at the first step), so P cannot affect the physics
+  std::vector<double> fixedP;  // neutral: shared vector to use instead of the first-step mean (optional)
   std::uint64_t seed=1;
 };
 
@@ -48,7 +51,7 @@ class World{
   void transport_();
   Params p_;long t_=0;
   std::vector<std::int64_t> m_;std::vector<float> P_;
-  std::vector<double> A_;
+  std::vector<double> A_;std::vector<double> pbar_;
   std::vector<std::vector<double>> khat_re_,khat_im_;  // kernel spectra
 };
 
