@@ -1,0 +1,10 @@
+agent-steps 5113196; with inputs 97.3%
+  reproduce hearing 0.760  deaf 0.645  diff +0.115 (+276.9 se)
+  attack    hearing 0.797  deaf 0.668  diff +0.130 (+322.4 se)
+  move      hearing 0.019  deaf 0.033  diff -0.014 (-98.4 se)
+  turn      hearing 0.773  deaf 0.685  diff +0.087 (+215.5 se)
+  bond      hearing 0.796  deaf 0.665  diff +0.131 (+324.3 se)
+hearing share among agents with inputs: first 50 steps 0.503 -> last 50 steps 0.603
+same label among agents without inputs (label has no effect, drift control): 0.449 -> 0.597
+half deaf: label-0 share among agents with inputs  first50 0.503  last50 0.603  change +0.099
+nobody deaf (label only): label-0 share among agents with inputs  first50 0.492  last50 0.507  change +0.015

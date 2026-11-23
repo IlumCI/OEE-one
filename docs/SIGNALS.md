@@ -17,3 +17,21 @@ Tools: `tools/signals` (replay recording per agent-step what was heard, by signa
 - Next: per-agent CIC (deafen a random half, compare matched agents) to remove the genotype confound; repeat on
   the lock run and a second seed.
 Data: `docs/results/signals/`.
+
+## Per-agent causal test (random half deaf by id hash, same world; label not inherited)
+Same checkpoint, 1500 steps. Among agents with input neurons (97%):
+
+| action | hearing | deaf | diff |
+|---|---|---|---|
+| reproduce | 0.760 | 0.645 | +0.115 |
+| attack | 0.797 | 0.668 | +0.130 |
+| turn | 0.773 | 0.685 | +0.087 |
+| bond | 0.796 | 0.665 | +0.131 |
+| move | 0.019 | 0.033 | -0.014 |
+
+- Random assignment removes the genotype confound: hearing causally raises reproduce/attack/bond by 11-13 points.
+- Survival: hearing share among agents with inputs 0.503 -> 0.603 (+0.099). Control (same labels, nobody deaf):
+  0.492 -> 0.507 (+0.015). Labels are not inherited, so the excess +0.084 is differential survival: hearing
+  agents live longer. Single checkpoint, single seed.
+- Conclusion: the signalling channel is used and selected for. It carries action broadcasts that coordinate
+  attack, bonding and reproduction within colonies; it is not a language.
