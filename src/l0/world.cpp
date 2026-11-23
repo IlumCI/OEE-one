@@ -95,6 +95,7 @@ void World::transport_(){
   std::vector<double> e(N);
   for(int c=0;c<N;++c)e[c]=std::exp(std::clamp(p_.beta*A_[c],-60.0,60.0));
   std::vector<std::int64_t> nm(N,0);std::vector<double> acc((std::size_t)N*K,0.0);
+  std::vector<int> pick(p_.sample?N:0,-1),cnt(p_.sample?N:0,0);  // sample mode: chosen source per target
   for(int y=0;y<n;++y)for(int x=0;x<n;++x){
     const int c=y*n+x;const std::int64_t mc=m_[c];if(mc==0)continue;
     int q[9];double w[9],W=0;
@@ -105,12 +106,16 @@ void World::transport_(){
     while(rem>0){int b=0;for(int j=1;j<9;++j)if(fr[j]>fr[b])b=j;++sh[b];fr[b]=-1;--rem;}  // largest remainder, ties to lowest j
     while(rem<0){int b=0;for(int j=1;j<9;++j)if(sh[j]>sh[b])b=j;--sh[b];++rem;}            // guard (rounding), never in practice
     const float* pc=&P_[(std::size_t)c*K];
-    for(int j=0;j<9;++j){if(!sh[j])continue;nm[q[j]]+=sh[j];double* a=&acc[(std::size_t)q[j]*K];for(int k=0;k<K;++k)a[k]+=(double)sh[j]*pc[k];}
+    for(int j=0;j<9;++j){if(!sh[j])continue;const int tq=q[j];nm[tq]+=sh[j];
+      if(p_.sample){if(u01(ctr(p_.seed^0xA5A5ULL,t_,tq,cnt[tq]++))*(double)nm[tq]<(double)sh[j])pick[tq]=c;continue;}  // weighted reservoir, fixed source order
+      double* a=&acc[(std::size_t)tq*K];for(int k=0;k<K;++k)a[k]+=(double)sh[j]*pc[k];}
   }
+  const std::vector<float> old=p_.sample?P_:std::vector<float>();
   for(int c=0;c<N;++c){
     float* pc=&P_[(std::size_t)c*K];const double* a=&acc[(std::size_t)c*K];
     if(nm[c]==0){for(int k=0;k<K;++k)pc[k]=0.f;continue;}
-    for(int k=0;k<K;++k)pc[k]=(float)(a[k]/(double)nm[c]);
+    if(p_.sample)for(int k=0;k<K;++k)pc[k]=old[(std::size_t)pick[c]*K+k];
+    else for(int k=0;k<K;++k)pc[k]=(float)(a[k]/(double)nm[c]);
     if(p_.mut_p>0&&u01(ctr(p_.seed,t_,c,255))<p_.mut_p)
       for(int k=0;k<K;++k)pc[k]=(float)std::clamp((double)pc[k]+p_.mut_s*gauss(ctr(p_.seed,t_,c,k)),0.0,1.0);
   }

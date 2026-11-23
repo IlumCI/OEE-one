@@ -22,6 +22,8 @@ struct Params{
   std::vector<Kernel> bank{Kernel{}};
   double mut_p=0;         // per cell per step probability of a parameter mutation (0 = off)
   double mut_s=0.05;      // mutation step (Gaussian sd), P clamped to [0,1]
+  bool sample=false;      // incoming parameters: false = mass-weighted average (eq. 9), true = one source
+                          // chosen with probability proportional to its incoming mass (eq. 10; no blending)
   std::uint64_t seed=1;
 };
 

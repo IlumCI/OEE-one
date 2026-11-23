@@ -1,5 +1,6 @@
 // L0 runner. Usage: oee_l0 [-n 256] [-seed S] [-steps T] [-beta B] [-kernels K] [-mut P] [-muts S]
-//   [-patches C] [-radius R] [-density D] [-every E] [-dump DIR] [-log FILE]
+//   [-patches C] [-radius R] [-density D] [-every E] [-dump DIR] [-log FILE] [-sample 0|1]
+//   [-qdump FILE -qfrom T0]  per-step u8 cell states from T0 on (0 empty, else 1+3*(dominant kernel)+density level 0-2)
 // Kernel bank: K random kernels drawn from the Flow-Lenia ranges (Table 1), seeded by -seed.
 // Log line every E steps: t total_mass max_density blobs mean_blob_area param_sd hash
 // Dump: DIR/f<t>.bin = u16 n, then n*n float32 density, then n*n*K float32 parameters.
@@ -18,7 +19,7 @@ static std::uint64_t sm(std::uint64_t& s){std::uint64_t z=(s+=0x9e3779b97f4a7c15
 static double ur(std::uint64_t& s,double a,double b){return a+(b-a)*((sm(s)>>11)*(1.0/9007199254740992.0));}
 
 int main(int argc,char** argv){
-  Params p;int K=3,steps=2000,patches=8,radius=12,every=50;double density=.6;std::string dump,logf;
+  Params p;int K=3,steps=2000,patches=8,radius=12,every=50;double density=.6;std::string dump,logf,qdump;long qfrom=0;
   for(int a=1;a<argc;a+=2){
     const char* s=argv[a];const char* v=a+1<argc?argv[a+1]:"0";
     if(!std::strcmp(s,"-n"))p.n=std::atoi(v);else if(!std::strcmp(s,"-seed"))p.seed=std::strtoull(v,nullptr,10);
@@ -27,7 +28,8 @@ int main(int argc,char** argv){
     else if(!std::strcmp(s,"-muts"))p.mut_s=std::atof(v);else if(!std::strcmp(s,"-patches"))patches=std::atoi(v);
     else if(!std::strcmp(s,"-radius"))radius=std::atoi(v);else if(!std::strcmp(s,"-density"))density=std::atof(v);
     else if(!std::strcmp(s,"-every"))every=std::atoi(v);else if(!std::strcmp(s,"-dump"))dump=v;
-    else if(!std::strcmp(s,"-log"))logf=v;else{std::fprintf(stderr,"unknown option %s\n",s);return 2;}
+    else if(!std::strcmp(s,"-log"))logf=v;else if(!std::strcmp(s,"-sample"))p.sample=std::atoi(v)!=0;
+    else if(!std::strcmp(s,"-qdump"))qdump=v;else if(!std::strcmp(s,"-qfrom"))qfrom=std::atol(v);else{std::fprintf(stderr,"unknown option %s\n",s);return 2;}
   }
   std::uint64_t rs=p.seed*0x2545F4914F6CDD1DULL+1;p.bank.clear();
   for(int k=0;k<K;++k){Kernel kb;kb.R=ur(rs,6,18);for(int j=0;j<3;++j){kb.a[j]=ur(rs,0,1);kb.b[j]=ur(rs,0,1);kb.w[j]=ur(rs,.05,.5);}
@@ -36,6 +38,7 @@ int main(int argc,char** argv){
   std::FILE* lg=logf.empty()?stdout:std::fopen(logf.c_str(),"w");if(!lg)return 2;
   for(int k=0;k<K;++k){const Kernel& b=p.bank[k];std::fprintf(lg,"# kernel %d R %.3f mu %.4f sigma %.4f a %.3f %.3f %.3f b %.3f %.3f %.3f w %.3f %.3f %.3f\n",k,b.R,b.mu,b.sigma,b.a[0],b.a[1],b.a[2],b.b[0],b.b[1],b.b[2],b.w[0],b.w[1],b.w[2]);}
   const int n=p.n,N=n*n;
+  std::FILE* qf=qdump.empty()?nullptr:std::fopen(qdump.c_str(),"wb");std::vector<unsigned char> q(N);
   for(int t=0;t<=steps;++t){
     if(t%every==0){
       double mx=0;for(auto v:w.mass())mx=std::max(mx,(double)v/kOne);
@@ -54,7 +57,13 @@ int main(int argc,char** argv){
           std::fwrite(d.data(),4,N,f);std::fwrite(w.pars().data(),4,w.pars().size(),f);std::fclose(f);}
       }
     }
+    if(qf&&t>=qfrom){
+      for(int c=0;c<N;++c){const double d=(double)w.mass()[c]/kOne;if(d<.05){q[c]=0;continue;}
+        int kb=0;for(int k=1;k<K;++k)if(w.pars()[(std::size_t)c*K+k]>w.pars()[(std::size_t)c*K+kb])kb=k;
+        q[c]=(unsigned char)(1+3*kb+(d<.3?0:d<.8?1:2));}
+      std::fwrite(q.data(),1,N,qf);}
     if(t<steps)w.step();
   }
   if(lg!=stdout)std::fclose(lg);
+  if(qf)std::fclose(qf);
 }

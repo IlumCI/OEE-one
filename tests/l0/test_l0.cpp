@@ -41,6 +41,16 @@ int main(){
     bool in=true;for(std::size_t i=0;i<w.pars().size();i+=2)if(w.mass()[i/2]>0&&(w.pars()[i]<lo-1e-6f||w.pars()[i]>hi+1e-6f))in=false;
     CHECK(in,"no mutation: carried parameters stay in the convex hull of the seeds");
   }
+  {  // sample mode (no blending): mass still exact, every carried vector is one of the seeded vectors
+    Params q=p;q.sample=true;World w(q);w.seed_patches(6,8,.8);const auto m0=w.total();
+    std::vector<std::pair<float,float>> seen;for(std::size_t c=0;c<w.mass().size();++c)if(w.mass()[c]>0)seen.push_back({w.pars()[2*c],w.pars()[2*c+1]});
+    bool ok=true;for(int i=0;i<200;++i){w.step();if(w.total()!=m0)ok=false;}
+    bool member=true;for(std::size_t c=0;c<w.mass().size();++c)if(w.mass()[c]>0){std::pair<float,float> v{w.pars()[2*c],w.pars()[2*c+1]};bool f=false;for(auto& s:seen)if(s==v){f=true;break;}if(!f)member=false;}
+    CHECK(ok,"sample mode: mass conserved exactly");
+    CHECK(member,"sample mode: carried vectors are copied whole, never blended");
+    World a(q),b(q);a.seed_patches(6,8,.8);b.seed_patches(6,8,.8);for(int i=0;i<50;++i){a.step();b.step();}
+    CHECK(a.hash()==b.hash(),"sample mode: deterministic");
+  }
   {  // drift: with beta>0 mass moves up a fixed affinity gradient (single-step check on a ramp)
     Params q;q.n=16;q.beta=8;q.bank={Kernel{}};World w(q);
     for(int c=0;c<16*16;++c){w.mass()[c]=kOne;w.pars()[c]=0.f;}
