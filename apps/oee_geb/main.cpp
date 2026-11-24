@@ -24,6 +24,7 @@
 #include <unistd.h>
 
 #include <cctype>
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -189,6 +190,15 @@ void stats(const World& w) {
     if(w.params().collectives&128){const auto k=w.lock_stats();std::fprintf(out,"time: K%ldK\tlocks %d opened %d meanlen %.3f maxlen %d born %ld dissolved %ld decayed %ld refilled %ld twins %ld\n",w.time(),k.locks,k.opened,k.meanlen,k.maxlen,k.born,k.dissolved,k.decayed,k.refilled,k.twins);}
     if((w.params().collectives&32)||g_follow)std::fprintf(out,"time: E%ldE\tlength %d neurons %d credit %ld collab_births %ld\n",w.time(),w.world_length(),w.params().max_num_nodes,w.credit(),w.collab());
   }
+  if(w.params().plastic){  // docs/PLASTIC.md
+    static const Character sig("0011");int n=0,lrn=0,so=0,son=0;double g=0,c[4]={0,0,0,0},wd=0;long nl=0;
+    for(int k=0;k<w.world_size();++k){const Organism*o=w.at(k);if(!o)continue;++n;
+      if(o->plastic()){const auto&r=o->prule();lrn+=r[4]>0;g+=r[4];for(int j=0;j<4;++j)c[j]+=r[j];
+        if(r[4])for(const auto&nd:o->nodes())for(auto x:nd.ew){wd+=std::abs(x-256)/256.0;++nl;}}
+      bool has=false,on=false;for(const auto&q:o->output_cache())if(sig.span().is_start_of(q.node->character)){has=true;on|=q.io_value>0;}
+      so+=has;son+=on;}
+    if(n)std::fprintf(out,"time: P%ldP	learners %.3f eta_g %.3f A %.3f B %.3f C %.3f D %.3f wdev %.4f sig_out %.3f sig_on %.3f\n",w.time(),double(lrn)/n,g/n,c[0]/n/8,c[1]/n/8,c[2]/n/8,c[3]/n/8,nl?wd/nl:0.0,double(so)/n,double(son)/n);
+  }
   std::fflush(out);
   if (num < 2) {
     std::fprintf(out, "Terminating because number of individuals = %d\n", num);
@@ -290,6 +300,8 @@ int main(int argc, char** argv) {
     } else if(!std::strcmp(s,"-grow-follow")&&has){follow=std::make_unique<Follow>();g_follow=true;follow->path=argv[a+1];const auto k=follow->path.rfind('/');follow->dir=k==std::string::npos?".":follow->path.substr(0,k);a+=2;
     } else if(!std::strcmp(s,"-earned-growth")){p.collectives|=8|32;++a;  // L3 v9: collective births buy space
     } else if(!std::strcmp(s,"-neuron-cost")){p.collectives|=64;++a;  // L3 v9: per-neuron death hazard
+    } else if(!std::strcmp(s,"-signals")){p.plastic|=1;++a;  // docs/PLASTIC.md: "0011" outputs are cheap talk
+    } else if(!std::strcmp(s,"-plastic")){p.plastic|=2;++a;  // docs/PLASTIC.md: heritable Hebbian rule
     } else if(!std::strcmp(s,"-locks")){p.collectives|=128;++a;  // L4a: evolving locks on the land
     } else if(!std::strcmp(s,"-lock-frozen")){p.collectives|=128;lmode=1;++a;  // L4a control: locks never change
     } else if(!std::strcmp(s,"-lock-churn")){p.collectives|=128;lmode=2;++a;  // L4a control: random re-keying
@@ -392,6 +404,7 @@ int main(int argc, char** argv) {
   }
   World& world = *world_ptr;
   if(p.rng_mode&&!world.params().rng_mode){world.to_crng();std::fprintf(stderr,"Switched to counter RNG streams at time %ld\n",world.time());}
+  if(world.params().plastic&&!world.params().rng_mode){std::fprintf(stderr,"-signals/-plastic require -crng\n");return 2;}
   if((world.params().collectives&128)&&!world.params().rng_mode){std::fprintf(stderr,"-locks requires -crng\n");return 2;}
   world.set_threads(nthr);
 

@@ -22,6 +22,7 @@ const Character kTurnClockwise("110");
 const Character kMoveForward("111");
 const Character kBond("000");    // L3 only
 const Character kUnbond("001");  // L3 only
+const Character kSignal("0011");  // plastic bit 1: no action
 constexpr int kPrimingLevel = 2;
 }  // namespace
 
@@ -39,6 +40,7 @@ Organism::Organism(World& w, Genotype genotype, int x64, int y64)
   at_y = at_y_64 >> 6;
   at = at_x + at_y * w.length_;
   direction_deg = w.R1_.random(360);
+  if(w.p_.plastic&2){set_plastic(w.pend_set_?w.pend_:w.rnd_rule());w.pend_set_=false;}
   copy_net_inputs_from_neighbourhood();
   for (int rep = 0; rep < kPrimingLevel; ++rep) update_outputs(w.R1_, w.net_);
 }
@@ -131,8 +133,9 @@ void Organism::copy_net_inputs_from_neighbourhood() {
 
 int Organism::action_output(const GeneSpan& prefix) {
   long sum = -1;
+  const bool sg=w_.p_.plastic&1;
   for (const Ann::OutCache& out : output_cache())
-    if (prefix.is_start_of(out.node->character)) {
+    if (prefix.is_start_of(out.node->character)&&!(sg&&kSignal.span().is_start_of(out.node->character))) {
       if (sum == -1) sum = 0;
       sum += out.io_value;
       if (sum > kExcitatoryScale) {
@@ -706,6 +709,7 @@ std::unique_ptr<Organism> World::reproduce(Organism* a, Organism* b, int cx64, i
     for (const Genotype& g : shadow_genotypes_) pool.push_back(&g);
     shadow_child = bff_breed_viable(R3_, pool);
     if (p_.second_shadow) pending_shadow2_ = breed_second_shadow();
+    if(p_.plastic&2){pend_=child_rule(p1,p2);pend_set_=true;}
     auto o = std::make_unique<Organism>(*this, std::move(child), cx64, cy64);
     ++num_reproductions_;
     return o;
@@ -714,6 +718,7 @@ std::unique_ptr<Organism> World::reproduce(Organism* a, Organism* b, int cx64, i
     Genotype child = bff_breed(R1_, g1, g2, p_.heredity);
     shadow_child = bff_breed(R3_, sp1, sp2, p_.heredity);
     if (p_.second_shadow) pending_shadow2_ = breed_second_shadow();
+    if(p_.plastic&2){pend_=child_rule(p1,p2);pend_set_=true;}
     auto o = std::make_unique<Organism>(*this, std::move(child), cx64, cy64);
     ++num_reproductions_;
     return o;
@@ -752,9 +757,19 @@ std::unique_ptr<Organism> World::reproduce(Organism* a, Organism* b, int cx64, i
     gene = gene == 0 ? 1 : 0;
   }
   if (p_.second_shadow) pending_shadow2_ = breed_second_shadow();
-  auto o = std::make_unique<Organism>(*this, std::move(child), cx64, cy64);
+  if(p_.plastic&2){pend_=child_rule(p1,p2);pend_set_=true;}
+    auto o = std::make_unique<Organism>(*this, std::move(child), cx64, cy64);
   ++num_reproductions_;
   return o;
+}
+
+// Founders: A..D uniform in [-8,8], g uniform in [0,7] (0 = no learning).
+Ann::Rule5 World::rnd_rule(){Ann::Rule5 r;for(int k=0;k<4;++k)r[k]=(std::int8_t)(R1_.random(17)-8);r[4]=(std::int8_t)R1_.random(8);return r;}
+// Child: each coefficient from either parent (uniform), then with p=1/5 per coefficient a +-1 step (clamped).
+Ann::Rule5 World::child_rule(const Organism* a,const Organism* b){
+  Ann::Rule5 r;for(int k=0;k<5;++k){r[k]=(R1_.random(2)?a:b)->prule()[k];
+    if(R1_.random(5)==0){const int lo=k<4?-8:0,hi=k<4?8:7;r[k]=(std::int8_t)std::clamp(r[k]+(R1_.random(2)?1:-1),lo,hi);}}
+  return r;
 }
 
 void World::reset_not_processed() {
@@ -1056,10 +1071,12 @@ constexpr std::uint64_t kWorldMagicCoupled = 0x4f45453547454257ULL;
 constexpr std::uint64_t kWorldMagicL3 = 0x4f45453347454257ULL;
 // Compute step 2 and later: full Params (incl. rng_mode) stored; all fields trusted.
 constexpr std::uint64_t kWorldMagicV9 = 0x4f45453947454257ULL;
+// docs/PLASTIC.md: Params::plastic trusted; per-agent rule stored when plastic bit 2 is set.
+constexpr std::uint64_t kWorldMagicV10 = 0x4f45453a47454257ULL;
 }
 
 void World::save(Writer& w) const {
-  if(p_.rng_mode){w.put(kWorldMagicV9);w.put(p_);}
+  if(p_.rng_mode){w.put(p_.plastic?kWorldMagicV10:kWorldMagicV9);w.put(p_);}
   else{w.put(p_.collectives ? kWorldMagicL3 : p_.heredity ? kWorldMagicCoupled : kWorldMagic);std::array<char,32>im;std::memcpy(im.data(),&p_,32);w.put(im);}
   w.put(seed_used_);
   rng_.save(w);
@@ -1073,6 +1090,7 @@ void World::save(Writer& w) const {
     w.put(o->id); w.put(o->pen_colour); w.put(o->at); w.put(o->at_x); w.put(o->at_y);
     w.put(o->at_x_64); w.put(o->at_y_64); w.put(o->direction_deg); w.put(o->birth_time);
     w.put(o->age);
+    if(p_.plastic&2)w.put(o->prule());
     o->save_state(w);
     if (p_.collectives) {
       w.put_vec(o->bonds);
@@ -1101,10 +1119,10 @@ void World::save(Writer& w) const {
 
 std::unique_ptr<World> World::load(Reader& r) {
   const auto magic = r.get<std::uint64_t>();
-  if (magic != kWorldMagic && magic != kWorldMagicCoupled && magic != kWorldMagicL3 && magic != kWorldMagicV9)
+  if (magic != kWorldMagic && magic != kWorldMagicCoupled && magic != kWorldMagicL3 && magic != kWorldMagicV9 && magic != kWorldMagicV10)
     throw std::runtime_error("not a world checkpoint");
   Params p;
-  if(magic==kWorldMagicV9)p=r.get<Params>();
+  if(magic==kWorldMagicV9||magic==kWorldMagicV10){p=r.get<Params>();if(magic==kWorldMagicV9)p.plastic=0;}
   else{const auto im=r.get<std::array<char,32>>();std::memcpy(&p,im.data(),32);p.rng_mode=0;
   if (magic == kWorldMagic) p.heredity = 0;
   if (magic != kWorldMagicL3) p.collectives = 0;}
@@ -1123,6 +1141,7 @@ std::unique_ptr<World> World::load(Reader& r) {
     o->at_x = r.get<int>(); o->at_y = r.get<int>(); o->at_x_64 = r.get<int>();
     o->at_y_64 = r.get<int>(); o->direction_deg = r.get<int>(); o->birth_time = r.get<long>();
     o->age = r.get<int>();
+    if(p.plastic&2)o->set_plastic(r.get<Ann::Rule5>());
     o->load_state(r);
     if (p.collectives) {
       o->bonds = r.get_vec<std::uint64_t>();

@@ -346,6 +346,7 @@ void Ann::add_link(Node* from, Node* to, bool excitatory) {
   if (excitatory) {
     from->excitatory_outputs.push_back(to);
     to->excitatory_inputs.push_back(from);
+    to->ew.push_back(256);
   } else {
     from->inhibitory_outputs.push_back(to);
     to->inhibitory_inputs.push_back(from);
@@ -414,6 +415,7 @@ void erase_one(std::vector<Node*>& v, Node* n) {
   auto it = std::find(v.begin(), v.end(), n);
   if (it != v.end()) v.erase(it);
 }
+void erase_exc_in(Node* y,Node* n){auto it=std::find(y->excitatory_inputs.begin(),y->excitatory_inputs.end(),n);if(it==y->excitatory_inputs.end())return;y->ew.erase(y->ew.begin()+(it-y->excitatory_inputs.begin()));y->excitatory_inputs.erase(it);}
 }  // namespace
 
 void Ann::delete_node(std::list<Node>::iterator node_it) {
@@ -421,7 +423,7 @@ void Ann::delete_node(std::list<Node>::iterator node_it) {
   for (Node* x : n->inhibitory_inputs) erase_one(x->inhibitory_outputs, n);
   for (Node* x : n->excitatory_inputs) erase_one(x->excitatory_outputs, n);
   for (Node* y : n->inhibitory_outputs) erase_one(y->inhibitory_inputs, n);
-  for (Node* y : n->excitatory_outputs) erase_one(y->excitatory_inputs, n);
+  for (Node* y : n->excitatory_outputs) erase_exc_in(y, n);
   nodes_.erase(node_it);
 }
 
@@ -487,7 +489,9 @@ void Ann::run_rule(Rule& rule, std::list<Node>::iterator node_it) {
   rule.used = true;
 }
 
-void Ann::calc_new_outputs(Node& node, Rng& rng, const NetConstants& k) {
+bool Ann::freeze=false;
+
+void Ann::calc_new_outputs(Node& node, Rng& rng, const NetConstants& k, bool pl) {
   bool inhibited = false;
   for (const Node* x : node.inhibitory_inputs)
     if (x->inhibitory_output) {
@@ -495,7 +499,8 @@ void Ann::calc_new_outputs(Node& node, Rng& rng, const NetConstants& k) {
       break;
     }
   int e = 0;
-  for (const Node* x : node.excitatory_inputs) e += x->excitatory_output;
+  if(pl){for(std::size_t i=0;i<node.excitatory_inputs.size();++i)e+=(node.excitatory_inputs[i]->excitatory_output*node.ew[i])>>8;}
+  else for (const Node* x : node.excitatory_inputs) e += x->excitatory_output;
   if (node.net_input) e += node.net_input->io_value;
   node.new_inhibitory_output = (e < k.t_v) ? 0 : 1;
   if (inhibited) {
@@ -526,13 +531,27 @@ void Ann::rebuild_out_cache() {
 }
 
 void Ann::update_outputs(Rng& rng, const NetConstants& k) {
-  for (Node& n : nodes_) calc_new_outputs(n, rng, k);
+  for (Node& n : nodes_) calc_new_outputs(n, rng, k, plastic_);
   for (Node& n : nodes_) {
     n.inhibitory_output = n.new_inhibitory_output;
     n.excitatory_output = n.new_excitatory_output;
     if (n.net_output) n.net_output->io_value = n.excitatory_output;
   }
+  if(plastic_&&pr_[4]&&!freeze)hebb();
   rebuild_out_cache();
+}
+
+// Integer ABCD rule: s = A*pre*post + B*pre + C*post + D (pre,post in 1/1024, coefficients in eighths),
+// dw (1/256 units) = s*eta/32; w clamped to [0,4], then each node's incoming weights rescaled to mean 1.
+void Ann::hebb(){
+  const int A=pr_[0],B=pr_[1],C=pr_[2],D=pr_[3],sh=5+pr_[4];
+  for(Node&n:nodes_){const int post=n.excitatory_output;
+    for(std::size_t i=0;i<n.excitatory_inputs.size();++i){const int pre=n.excitatory_inputs[i]->excitatory_output;
+      const int s=((A*pre*post)>>10)+B*pre+C*post+D*1024;int w=n.ew[i]+(s>>sh);n.ew[i]=(std::int16_t)std::clamp(w,0,1024);}
+    // synaptic normalisation: mean incoming weight back to 1, so learning redistributes drive but cannot add gain
+    const int m=(int)n.ew.size();if(!m)continue;long t=0;for(auto x:n.ew)t+=x;
+    if(t==0){for(auto&x:n.ew)x=256;continue;}
+    for(auto&x:n.ew)x=(std::int16_t)std::min<long>(1024,(long)x*256*m/t);}
 }
 
 }  // namespace oee::geb
@@ -591,6 +610,7 @@ void Ann::save_state(Writer& w) const {
       for (const Node* x : *links) idx.push_back(index(x));
       w.put_vec(idx);
     }
+    if(plastic_)w.put_vec(n->ew);
   }
   for (const auto* io : {&net_inputs_, &net_outputs_}) {
     w.put<std::uint64_t>(io->size());
@@ -620,6 +640,7 @@ void Ann::load_state(Reader& r) {
     nd.new_inhibitory_output = r.get<int>(); nd.new_excitatory_output = r.get<int>();
     nd.just_constructed = r.get<std::uint8_t>() != 0;
     for (auto& l : pending[i].l) l = r.get_vec<std::int32_t>();
+    if(plastic_)nd.ew=r.get_vec<std::int16_t>();else nd.ew.assign(pending[i].l[1].size(),256);
   }
   for (std::uint64_t i = 0; i < n; ++i) {
     Node& nd = *order[i];

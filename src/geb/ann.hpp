@@ -2,6 +2,7 @@
 // the McCulloch-Pitts-style recurrent network. See docs/GEB_SPEC.md sections 3-4.
 #pragma once
 
+#include <array>
 #include <list>
 #include <memory>
 #include <vector>
@@ -66,6 +67,7 @@ struct Node {
   // Links are a multiset of neighbour pointers (duplicates count separately).
   std::vector<Node*> inhibitory_inputs, excitatory_inputs;
   std::vector<Node*> inhibitory_outputs, excitatory_outputs;
+  std::vector<std::int16_t> ew;  // plastic weight of each excitatory input (256 = 1), parallel to excitatory_inputs
   IoEntry* net_input = nullptr;
   IoEntry* net_output = nullptr;
   int inhibitory_output = 0, excitatory_output = 0;
@@ -111,7 +113,14 @@ class Ann {
   const std::vector<OutCache>& output_cache() const { return out_cache_; }
   // The entries of output_cache() with a non-zero value, in the same order.
   const std::vector<OutCache>& output_nonzero() const { return out_nz_; }
-  const std::list<Node>& nodes() const {return nodes_;}  // read-only, for visualisation tools
+  const std::list<Node>& nodes() const {return nodes_;}
+  // Lifetime plasticity (docs/PLASTIC.md): heritable ABCD Hebbian rule on excitatory links,
+  // dw=eta*(A*pre*post+B*pre+C*post+D); pr[0..3]=A..D in eighths (-8..8), pr[4]=g, eta=2^-g (0 = off).
+  using Rule5=std::array<std::int8_t,5>;
+  void set_plastic(const Rule5& r){plastic_=true;pr_=r;}
+  bool plastic() const {return plastic_;}
+  const Rule5& prule() const {return pr_;}
+  static bool freeze;  // analysis: weights stay as they are (not saved)  // read-only, for visualisation tools
 
   void morphogenesis_step();
   void update_outputs(Rng& rng, const NetConstants& k);
@@ -127,7 +136,9 @@ class Ann {
   void run_rule(Rule& rule, std::list<Node>::iterator node_it);
   void delete_node(std::list<Node>::iterator node_it);
   static void add_link(Node* from, Node* to, bool excitatory);
-  static void calc_new_outputs(Node& node, Rng& rng, const NetConstants& k);
+  static void calc_new_outputs(Node& node, Rng& rng, const NetConstants& k, bool pl);
+  void hebb();
+  bool plastic_=false;Rule5 pr_{};
 
   // Heap-held so spans into it stay valid if the Ann object is moved.
   std::unique_ptr<Genotype> genotype_;

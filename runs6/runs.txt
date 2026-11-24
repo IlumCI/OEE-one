@@ -80,3 +80,8 @@ l4Lb_s1 resets_v14 1 3000000 -length 52 -neurons 84 -collectives -division-of-la
 l4Ln_s1 resets_v12 1 3000000 -length 52 -neurons 84 -collectives -division-of-labour -senescence -grow-every 500000 -grow-by 8 -grow-max 104 -grow-neurons-by 16 -grow-neurons-max 188 -second-shadow -presence presence -crng
 l4Lb_s2 resets_v14 2 3000000 -length 52 -neurons 84 -collectives -division-of-labour -senescence -grow-every 500000 -grow-by 8 -grow-max 104 -grow-neurons-by 16 -grow-neurons-max 188 -second-shadow -presence presence -crng -locks -lock-floor
 l4Ln_s2 resets_v12 2 3000000 -length 52 -neurons 84 -collectives -division-of-labour -senescence -grow-every 500000 -grow-by 8 -grow-max 104 -grow-neurons-by 16 -grow-neurons-max 188 -second-shadow -presence presence -crng
+# docs/PLASTIC.md: signals + lifetime plasticity (SP) vs signals only (S), L24 fixed, 1M
+plSP_s1 resets_v16 1 1000000 -length 24 -neurons 40 -collectives -division-of-labour -senescence -second-shadow -presence presence -crng -signals -plastic
+plS_s1 resets_v16 1 1000000 -length 24 -neurons 40 -collectives -division-of-labour -senescence -second-shadow -presence presence -crng -signals
+plSP_s2 resets_v16 2 1000000 -length 24 -neurons 40 -collectives -division-of-labour -senescence -second-shadow -presence presence -crng -signals -plastic
+plS_s2 resets_v16 2 1000000 -length 24 -neurons 40 -collectives -division-of-labour -senescence -second-shadow -presence presence -crng -signals

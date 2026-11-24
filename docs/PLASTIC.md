@@ -1,0 +1,73 @@
+# Signal outputs and lifetime plasticity
+
+Follows docs/SIGNALS.md. There, every Geb output is both an action and a signal, so what
+neighbours hear is a broadcast of what an agent does. This step adds a channel with no
+physical effect (cheap talk), and learning within a lifetime.
+
+## Signal outputs (`-signals`, Params::plastic bit 1)
+
+- An output whose character starts with `0011` drives no action. It is excluded from every
+  action sum, including unbond (`001`) and lock keys.
+- Neighbours still hear it through the usual Geb matching: an input hears an output when the
+  input's character, minus its side bit, is a prefix of the output's character.
+- A signal therefore costs nothing and does nothing, except through its effect on whoever hears
+  it. Whether it gets used is up to evolution.
+
+## Plasticity (`-plastic`, Params::plastic bit 2)
+
+Each excitatory link carries a weight w, which starts at 1 at birth. A node's drive becomes
+sum w_i * pre_i.
+
+After every network update, each agent applies its own heritable rule:
+
+    dw = eta * (A*pre*post + B*pre + C*post + D)      pre, post in [0,1]
+
+This is the generalised Hebbian "ABCD" rule:
+- Najarro & Risi, arXiv:2007.02686.
+- Yaman et al., arXiv:1904.01709: evolved interpretable local rules.
+- Pedersen & Risi, arXiv:2104.07959: rule sharing.
+- arXiv:2507.11566 (2025): one evolved ABCD rule shared by a swarm, with heterogeneity coming
+  from each agent's experience.
+
+Departures from those papers:
+- **The rule evolves inside an open-ended world.** It is not meta-learned against a task.
+  A, B, C and D are in eighths (-8..8). eta = 2^-g with g in 0..7, and g = 0 means no learning.
+- **Founders get random rules.** A child takes each coefficient from either parent, then each
+  coefficient takes a +-1 step with probability 1/5. Learned weights are not inherited.
+- **Synaptic normalisation.** After the update, weights are clamped to [0,4], and each node's
+  incoming weights are rescaled to mean 1.
+
+Why normalisation: without it, evolution selected D > 0. Weights then ran to the cap within a
+lifetime, which is a gain increase, not learning. With normalisation, learning can only
+redistribute a node's drive among its inputs. In a 30k-step test, weights stayed within 10–20%
+of 1.
+
+## Checkpoints and tests
+
+- Checkpoint magic V10 stores Params::plastic, each agent's rule and its link weights. Older
+  checkpoints load with plastic = 0.
+- With both bits off, results are bit-identical to before; all 12 ctest checks pass.
+- tests/check_plastic.sh: a run resumed from a checkpoint matches an uninterrupted one, and
+  2 threads match 1.
+- Log line `time: P`, values per agent:
+  - learners: fraction with g > 0
+  - eta_g: mean g
+  - A..D: mean coefficients
+  - wdev: mean |w - 1|
+  - sig_out: fraction with a signal output
+  - sig_on: fraction whose signal output is non-zero
+- Analysis switch: `Ann::freeze` (not saved) stops all weight changes, for ablation.
+
+## Experiment (runs6, plSP_* vs plS_*)
+
+- L24, neurons 40, kin colonies, division of labour, senescence, counter RNG, 1M steps,
+  seeds 1–2.
+- Arms: signals + plasticity (SP), and signals only (S).
+- The runs use nice 10, so the L4 scale test keeps priority.
+
+Planned measurements:
+1. Do the signal outputs get used? Track sig_out and sig_on over time, and the
+   heard/did influence of `0011` signals measured as in SIGNALS.md.
+2. Causal effect of learning: on SP checkpoints, compare behaviour and births with
+   `Ann::freeze` on and off.
+3. SP vs S: population, births, complexity and activity statistics.

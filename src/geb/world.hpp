@@ -63,6 +63,11 @@ struct Params {
   // Compute step 2 (docs/COMPUTE.md): 0 = Geb's single ran1 stream; 1 = counter streams keyed by
   // (seed, cycle, agent id), cycle order from a per-cycle permutation. Changes draws, not rules.
   std::uint8_t rng_mode = 0;
+  // docs/PLASTIC.md. Bit 1 = signal outputs: outputs whose character starts "0011" drive no action
+  // (cheap talk; neighbours still hear them). Bit 2 = lifetime plasticity: each agent carries a heritable
+  // ABCD Hebbian rule (Ann::Rule5) on its excitatory links; weights start at 1 at birth (no Lamarckism).
+  // Stored in checkpoints from magic V10 on. Requires counter RNG streams. Not in Geb.
+  std::uint8_t plastic = 0;
 };
 
 static_assert(sizeof(Params)==36,"Params is stored raw in checkpoints (first 32 bytes in pre-v9 files)");
@@ -176,6 +181,9 @@ class World {
   long collab() const {return collab_;}
   void set_deaf(int d){deaf_=d;}  // analysis only (not saved): 1 = no agent senses neighbours, 2 = random half (by id) deaf
   static bool deaf_half(std::uint64_t id){id^=id>>33;id*=0xff51afd7ed558ccdULL;id^=id>>33;return id&1;}
+  Ann::Rule5 pend_{};bool pend_set_=false;  // plasticity rule for the agent being constructed (set by reproduce)
+  Ann::Rule5 child_rule(const Organism* a,const Organism* b);
+  Ann::Rule5 rnd_rule();
   static constexpr int kMaxAge = 1000;  // L3 v4 senescence (collectives bit 2)  // a budded child joins the parent's group only below this size
 
   // Shadow population (genotypes only).
