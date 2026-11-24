@@ -71,3 +71,26 @@ Planned measurements:
 2. Causal effect of learning: on SP checkpoints, compare behaviour and births with
    `Ann::freeze` on and off.
 3. SP vs S: population, births, complexity and activity statistics.
+
+## Interim results
+
+### Freeze test at about 190k steps
+
+Method:
+- Checkpoints: plSP_s1 at 195k steps and plSP_s2 at 186k.
+- Each replay runs 500 steps with learning on and again with learning frozen, for 12 paired
+  reseeded replicates per checkpoint.
+- Raw output is in docs/results/plastic/.
+
+Results:
+- **Births and population: no effect.**
+  - s1: births +6 of about 49,900 (t +0.02).
+  - s2: births +152 of about 46,600 (t +0.42).
+- **Behaviour in s1**, where all agents learn: learning raises attack by 0.4 percentage points
+  (t +2.4) and turn by 0.5 points (t +2.9). Reproduce rises 0.5 points, but at t +1.7 this is
+  not clearly separate from noise.
+- **Behaviour in s2:** nothing.
+- **Signal outputs:** below 2% of agents in all four runs, with no trend.
+
+At this stage the rule has spread (s1 has learners 1.0), but it is close to a passenger. It
+changes behaviour slightly and fitness not at all.

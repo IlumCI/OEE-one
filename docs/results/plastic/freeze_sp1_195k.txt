@@ -1,0 +1,8 @@
+births     learning  49922.167 frozen  49916.583 diff +5.583 se 234.615 t +0.02 wins 7/12
+pop        learning    426.667 frozen    427.917 diff -1.250 se 3.589 t -0.35 wins 4/12
+reproduce  learning      0.712 frozen      0.708 diff +0.005 se 0.003 t +1.65 wins 9/12
+attack     learning      0.728 frozen      0.723 diff +0.004 se 0.002 t +2.39 wins 8/12
+move       learning      0.030 frozen      0.030 diff -0.000 se 0.001 t -0.20 wins 5/12
+turn       learning      0.702 frozen      0.697 diff +0.005 se 0.002 t +2.93 wins 9/12
+bond       learning      0.590 frozen      0.587 diff +0.003 se 0.005 t +0.73 wins 7/12
+signal     learning      0.005 frozen      0.005 diff -0.000 se 0.001 t -0.02 wins 6/12
