@@ -96,3 +96,13 @@ target_link_libraries(test_l0 PRIVATE oee_l0_core)
 add_test(NAME l0_core COMMAND test_l0)
 add_executable(oee_l0 apps/oee_l0/main.cpp)
 target_link_libraries(oee_l0 PRIVATE oee_l0_core)
+
+# Evolved models (docs/EVO.md): AMX int8 kernels
+add_library(oee_evo_core src/evo/gemm.cpp)
+target_include_directories(oee_evo_core PUBLIC ${CMAKE_SOURCE_DIR}/src)
+set_source_files_properties(src/evo/gemm.cpp PROPERTIES COMPILE_OPTIONS "-mamx-tile;-mamx-int8")
+find_package(Threads REQUIRED)
+target_link_libraries(oee_evo_core PUBLIC Threads::Threads)
+add_executable(test_evo_gemm tests/evo/test_gemm.cpp)
+target_link_libraries(test_evo_gemm PRIVATE oee_evo_core)
+add_test(NAME evo_gemm COMMAND test_evo_gemm)
