@@ -14,6 +14,7 @@ namespace oee::evo {
 namespace {
 std::uint64_t mix(std::uint64_t x){x+=0x9e3779b97f4a7c15ULL;x=(x^(x>>30))*0xbf58476d1ce4e5b9ULL;x=(x^(x>>27))*0x94d049bb133111ebULL;return x^(x>>31);}
 std::int8_t c8(std::int64_t x){return (std::int8_t)(x>127?127:x<-127?-127:x);}  // I8 cast: clip to [-127,127]
+inline std::int8_t c8i(int x){return (std::int8_t)std::min(127,std::max(-127,x));}  // same, int32 (vectorises)
 
 // Acklam's inverse normal CDF (relative error < 1.2e-9).
 double invphi(double p){
@@ -44,7 +45,9 @@ std::int32_t log2_16(std::int64_t x){return (std::int32_t)std::llround(16*std::l
 // floor(x/m) for |x| < 2^15, 1 <= m <= 127, by multiply-shift (exactness checked exhaustively in tests/evo/test_egg.cpp).
 struct Div{std::uint64_t mg[128];Div(){mg[0]=0;for(int m=1;m<128;++m)mg[m]=(1ULL<<32)/m+1;}};  // 64-bit: m = 1 needs 2^32 + 1
 const Div& divs(){static Div d;return d;}
-inline int fdiv(int x,int m){const std::uint64_t g=divs().mg[m];if(x>=0)return (int)(((std::uint64_t)x*g)>>32);const int a=-x;const int q=(int)(((std::uint64_t)a*g)>>32);return q*m==a?-q:-q-1;}
+// branch-free: floor(x/m) = x>=0 ? x/m : -((-x+m-1)/m), each unsigned quotient by multiply-shift
+inline int fdiv_g(int x,int m,std::uint64_t g){const int t=x>=0?x:m-1-x;const int q=(int)(((std::uint64_t)t*g)>>32);return x>=0?q:-q;}
+inline int fdiv(int x,int m){return fdiv_g(x,m,divs().mg[m]);}
 }  // namespace
 
 long Egg::nparams() const{long n=0;for(auto* m:mats)n+=(long)m->m*m->n;for(auto* v:vecs)n+=v->n;return n;}
@@ -107,31 +110,41 @@ namespace {
 // Per-thread forward over rows [r0, r0+n) (n a multiple of 32 or the tail), all T tokens.
 struct Fwd{
   const Egg& g;const Noise* nz;Rows& rows;int r0,n;int D,sh;
-  std::vector<std::int8_t> y,u,z,f,fh,a,b2;std::vector<std::int32_t> acc,acc2;
+  std::vector<std::int8_t> y,u,z,f,fh,a,b2;std::vector<std::int32_t> acc;
+  std::vector<int> voff;int vtot=0;std::vector<std::int8_t> pvb;  // perturbed vector parameters per row (fixed within a step)
   Fwd(const Egg& gg,const Noise* z0,Rows& rr,int r,int nn):g(gg),nz(z0),rows(rr),r0(r),n(nn),D(gg.c.D),sh(4+gg.c.sig){
     const int npad=(n+15)/16*16;y.assign((std::size_t)npad*D,0);u=y;f=y;fh=y;a=y;b2=y;z.assign((std::size_t)npad*4*D,0);
-    acc.assign((std::size_t)npad*4*D,0);acc2=acc;}
-  // perturbed vector parameter value for row r
-  int pv(const Vec& v,int i,int r) const{
-    int w=v.w[i];const int s=rows.sign[r];if(!nz||!s)return w;
-    const int k=(int)g.mats.size()+v.id,p=rows.pair[r];const int pr=s*(int)nz->A(k,p)[i]*(int)nz->B(k,p)[i];
-    return std::clamp(w+(pr>>sh),-127,127);
+    acc.assign((std::size_t)64*std::max(4*D,gg.c.V),0);
+    for(auto* v:g.vecs){voff.push_back(vtot);vtot+=v->n;}
+    pvb.resize((std::size_t)n*vtot);
+    for(int i=0;i<n;++i){const int r=r0+i,s=rows.sign[r];
+      for(auto* v:g.vecs){std::int8_t* o=pvb.data()+(std::size_t)i*vtot+voff[v->id];
+        if(!nz||!s){std::memcpy(o,v->w.data(),v->n);continue;}
+        const int k=(int)g.mats.size()+v->id,p=rows.pair[r];const std::int8_t* A=nz->A(k,p);const std::int8_t* B=nz->B(k,p);
+        for(int j=0;j<v->n;++j)o[j]=(std::int8_t)std::clamp((int)v->w[j]+((s*(int)A[j]*(int)B[j])>>sh),-127,127);}}
   }
-  // out (n x M.m int8) = I8((U M^T + ((U.B) A >> sh)) / (16 sqrt(M.n)))
+  // perturbed vector parameter value for row r
+  const std::int8_t* pvr(const Vec& v,int r) const{return pvb.data()+(std::size_t)(r-r0)*vtot+voff[v.id];}
+  int pv(const Vec& v,int i,int r) const{return pvr(v,r)[i];}
+  // out (n x M.m int8) = I8((U M^T + ((U.B) A >> sh)) / (16 sqrt(M.n))). Rows go in blocks of 64 so the int32
+  // accumulator block stays in cache; the noise term and the int8 conversion are fused into one pass.
   void mm(const Mat& M,const std::int8_t* U,std::int8_t* out,std::int32_t* c){
-    const int npad=(n+15)/16*16;gemm(U,M.n,M.p.data(),c,M.m,npad,M.m,M.n);
-    if(nz)for(int i=0;i<n;++i){const int r=r0+i,s=rows.sign[r];if(!s)continue;const int p=rows.pair[r];
-      const std::int8_t* B=nz->B(M.id,p);const std::int8_t* A=nz->A(M.id,p);const std::int8_t* x=U+(std::size_t)i*M.n;
-      std::int32_t dot=0;for(int j=0;j<M.n;++j)dot+=(std::int32_t)x[j]*B[j];const std::int64_t sd=(std::int64_t)s*dot;
-      std::int32_t* ci=c+(std::size_t)i*M.m;for(int o=0;o<M.m;++o)ci[o]+=(std::int32_t)((sd*A[o])>>sh);}
-    const int ds=4+ilog2(M.n)/2;
-    for(int i=0;i<n;++i){const std::int32_t* ci=c+(std::size_t)i*M.m;std::int8_t* oi=out+(std::size_t)i*M.m;for(int o=0;o<M.m;++o)oi[o]=c8(ci[o]>>ds);}
+    const int ds=4+ilog2(M.n)/2,npad=(n+15)/16*16;
+    for(int b0=0;b0<npad;b0+=64){const int bn=std::min(64,npad-b0);
+      gemm(U+(std::size_t)b0*M.n,M.n,M.p.data(),c,M.m,bn,M.m,M.n);
+      for(int bi=0;bi<bn&&b0+bi<n;++bi){const int i=b0+bi,r=r0+i,s=nz?rows.sign[r]:0;const std::int32_t* ci=c+(std::size_t)bi*M.m;std::int8_t* oi=out+(std::size_t)i*M.m;
+        if(!s){for(int o=0;o<M.m;++o)oi[o]=c8i(ci[o]>>ds);continue;}
+        const int p=rows.pair[r];const std::int8_t* B=nz->B(M.id,p);const std::int8_t* A=nz->A(M.id,p);const std::int8_t* x=U+(std::size_t)i*M.n;
+        std::int32_t dot=0;for(int j=0;j<M.n;++j)dot+=(std::int32_t)x[j]*B[j];
+        if(M.n<=1024){const std::int32_t sd=s*dot;for(int o=0;o<M.m;++o)oi[o]=c8i((ci[o]+((sd*(std::int32_t)A[o])>>sh))>>ds);}  // |dot*A| < 1024*127^3 < 2^31
+        else{const std::int64_t sd=(std::int64_t)s*dot;for(int o=0;o<M.m;++o)oi[o]=c8i((ci[o]+(std::int32_t)((sd*A[o])>>sh))>>ds);}}
+    }
   }
   void ln(const Vec& w,const std::int8_t* in,std::int8_t* out){
     const int s2=ilog2(D);
     for(int i=0;i<n;++i){const std::int8_t* x=in+(std::size_t)i*D;std::int8_t* o=out+(std::size_t)i*D;
       std::int32_t sum=0;for(int j=0;j<D;++j)sum+=std::abs((int)x[j]);const int m=std::max(1,std::min(127,(int)(sum>>s2)));
-      for(int j=0;j<D;++j)o[j]=c8(fdiv((int)x[j]*pv(w,j,r0+i),m));}
+      const std::int8_t* wv=pvr(w,r0+i);const std::uint64_t gm=divs().mg[m];for(int j=0;j<D;++j)o[j]=c8i(fdiv_g((int)x[j]*(int)wv[j],m,gm));}
   }
   void run(const std::uint8_t* tok,int T,std::int64_t* fit){
     const int L=g.c.L,V=g.c.V;const std::int32_t* E2=exp2_table();std::vector<std::int8_t> lg((std::size_t)((n+15)/16*16)*V);
@@ -139,7 +152,7 @@ struct Fwd{
       for(int i=0;i<n;++i){const int r=r0+i;const int tk=tok[(std::size_t)r*(T+1)+t];std::int8_t* yi=y.data()+(std::size_t)i*D;
         const std::int8_t* w=g.emb.w.data()+(std::size_t)tk*D;const int s=rows.sign[r];
         if(nz&&s){const int p=rows.pair[r];const int at=s*(int)nz->A(g.emb.id,p)[tk];const std::int8_t* B=nz->B(g.emb.id,p);
-          for(int j=0;j<D;++j)yi[j]=c8((int)w[j]+((at*(int)B[j])>>sh));}
+          for(int j=0;j<D;++j)yi[j]=c8i((int)w[j]+((at*(int)B[j])>>sh));}
         else std::memcpy(yi,w,D);}
       for(int l=0;l<L;++l){const auto& Ly=g.ly[l];
         ln(Ly.ln1,y.data(),u.data());
@@ -148,18 +161,18 @@ struct Fwd{
         for(int i=0;i<n;++i)std::memcpy(a.data()+(std::size_t)i*D,rows.state.data()+((std::size_t)(r0+i)*L+l)*D,D);  // s
         mm(Ly.Uf,a.data(),b2.data(),acc.data());
         for(int i=0;i<n;++i){std::int8_t* fi=f.data()+(std::size_t)i*D;const std::int8_t* us=b2.data()+(std::size_t)i*D;const std::int8_t* s=a.data()+(std::size_t)i*D;std::int8_t* hh=fh.data()+(std::size_t)i*D;
-          for(int j=0;j<D;++j){fi[j]=c8((int)fi[j]+(int)us[j]+pv(Ly.bf,j,r0+i));hh[j]=c8((((int)fi[j]+127)*(int)s[j])>>8);}}
+          const std::int8_t* bf=pvr(Ly.bf,r0+i);for(int j=0;j<D;++j){fi[j]=c8i((int)fi[j]+(int)us[j]+(int)bf[j]);hh[j]=c8i((((int)fi[j]+127)*(int)s[j])>>8);}}
         mm(Ly.Wh,u.data(),z.data(),acc.data());  // u@Wh (into z, first D columns used)
         mm(Ly.Uh,fh.data(),b2.data(),acc.data());
         for(int i=0;i<n;++i){const std::int8_t* fi=f.data()+(std::size_t)i*D;const std::int8_t* wh=z.data()+(std::size_t)i*D;const std::int8_t* uh=b2.data()+(std::size_t)i*D;
           std::int8_t* s=rows.state.data()+((std::size_t)(r0+i)*L+l)*D;std::int8_t* yi=y.data()+(std::size_t)i*D;
-          for(int j=0;j<D;++j){const int hh=c8((int)wh[j]+(int)uh[j]+pv(Ly.bh,j,r0+i));
-            const int h=c8((int)s[j]+(int)c8((((int)fi[j]+127)*(hh-(int)s[j]))>>8));s[j]=(std::int8_t)h;yi[j]=c8((int)yi[j]+h);}}
+          const std::int8_t* bh=pvr(Ly.bh,r0+i);for(int j=0;j<D;++j){const int hh=c8i((int)wh[j]+(int)uh[j]+(int)bh[j]);
+            const int h=c8i((int)s[j]+(int)c8i((((int)fi[j]+127)*(hh-(int)s[j]))>>8));s[j]=(std::int8_t)h;yi[j]=c8i((int)yi[j]+h);}}
         // MLP (Appendix G.7)
         ln(Ly.ln2,y.data(),u.data());
         mm(Ly.m1,u.data(),z.data(),acc.data());
         mm(Ly.m2,z.data(),a.data(),acc.data());
-        for(std::size_t k=0;k<(std::size_t)n*D;++k)y[k]=c8((int)y[k]+(int)a[k]);
+        for(std::size_t k=0;k<(std::size_t)n*D;++k)y[k]=c8i((int)y[k]+(int)a[k]);
       }
       ln(g.lnout,y.data(),u.data());mm(g.head,u.data(),lg.data(),acc.data());
       for(int i=0;i<n;++i){const int r=r0+i;const int tgt=tok[(std::size_t)r*(T+1)+t+1];const std::int8_t* li=lg.data()+(std::size_t)i*V;

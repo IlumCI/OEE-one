@@ -4,7 +4,7 @@
 // Data split (enwik8 convention): first 90% train, next 5% validation, last 5% test.
 // Rows: R = max(pop, 2*seqs); row r belongs to pair (r/2) % (pop/2) with sign + (even) or - (odd) and reads sequence
 // (r/2) % seqs, so both members of a pair see the same bytes. Hidden states persist across steps (truncated ES).
-// Log: step bytes_seen train_bpb valid_bpb changed alpha sec macs_total
+// Log: step bytes_seen train_bpb valid_bpb changed alpha sec macs_total t_noise t_forward t_update
 #include <chrono>
 #include <cmath>
 #include <cstdio>
@@ -44,16 +44,17 @@ int main(int argc,char** argv){
     std::vector<std::int64_t> ef(evs,0);run_rows(g,nullptr,er,et.data(),evt,ef.data(),threads);double s=0;for(auto x:ef)s+=x;return -s/16.0/((double)evs*evt);};
   for(long st=step0;st<step0+steps;++st){
     const auto t0=std::chrono::steady_clock::now();
-    nz.gen(g,P,seed,st);
+    nz.gen(g,P,seed,st);const auto t1=std::chrono::steady_clock::now();
     for(int r=0;r<R;++r){const int q=(r/2)%seqs;std::size_t p=pos[q]%(ntr-T-1);std::memcpy(tok.data()+(std::size_t)r*(T+1),tr+p,T+1);}
-    std::fill(fit.begin(),fit.end(),0);run_rows(g,&nz,rows,tok.data(),T,fit.data(),threads);macs+=mpt*R*T;
+    std::fill(fit.begin(),fit.end(),0);run_rows(g,&nz,rows,tok.data(),T,fit.data(),threads);macs+=mpt*R*T;const auto t2=std::chrono::steady_clock::now();
     std::vector<std::int64_t> sp(P,0),sm(P,0);double fs=0;for(int r=0;r<R;++r){(rows.sign[r]>0?sp:sm)[rows.pair[r]]+=fit[r];fs+=fit[r];}
     std::vector<int> F(P);for(int p=0;p<P;++p)F[p]=sp[p]>sm[p]?1:sp[p]<sm[p]?-1:0;
-    const double alpha=1.0/(0.015*st+1);const long ch=egg_update(g,nz,F,alpha);
+    const double alpha=1.0/(0.015*st+1);const long ch=egg_update(g,nz,F,alpha);const auto t3=std::chrono::steady_clock::now();
+    auto dt=[](auto a,auto b){return std::chrono::duration<double>(b-a).count();};
     for(auto& p:pos)p+=T;
     const double sec=std::chrono::duration<double>(std::chrono::steady_clock::now()-t0).count();
     const bool ev=eve>0&&((st+1)%eve==0||st+1==step0+steps);
-    std::fprintf(lg,"%ld\t%ld\t%.4f\t%s\t%ld\t%.5f\t%.2f\t%.4g\n",st+1,(long)(st+1)*seqs*T,-fs/16.0/((double)R*T),ev?std::to_string(eval()).substr(0,6).c_str():"-",ch,alpha,sec,macs);
+    std::fprintf(lg,"%ld\t%ld\t%.4f\t%s\t%ld\t%.5f\t%.2f\t%.4g\t%.2f\t%.2f\t%.2f\n",st+1,(long)(st+1)*seqs*T,-fs/16.0/((double)R*T),ev?std::to_string(eval()).substr(0,6).c_str():"-",ch,alpha,sec,macs,dt(t0,t1),dt(t1,t2),dt(t2,t3));
     std::fflush(lg);
     if(!save.empty()&&ev)g.save(save,st+1);
   }

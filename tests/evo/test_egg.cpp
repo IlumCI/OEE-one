@@ -11,8 +11,8 @@ static int fails=0;
 #define CHECK(c,msg) do{if(!(c)){std::printf("FAIL %s\n",msg);++fails;}else std::printf("ok   %s\n",msg);}while(0)
 
 int main(){
-  {bool ok=true;for(int m=1;m<128&&ok;++m)for(int x=-32767;x<=32767;++x){int q=x/m;if((x%m!=0)&&(x<0))--q;if(egg_fdiv(x,m)!=q){ok=false;break;}}
-    CHECK(ok,"layer norm floor division exact for all |x| < 2^15, 1 <= m <= 127");}
+  {bool ok=true;for(int m=1;m<128&&ok;++m)for(int x=-65535;x<=65535;++x){int q=x/m;if((x%m!=0)&&(x<0))--q;if(egg_fdiv(x,m)!=q){ok=false;break;}}
+    CHECK(ok,"layer norm floor division exact for all |x| < 2^16, 1 <= m <= 127");}
   EggCfg c;c.L=2;c.D=64;
   {Egg a(c,1),b(c,1),d(c,2);bool same=true,diff=false;for(std::size_t k=0;k<a.mats.size();++k){same=same&&a.mats[k]->w==b.mats[k]->w;diff=diff||a.mats[k]->w!=d.mats[k]->w;}
     CHECK(same&&diff,"init: same seed same weights, other seed differs");
