@@ -234,6 +234,26 @@ Pass, kill and plasticity:
 - **W2b (plasticity).** Start it only if amnesia shows that memory pays. Then test whether fast weights add to the
   GRU state, with a freeze ablation.
 
+### W1b protocol: split lineages inherit the parent's step schedule (fixed 2026-11-25, before the runs)
+
+Observation in W1 (seeds 1–2, epochs 0–1000):
+- A split starts the new lineage at age 0, so α = 1/(0.015·age + 1) restarts at 1. Splits happen every ~20 epochs.
+- The first active lineage had α > 0.5 in 56% (hist s1) and 92% (nohist s2) of epochs.
+- Between consecutive champions 250 epochs apart, 96–97% of the weights differ, with mean |Δw| 8–11 (weight sd 16).
+  This is close to an unbiased random walk of one step per epoch.
+- Selection works mainly through which lineages survive and split, and little through the ES gradient.
+
+Change: `-split_age 1`, a new lineage takes its parent's age (and so its α). This is not a new mechanism: it fixes
+the reset of the step schedule. W1 itself is unchanged.
+
+Test:
+- hist arm, seeds 1–2, 2000 epochs, otherwise the W1 settings.
+- **Primary.** Champions of W1b against W1 champions of the same seed at the same epoch (500, 1000, 1500, 2000),
+  mirrored, 16 seeds. W1b is better if the post-founder share is > 0.5 with t > 3 at 2000 in both seeds.
+- **Secondary.** Era progress, and genome change per era.
+- **Decision.** If W1b is better, later phases inherit the age (W2a keeps the W1 rule, so it stays comparable to
+  W1). If it is not, keep the W1 rule and record that the drift is harmless.
+
 ## 7. Implementation (planned files)
 
 - `src/w/world.{hpp,cpp}`: grid, resources, machines, agents, deterministic tick (counter RNG), copyable for forks.
