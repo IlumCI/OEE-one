@@ -207,9 +207,23 @@ Measurement:
     pay.
 - **Era progress** as in W1.
 
+Calibration of resource production (2026-11-25, before the runs). Seed 1, W1 settings plus seasons, signals and
+the view below:
+
+| Regrowth | View | Rot | Result |
+|---|---|---|---|
+| 2 (W1) | 1 | 1 | Collapse: repeated reseeds within 40 epochs |
+| 8 | 1 | 1 | Not viable: 10 reseeds in 180 epochs, about 18 agents, one lineage |
+| 8 | 2 | 1 | Not viable: about 23 agents, reseeds, one split |
+| 16 | 1 | 1 | Viable: about 57 agents, frequent splits, no reseeds |
+| 12 | 1 | 0 | Viable: about 71 agents |
+
+- Seasons give a quarter of the peak production on average. Out of season, rot removes the stock.
+- Chosen: regrowth 16 with rot kept, so that patches really disappear. Mean production is then about twice W1's.
+
 Runs:
-- 5 seeds, 3000 epochs, W1 settings plus `-season 300 -view 1 -signals 1`.
-- Baseline arm: `-season 300 -view 1 -signals 0` (no channel), for the deaf comparison and for the era-progress
+- 5 seeds, 3000 epochs, W1 settings plus `-season 300 -view 1 -signals 1 -regrow 16`.
+- Baseline arm: the same with `-signals 0` (no channel), for the deaf comparison and for the era-progress
   comparison.
 
 Pass, kill and plasticity:
