@@ -66,6 +66,9 @@ struct World{
   // P(length > l) = cont^l (shorter programs are likelier, as in a simplicity prior), instructions uniform over kCode;
   // store `store`, no owner lineage. Returns how many were placed.
   int seed_programs(int n,std::uint64_t salt,int store,double cont);
+  // intervention on the world's mechanisms (swap test): remove every machine without an owner lineage (seeded
+  // programs and their copies) and seed the same number of new random programs. Returns how many were swapped.
+  int swap_programs(std::uint64_t salt,int store,double cont);
   // census of machines that lived at least min_age ticks: machines, walls, distinct tapes, distinct effect classes
   void census(int min_age,int& machines,int& walls,int& tapes,int& classes) const;
   void set_climate(std::uint64_t salt);  // seasons: draw a new period and phases

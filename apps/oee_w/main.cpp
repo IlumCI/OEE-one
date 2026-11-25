@@ -25,6 +25,10 @@
 //          programs (short ones likelier, -prog_cont 0.7); -solo 1 plays A and B alone in the same arenas and reports
 //          the mean log ratio of their post-founder biomass (an absolute measure, as in Legg & Hutter's universal
 //          intelligence, arXiv:0712.3329, rather than a head-to-head share).
+//          -swap_at T (with -solo 1 and -arena_progs): at tick T the arena's own programs are replaced by new random
+//          ones (an intervention on one mechanism of the world). Recovery = biomass integrated over the -swap_win
+//          ticks after T / over the swap_win ticks before; reported as the mean log ratio of A's recovery to B's
+//          (faster adaptation to a changed mechanism suggests a causal model; Bengio et al., arXiv:1901.10912).
 //          mean_lshareA: integrated share over ticks after the founder generation (> skip, default max_age = 500); the
 //          founders' starting energy dominates the integrated share before that (docs/WORLD.md §9).
 //          -ablate amnesia: A's recurrent state is zeroed before every step (A without memory). -ablate shuffle: A's
@@ -106,7 +110,7 @@ constexpr std::int64_t kCkMagic=0x3130574b43454f4fLL;  // "OEECKW01"
 }  // namespace
 
 int main(int argc,char** argv){
-  int epochs=100,P=128,H=200,threads=4,layers=2,D=64,sig=4,archive_every=50,seeds=5,ticks=2000,Kmax=1,split_at=-1,hist_frac=0,hist_founders=8,ck_every=10,climate_every=5,climate_ticks=1000,stats=0,curve=0,skip=-1,split_age=0,null_es=0,hist_pair=0,gen=0,arena_progs=0,solo=0;double prog_cont=0.7;
+  int epochs=100,P=128,H=200,threads=4,layers=2,D=64,sig=4,archive_every=50,seeds=5,ticks=2000,Kmax=1,split_at=-1,hist_frac=0,hist_founders=8,ck_every=10,climate_every=5,climate_ticks=1000,stats=0,curve=0,skip=-1,split_age=0,null_es=0,hist_pair=0,gen=0,arena_progs=0,solo=0,swap_at=0,swap_win=500;double prog_cont=0.7;
   double alpha_floor=0;std::uint64_t seed=1,seed0=1000;std::string logf,archive,ta,tb,ckf,ablate;w::WParams wp;int founders=16;
   for(int a=1;a<argc;a+=2){const char* s=argv[a];const char* v=a+1<argc?argv[a+1]:"";
     if(!std::strcmp(s,"-epochs"))epochs=std::atoi(v);else if(!std::strcmp(s,"-pairs"))P=std::atoi(v);else if(!std::strcmp(s,"-H"))H=std::atoi(v);
@@ -129,7 +133,8 @@ int main(int argc,char** argv){
     else if(!std::strcmp(s,"-wr_cost"))wp.wr_cost=std::atoi(v);else if(!std::strcmp(s,"-feed_amt"))wp.feed_amt=std::atoi(v);
     else if(!std::strcmp(s,"-rep_cost"))wp.rep_cost=std::atoi(v);else if(!std::strcmp(s,"-wall_cost"))wp.wall_cost=std::atoi(v);else if(!std::strcmp(s,"-stats"))stats=std::atoi(v);else if(!std::strcmp(s,"-curve"))curve=std::max(0,std::atoi(v));else if(!std::strcmp(s,"-skip"))skip=std::max(0,std::atoi(v));else if(!std::strcmp(s,"-split_age"))split_age=std::atoi(v);else if(!std::strcmp(s,"-null_es"))null_es=std::atoi(v);else if(!std::strcmp(s,"-hist_pair"))hist_pair=std::atoi(v);
     else if(!std::strcmp(s,"-gen"))gen=std::atoi(v);else if(!std::strcmp(s,"-arena_progs"))arena_progs=std::atoi(v);
-    else if(!std::strcmp(s,"-prog_cont"))prog_cont=std::atof(v);else if(!std::strcmp(s,"-solo"))solo=std::atoi(v);else if(!std::strcmp(s,"-ck_every"))ck_every=std::max(1,std::atoi(v));
+    else if(!std::strcmp(s,"-prog_cont"))prog_cont=std::atof(v);else if(!std::strcmp(s,"-solo"))solo=std::atoi(v);
+    else if(!std::strcmp(s,"-swap_at"))swap_at=std::atoi(v);else if(!std::strcmp(s,"-swap_win"))swap_win=std::max(1,std::atoi(v));else if(!std::strcmp(s,"-ck_every"))ck_every=std::max(1,std::atoi(v));
     else if(!std::strcmp(s,"-tourney")&&a+2<argc){ta=argv[a+1];tb=argv[a+2];++a;}
     else{std::fprintf(stderr,"unknown option %s\n",s);return 2;}}
   if(wp.S%16){std::fprintf(stderr,"-S must be a multiple of 16\n");return 2;}
@@ -147,7 +152,8 @@ int main(int argc,char** argv){
     const int nc=curve>0?(ticks+curve-1)/curve:0;std::vector<std::vector<double>> cv(G,std::vector<double>(nc,0.5));
     const int sk=skip>=0?skip:wp.max_age;std::vector<double> ls(G,0.5);
     if(arena_progs>0&&!wp.matter){std::fprintf(stderr,"-arena_progs needs -matter 1\n");return 2;}
-    std::vector<double> sv(G,0);  // solo: post-founder integrated biomass of the genome playing alone
+    if(swap_at>0&&(!solo||arena_progs<=0||swap_at<swap_win||swap_at+swap_win>ticks)){std::fprintf(stderr,"-swap_at needs -solo 1, -arena_progs, and swap_win <= swap_at <= ticks - swap_win\n");return 2;}
+    std::vector<double> sv(G,0),rv(G,0);  // solo: post-founder integrated biomass alone; swap: log recovery
     auto game=[&](int gi){const int sw=gi%2;w::WParams q=wp;q.K=solo?1:2;q.seed=seed0+gi/2;
       if(gen){const std::uint64_t h=mixu(mixu(q.seed^0x6e9ULL));q.L=24+8*(int)(h%6);q.patches=3+(int)((h>>8)%8);if(wp.season>0)q.season=150+(int)((h>>16)%451);
         const double f=std::exp2(((int)((h>>32)%201)-100)/100.0);  // machine costs x0.5-2
@@ -159,12 +165,16 @@ int main(int argc,char** argv){
       const int sa=solo?0:sw;  // A's lineage slot (solo: the only slot, A in even games)
       std::vector<char> amn(q.K,0);if(!solo||sw==0){amn[sa]=ablate=="amnesia"?1:ablate=="shuffle"?2:0;if(ablate=="deaf")one[0].deaf=1u<<sa;}one[0].track=stats>0;
       int step=curve>0?std::min(curve,climate_ticks):climate_ticks;long la=-1,lb=-1;if(ablate=="wipe")step=std::min(step,100);  // wipe A's machines every 100 ticks
+      long sp0=-1,sp1=-1,sp2=-1;  // swap test: integrated biomass at swap_at - swap_win, swap_at, swap_at + swap_win
       for(int t0=0;t0<ticks;){int n=std::min(step-t0%step,ticks-t0);if(t0<sk)n=std::min(n,sk-t0);  // segment ends at curve points, climate changes and skip
+        if(swap_at>0)for(int b:{swap_at-swap_win,swap_at,swap_at+swap_win})if(t0<b)n=std::min(n,b-t0);
         if(t0>0&&t0%climate_ticks==0)one[0].set_climate((std::uint64_t)(t0/climate_ticks));
         run_worlds(one,rows,st,q.S,n,&ig,&amn);t0+=n;if(t0==sk){la=ig[sa][0];lb=solo?0:ig[1-sw][0];}
         if(ablate=="wipe"&&t0%100==0&&(!solo||sw==0))one[0].wipe(sa);
+        if(swap_at>0){if(t0==swap_at-swap_win)sp0=ig[0][0];if(t0==swap_at){sp1=ig[0][0];one[0].swap_programs(q.seed^0x5a5aULL,100,prog_cont);}if(t0==swap_at+swap_win)sp2=ig[0][0];}
         if(curve>0&&t0%curve==0&&!solo){const long x=one[0].biomass(sw),y=one[0].biomass(1-sw);cv[gi][t0/curve-1]=x+y>0?(double)x/(x+y):0.5;}}
-      if(solo){sv[gi]=(double)(ig[0][0]-std::max(0L,la));ba[gi]=one[0].biomass(0);na[gi]=one[0].count(0);return;}
+      if(solo){sv[gi]=(double)(ig[0][0]-std::max(0L,la));ba[gi]=one[0].biomass(0);na[gi]=one[0].count(0);
+        if(swap_at>0)rv[gi]=std::log((double)(sp2-sp1+1)/(double)(sp1-sp0+1));return;}
       if(la>=0){const long x=ig[sw][0]-la,y=ig[1-sw][0]-lb;ls[gi]=x+y>0?(double)x/(x+y):0.5;}
 
       const w::World& Z=one[0];const int a=sw,b=1-sw;  // lineage slots of A and B
@@ -182,6 +192,10 @@ int main(int argc,char** argv){
       std::sort(dl.begin(),dl.end());const double med=seeds%2?dl[seeds/2]:(dl[seeds/2-1]+dl[seeds/2])/2;
       std::printf("solo_log_ratio %.4f\tse %.4f\tt %.2f\twins %d/%d\tmedian %.4f\tsurviveA %d/%d\tsurviveB %d/%d\tmeanA %.0f\tmeanB %.0f\tafter tick %d\n",
         m,se,se>1e-9?m/se:0.0,w,seeds,med,ua,seeds,ub,seeds,ma/seeds,mb/seeds,sk);
+      if(swap_at>0){double r1=0,r2=0,ra=0,rb=0;int rw=0;  // recovery after the intervention: A against B in the same arenas
+        for(int k=0;k<seeds;++k){const double d=rv[2*k]-rv[2*k+1];r1+=d;r2+=d*d;rw+=d>0;ra+=rv[2*k];rb+=rv[2*k+1];}
+        const double mr=r1/seeds,sr=seeds>1?std::sqrt(std::max(0.0,(r2-seeds*mr*mr)/(seeds-1))/seeds):0;
+        std::printf("swap_recovery %.4f\tse %.4f\tt %.2f\twins %d/%d\tlogrecA %.4f\tlogrecB %.4f\tat tick %d window %d\n",mr,sr,sr>1e-9?mr/sr:0.0,rw,seeds,ra/seeds,rb/seeds,swap_at,swap_win);}
       return 0;}
     double sf=0,si=0,si2=0;int wins=0;
     for(int gi=0;gi<G;++gi){sf+=fs[gi];std::printf("seed %llu\tswap %d\tshareA %.4f\tishareA %.4f\tbiomass %ld %ld\tcount %d %d\n",

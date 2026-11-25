@@ -176,6 +176,10 @@ int World::seed_programs(int n,std::uint64_t salt,int store,double cont){
     ++placed;}
   return placed;
 }
+int World::swap_programs(std::uint64_t salt,int store,double cont){
+  if(!p.matter)return 0;int n=0;for(int c=0;c<p.L*p.L;++c)if(mat[c]==1&&mlin[c]<0){kill_machine(c);++n;}
+  return seed_programs(n,salt,store,cont);
+}
 int World::wipe(int k){int n=0;if(!p.matter)return 0;for(int c=0;c<p.L*p.L;++c)if(mat[c]==1&&mlin[c]==k){kill_machine(c);++n;}return n;}
 void World::census(int min_age,int& machines,int& walls,int& tapes,int& classes) const{
   machines=walls=tapes=classes=0;if(!p.matter)return;std::vector<std::uint64_t> th;bool cls[16]={false};

@@ -394,12 +394,25 @@ Measures:
    - Calibration run (seed 1, epochs 100 and 200): 100 vs 0 gives solo +10.4 (t 6.2), surviving 14/16 vs 1/16.
      200 vs 100 gives solo +0.56 (t 1.3) while head-to-head is 0.72 (t 4.4): better in fights, not yet better
      alone. The two scores measure different things.
-4. **Open-endedness.**
+4. **Swap test: adaptation to an intervention** (secondary; added 2026-11-26, before any W3 run).
+   - In the solo generality arenas, at tick 1000 the arena's own programs are replaced by new random ones. This is
+     an intervention on one mechanism of the world.
+   - Recovery of a genome = log of the biomass integrated over the 500 ticks after the swap, divided by the 500
+     ticks before.
+   - The score is the later champion's recovery minus the earlier one's (mean, t), in the same arenas.
+   - Basis:
+     - Pearl: interventions, not passive data, reveal causal structure (arXiv:1801.04016).
+     - Bengio et al.: a learner with the right causal model adapts faster after a sparse change in one mechanism
+       (arXiv:1901.10912).
+   - Faster recovery in later champions therefore indicates that they model the world's mechanisms rather than
+     surface regularities.
+   - A genome against itself scores exactly 0 (ctest w3_generality).
+5. **Open-endedness.**
    - Our own int8 observer is trained online by EGGROLL on the canonical world-state log; no human data.
    - Novelty is its loss on new history before updating.
    - Learnability is the loss drop after updating.
    - Open-ended while both stay positive (Hughes et al., arXiv:2406.04268).
-5. **Era progress** as in W1.
+6. **Era progress** as in W1.
 
 Pass (epoch 3000):
 - The wipe ablation costs fitness in at least 3 of 5 seeds.
