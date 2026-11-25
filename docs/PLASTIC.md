@@ -162,3 +162,11 @@ Freeze births across tests (learning on minus frozen):
 
 Learning lowers births in all three, but none is individually significant. Sign-consistent
 across tests: a small cost. Signals are still not heard in any way that matters.
+
+### plSP_s2 at 620k
+
+Mute test on the 620k checkpoint:
+- The live signal had peaked at 26% of agents at 611k.
+- During these replays 9.4% of agents sent a signal.
+- Results: births -0.2% (t -0.18), population t -0.38, every behaviour |t| < 1.6.
+- No receivers. The rise is drift.
