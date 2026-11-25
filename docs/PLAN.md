@@ -46,8 +46,10 @@ Current version 2026-11-25. Sections 0–3 are binding. The original M1 plan is 
 | Complexity | Tracks capacity: plateau at 9–10 at fixed size; about 12 when world and neuron limit grow together (v8). | L3.md |
 | Kin colonies, colony reproduction, division of labour (L3) | Diversity rises, bounded by capacity (D/N about 0.3). | L3.md |
 | Locks (L4) | No gain over no locks (5 seeds); scale test negative so far. | L4.md |
-| Signals | Listening is causal, but it carries action broadcasts. A free channel goes unused: 4 mute tests, no receivers. | SIGNALS.md, PLASTIC.md |
-| Lifetime plasticity | Spreads without benefit: 5 freeze tests, slight cost at 485k–600k. | PLASTIC.md |
+| Signals | Listening is causal, but it carries action broadcasts. A free channel goes unused: 6 mute tests to 1M, no receivers. | SIGNALS.md, PLASTIC.md |
+| Lifetime plasticity | Spreads without benefit: 7 freeze tests to 1M, no consistent effect. The arm without it has more births (2 seeds). | PLASTIC.md |
+| World v1 W0 | Passes trivially. The evolved memory is a handicap in competition: the memoryless copy wins 0.70 (t +14.5). | WORLD.md §9 |
+| World v1 W1 (interim, 2026-11-25) | Era progress beyond t > 3 by epoch 500, after correcting for founder energy. A champion's memory pays (amnesia loses 0.11, t −51; 1 seed). | WORLD.md §9 |
 | Tournaments | 1.5M beats 250k at 0.98–1.00, still 0.98 at the old neuron limit. Neighbouring eras are within drift (2 seeds). | TOURNEY.md |
 | L0 Flow-Lenia, L1 BFF | Localisation and replicators work. Selection beyond drift in L0 (6/6). | L0.md, M3.md |
 | Engine | EGG plus integer EGGROLL on AMX, tested. enwik8 calibration 8.7 → 4.8 bits/byte by step 200. Paper: evolution beat backprop at equal data (3.40 vs 3.58) at about 180× compute. | EVO.md |
@@ -68,7 +70,7 @@ Main line: World v1, docs/WORLD.md. Each phase has a pass criterion fixed in adv
 |---|---|---|
 | W0 | One lineage, resources, fork/evaluate/update loop | Evolved mean beats initial mean, share ≥ 0.7 over 5 seeds |
 | W1 | Several lineages, splitting and extinction, historical self-play | Tournament progress above the drift band for 5k epochs; less non-transitivity with the archive |
-| W2 | Private and changing information, evolved plasticity, signals | Freeze and mute ablations cost fitness (t > 3) |
+| W2 | Private and changing information, signals (W2a); evolved plasticity (W2b) | Amnesia and deaf ablations cost fitness (t > 3); W2b also freeze |
 | W3 | Programmable matter (BFF-like tapes), write action | Wiping artifacts costs fitness; distinct functional artifact types keep growing |
 | W4 | State-dependent physics, observer measure | Observer compression progress stays positive; held-out-arena fitness keeps rising |
 
@@ -83,8 +85,7 @@ Status of older lines:
   - The EGC (evolvable genetic code) results inform how machine code is encoded.
 - **EGG on enwik8 is engine calibration only:** human text, so not on the critical path.
 - **Transformer scaffold policy (DESIGN.md §1.1, §4): retired by rule 2.**
-- **Plasticity and signal runs (runs6 pl*):** finish to 1M, record the final freeze and mute tests in PLASTIC.md,
-  then stop.
+- **Plasticity and signal runs (runs6 pl*):** done at 1M (PLASTIC.md, verdict). Closed.
 
 ## 3. Risks and open questions
 
