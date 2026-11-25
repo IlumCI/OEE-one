@@ -5,7 +5,7 @@
 set -u;n="$1";shift
 active(){ for p in $(pgrep -f '[.][.]/oee_w_v');do [ "$(readlink /proc/$p/cwd)" = "$(realpath "$1")" ]&&return 0;done;return 1; }
 for d in "$@";do
-  tot=$(grep -o -- '-epochs [0-9]*' "$d/cmd.txt"|awk '{print $2}');last=$( [ -f "$d/log.txt" ]&&awk '!/^#/{e=$1}END{print e+0}' "$d/log.txt"||echo 0)
+  tot=$(grep -o -- '-epochs [0-9]*' "$d/cmd.txt"|head -1|awk '{print $2}');last=$( [ -f "$d/log.txt" ]&&awk '!/^#/{e=$1}END{print e+0}' "$d/log.txt"||echo 0)
   if active "$d";then echo "$(date -u +%FT%TZ) skip $d (active)";continue;fi
   if [ "$last" -ge "$tot" ];then echo "$(date -u +%FT%TZ) skip $d (done)";continue;fi
   while [ "$(pgrep -fc '[.][.]/oee_w_v')" -ge "$n" ];do sleep 30;done
