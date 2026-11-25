@@ -31,28 +31,29 @@ from 84 by 16. Checkpoints every 250k steps from 250k to 1.5M.
 
 | A vs B | Seeds | Share of A (neutral marker), mean [min, max] |
 |---|---|---|
-| 250k vs 250k (control) | 1 | 0.565 |
+| 250k vs 250k (control) | 2 | 0.450 [0.336, 0.565] |
 | 1.5M vs 1.5M (control) | 2 | 0.583 [0.418, 0.749] |
-| 500k vs 250k | 2 | 0.732 [0.620, 0.844] |
-| 750k vs 500k | 2 | 0.749 [0.673, 0.825] |
-| 1.0M vs 750k | 2 | 0.637 [0.488, 0.787] |
-| 1.25M vs 1.0M | 2 | 0.384 [0.273, 0.496] |
-| 1.5M vs 1.25M | 2 | 0.533 [0.436, 0.630] |
-| 1.5M vs 250k | 2 | 0.989 [0.978, 1.000] |
-| 1.5M vs 250k, neuron limit 84 (250k era) | 1 | 0.981 |
+| 500k vs 250k | 3 | 0.805 [0.620, 0.953] |
+| 750k vs 500k | 3 | 0.822 [0.673, 0.969] |
+| 1.0M vs 750k | 3 | 0.551 [0.378, 0.787] |
+| 1.25M vs 1.0M | 3 | 0.420 [0.273, 0.496] |
+| 1.5M vs 1.25M | 3 | 0.532 [0.436, 0.630] |
+| 1.5M vs 250k | 3 | 0.963 [0.912, 1.000] |
+| 1.5M vs 250k, neuron limit 84 (250k era) | 2 | 0.971 [0.961, 0.981] |
 
 Interpretation, interim:
-- **The drift band is wide.** With 2 seeds the controls cover 0.42–0.75. Most neighbouring-era results fall inside
+- **The drift band is wide.** The two controls cover 0.34–0.75. Most neighbouring-era results fall inside
   it, so we cannot yet tell whether each 250k step is an improvement, or whether eras cycle. An earlier reading of
   "cycling between 1.0M and 1.25M" is withdrawn: it is within drift.
-- **Long-range progress is clear.** 1.25M steps apart, the later population takes over (0.98–1.00).
-- **It is not just bigger brains.** Under the old 84-neuron limit the 1.5M genomes still win 0.98.
+- **Early eras improve.** 500k vs 250k and 750k vs 500k lie above the control range in 2 of 3 seeds each (0.95, 0.97
+  at best). From 1.0M on, neighbouring eras are level.
+- **Long-range progress is clear.** 1.25M steps apart, the later population takes over (0.91–1.00).
+- **It is not just bigger brains.** Under the old 84-neuron limit the 1.5M genomes still win 0.96–0.98.
 
 ## 4. Pending
 
-- Seed 3, all pairs for l4Ln_s2, and the remaining n84 runs: `tools/tourney/run.sh` is running, and skips finished
-  files.
-- After a container restart, rerun:
+- Paused 2026-11-25 so the World v1 runs get the CPU (the Geb ladder is frozen, PLAN.md). Not done yet: the s3
+  1.5M control, n84 seed 3, and every pair for l4Ln_s2. To resume (finished files are skipped):
   `nohup tools/tourney/run.sh build/rel/tourney docs/results/tourney runs6/l4Ln_s1 runs6/l4Ln_s2 &`
 - Power: adjacent-era claims need at least 5 seeds each, or longer runs and a larger arena (lower drift).
 - Summarise with `tools/tourney/analyse.py docs/results/tourney`.
