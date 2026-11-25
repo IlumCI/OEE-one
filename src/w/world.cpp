@@ -10,11 +10,11 @@ std::uint64_t mix(std::uint64_t x){x+=0x9e3779b97f4a7c15ULL;x=(x^(x>>30))*0xbf58
 const int FX[4]={0,1,0,-1},FY[4]={-1,0,1,0};  // dir 0 = north (y-1), clockwise
 }  // namespace
 
-int act_of(const std::int8_t* l){int b=0;for(int a=1;a<World::kActions;++a)if(l[a]>l[b])b=a;return b;}
-int act_sample(const std::int8_t* l,std::uint64_t bits){
+int act_of(const std::int8_t* l,int n){int b=0;for(int a=1;a<n;++a)if(l[a]>l[b])b=a;return b;}
+int act_sample(const std::int8_t* l,std::uint64_t bits,int n){
   static std::int64_t E[256];static bool init=[]{for(int i=0;i<256;++i)E[i]=(std::int64_t)std::llround(16*std::exp2(i/16.0));return true;}();(void)init;
-  std::int64_t w[World::kActions],tot=0;for(int a=0;a<World::kActions;++a){w[a]=E[(int)l[a]+128];tot+=w[a];}
-  std::int64_t u=(std::int64_t)(bits%(std::uint64_t)tot);for(int a=0;a<World::kActions;++a){if(u<w[a])return a;u-=w[a];}return World::kActions-1;
+  std::int64_t w[World::kActions],tot=0;for(int a=0;a<n;++a){w[a]=E[(int)l[a]+128];tot+=w[a];}
+  std::int64_t u=(std::int64_t)(bits%(std::uint64_t)tot);for(int a=0;a<n;++a){if(u<w[a])return a;u-=w[a];}return n-1;
 }
 
 void World::init(const WParams& pp,int founders){
@@ -54,7 +54,7 @@ void World::tick(const std::int8_t* const* logits,std::vector<int>& born){
   for(int i=(int)order.size()-1;i>0;--i){const int j=(int)(mix(mix(p.seed^0x7e1cULL)+((std::uint64_t)t<<20)+i)%(std::uint64_t)(i+1));std::swap(order[i],order[j]);}
   std::vector<int> act(p.K*p.S,0);
   for(int s:order){const int k=s/p.S;const std::int8_t* l=logits[k]+(std::size_t)(s%p.S)*kV;
-    act[s]=p.stoch?act_sample(l,mix(mix(p.seed^0xac7ULL)+((std::uint64_t)t<<24)+ag[s].id)):act_of(l);}  // same draws in mirrored forks
+    act[s]=p.stoch?act_sample(l,mix(mix(p.seed^0xac7ULL)+((std::uint64_t)t<<24)+ag[s].id),p.nact):act_of(l,p.nact);}  // same draws in mirrored forks
   for(int s:order){Agent& a=ag[s];if(!a.alive)continue;const int c=a.y*p.L+a.x;
     const int fc=((a.y+FY[a.dir]+p.L)%p.L)*p.L+(a.x+FX[a.dir]+p.L)%p.L;
     switch(act[s]){
@@ -67,6 +67,10 @@ void World::tick(const std::int8_t* const* logits,std::vector<int>& born){
           if(j>=0){const int cs=k*p.S+j;Agent& b=ag[cs];b=Agent{};b.x=fc%p.L;b.y=fc/p.L;b.dir=a.dir;b.energy=p.repro_give;b.lineage=k;b.alive=true;b.id=next_id++;
             occ[fc]=cs;a.energy-=p.repro_give+p.repro_cost;born.push_back(cs);}}
         break;
+      case 6:{const int q=occ[fc];a.energy-=p.atk_cost;
+        if(q>=0&&ag[q].alive){Agent& v=ag[q];const int take=std::min(v.energy,p.atk_take);v.energy-=take;a.energy=std::min(p.ecap,a.energy+take);
+          if(v.energy<=0){v.alive=false;occ[fc]=-1;}}
+        break;}
       default:break;}
   }
   for(int s=0;s<p.K*p.S;++s){Agent& a=ag[s];if(!a.alive)continue;a.energy-=p.base;++a.age;
@@ -79,5 +83,6 @@ void World::tick(const std::int8_t* const* logits,std::vector<int>& born){
 long World::biomass(int k) const{long b=0;for(int s=0;s<p.S;++s){const Agent& a=ag[(std::size_t)k*p.S+s];if(a.alive)b+=a.energy;}return b;}
 int World::count(int k) const{int n=0;for(int s=0;s<p.S;++s)n+=ag[(std::size_t)k*p.S+s].alive;return n;}
 long World::resources() const{long r=0;for(auto x:res)r+=x;return r;}
+void World::move_slot(int from,int to){Agent& a=ag[from];if(!a.alive)return;ag[to]=a;ag[to].lineage=to/p.S;occ[a.y*p.L+a.x]=to;a=Agent{};}
 
 }  // namespace oee::w

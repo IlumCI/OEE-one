@@ -13,7 +13,7 @@ static std::uint64_t hash(const World& w){std::uint64_t h=1469598103934665603ULL
   for(auto& a:w.ag){f(a.alive);f(a.x);f(a.y);f(a.dir);f((std::uint64_t)(a.energy+1000000));f(a.age);}f(w.t);return h;}
 
 int main(){
-  WParams p;p.L=16;p.S=16;p.K=2;p.seed=7;
+  WParams p;p.L=16;p.S=16;p.K=2;p.seed=7;p.nact=7;  // exercise attack too
   std::vector<std::int8_t> lg((std::size_t)p.S*World::kV);
   auto drive=[&](World& w,int ticks){std::vector<int> born;for(int t=0;t<ticks;++t){
       for(std::size_t i=0;i<lg.size();++i)lg[i]=(std::int8_t)((i*37+t*11)%23-11);  // fixed pseudo-random policy
