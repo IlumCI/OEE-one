@@ -390,6 +390,28 @@ Post-founder share of the ablated copy:
   being forced. It supports the W2 premise: information that changes, here the other agents, selects for keeping
   it.
 
+### W2a kill check, seed 1, epoch 1500 (2026-11-25; 16 mirrored seeds; docs/results/w2a/ablate_s1_1500.txt)
+
+Champion against its intact copy. Post-founder share of the ablated copy, in the training arenas (seasons) and in
+arenas with seasons off (control):
+
+| Run | Ablation | Seasons | Seasons off |
+|---|---|---|---|
+| signals s1 | amnesia | 0.0007 (t −1044) | 0.525 (t +3.8) |
+| signals s1 | shuffle | 0.0001 (t −12700) | 0.488 (t −3.5) |
+| signals s1 | deaf | 0.534 (t +0.6) | 0.512 (t +8.8) |
+| no signals s1 | amnesia | 0.275 (t −2.7) | 0.484 (t −5.9) |
+| no signals s1 | shuffle | 0.094 (t −8.2) | 0.426 (t −56) |
+
+- **Memory pays because the world changes.**
+  - In seasonal arenas the champion loses everything without its own history.
+  - With seasons off, the same champion does as well, or better, without it.
+  - This is the W2a premise confirmed against its control: changing hidden information is what selects for
+    memory.
+- **The signal channel is not used.** Deafness has no cost (t +0.6 in seasons).
+- **Not killed:** memory ablation costs fitness. The signal question stays open until epoch 3000 and the other
+  seeds.
+
 ### W1b replication, seeds 3–5 (2026-11-25; docs/results/w1/w1b_replication.txt)
 
 - **Primary test, W1b against W1 hist at epoch 2000** (post-founder share of W1b):
