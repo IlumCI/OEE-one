@@ -5,6 +5,7 @@
 //                [-lineages 1] [-split_at 3S/4] [-nact 6] [-hist_frac 0] [-hist_founders 8] [-log FILE]
 //                [-ck FILE] [-ck_every 10] [W2a: -season T -view R -signals 1 -rot 1 -sig_cost 0 -climate_every 5]
 //                [-split_age 1: a split lineage takes its parent's age, so its update fraction alpha (W1b)]
+//                [-null_es 1: updates use random pair signs instead of fitness signs (null control, W1c)]
 //          W0 = -lineages 1 -nact 6 -hist_frac 0 (bit-identical to the W0 binary).
 //          W1 = -lineages K -nact 7 (attack) -hist_frac 4 (ancestor in every 4th fork pair).
 //          -ck: checkpoint every ck_every epochs and at the end. If FILE exists at start, the run resumes from it
@@ -89,7 +90,7 @@ constexpr std::int64_t kCkMagic=0x3130574b43454f4fLL;  // "OEECKW01"
 }  // namespace
 
 int main(int argc,char** argv){
-  int epochs=100,P=128,H=200,threads=4,layers=2,D=64,sig=4,archive_every=50,seeds=5,ticks=2000,Kmax=1,split_at=-1,hist_frac=0,hist_founders=8,ck_every=10,climate_every=5,climate_ticks=1000,stats=0,curve=0,skip=-1,split_age=0;
+  int epochs=100,P=128,H=200,threads=4,layers=2,D=64,sig=4,archive_every=50,seeds=5,ticks=2000,Kmax=1,split_at=-1,hist_frac=0,hist_founders=8,ck_every=10,climate_every=5,climate_ticks=1000,stats=0,curve=0,skip=-1,split_age=0,null_es=0;
   double alpha_floor=0;std::uint64_t seed=1,seed0=1000;std::string logf,archive,ta,tb,ckf,ablate;w::WParams wp;int founders=16;
   for(int a=1;a<argc;a+=2){const char* s=argv[a];const char* v=a+1<argc?argv[a+1]:"";
     if(!std::strcmp(s,"-epochs"))epochs=std::atoi(v);else if(!std::strcmp(s,"-pairs"))P=std::atoi(v);else if(!std::strcmp(s,"-H"))H=std::atoi(v);
@@ -106,7 +107,7 @@ int main(int argc,char** argv){
     else if(!std::strcmp(s,"-season"))wp.season=std::atoi(v);else if(!std::strcmp(s,"-view"))wp.view=std::atoi(v);
     else if(!std::strcmp(s,"-signals"))wp.signals=std::atoi(v);else if(!std::strcmp(s,"-rot"))wp.rot=std::atoi(v);
     else if(!std::strcmp(s,"-sig_cost"))wp.sig_cost=std::atoi(v);else if(!std::strcmp(s,"-climate_every"))climate_every=std::max(1,std::atoi(v));
-    else if(!std::strcmp(s,"-climate_ticks"))climate_ticks=std::max(1,std::atoi(v));else if(!std::strcmp(s,"-stats"))stats=std::atoi(v);else if(!std::strcmp(s,"-curve"))curve=std::max(0,std::atoi(v));else if(!std::strcmp(s,"-skip"))skip=std::max(0,std::atoi(v));else if(!std::strcmp(s,"-split_age"))split_age=std::atoi(v);else if(!std::strcmp(s,"-ck_every"))ck_every=std::max(1,std::atoi(v));
+    else if(!std::strcmp(s,"-climate_ticks"))climate_ticks=std::max(1,std::atoi(v));else if(!std::strcmp(s,"-stats"))stats=std::atoi(v);else if(!std::strcmp(s,"-curve"))curve=std::max(0,std::atoi(v));else if(!std::strcmp(s,"-skip"))skip=std::max(0,std::atoi(v));else if(!std::strcmp(s,"-split_age"))split_age=std::atoi(v);else if(!std::strcmp(s,"-null_es"))null_es=std::atoi(v);else if(!std::strcmp(s,"-ck_every"))ck_every=std::max(1,std::atoi(v));
     else if(!std::strcmp(s,"-tourney")&&a+2<argc){ta=argv[a+1];tb=argv[a+2];++a;}
     else{std::fprintf(stderr,"unknown option %s\n",s);return 2;}}
   if(wp.S%16){std::fprintf(stderr,"-S must be a multiple of 16\n");return 2;}
@@ -167,6 +168,7 @@ int main(int argc,char** argv){
     (std::int64_t)seed,wp.L,wp.S,wp.patches,wp.regrow,wp.base,wp.nact};  // settings a resumed run must share
   std::vector<std::int64_t> fp2=fp;if(w2){for(std::int64_t x:{wp.season,wp.view,wp.signals,wp.rot,wp.sig_cost,climate_every})fp2.push_back(x);}
   if(split_age)fp2.push_back(1000+split_age);
+  if(null_es)fp2.push_back(2000+null_es);
   auto save_ck=[&](int e){const std::string tmp=ckf+".tmp";std::FILE* f=std::fopen(tmp.c_str(),"wb");if(!f)return false;
     auto w=[&](std::int64_t x){std::fwrite(&x,8,1,f);};w(kCkMagic);w((std::int64_t)fp2.size());for(auto x:fp2)w(x);
     w(e);w(reseeds);w(splits);w(extinct);w((std::int64_t)next_lid);canon.save(f);w((std::int64_t)rc.state.size());std::fwrite(rc.state.data(),1,rc.state.size(),f);
@@ -197,6 +199,7 @@ int main(int argc,char** argv){
       wp.L,wp.S,founders,H,P,layers,D,sig,lin[0].g->nparams(),threads,(unsigned long long)seed,wp.regrow,wp.base,wp.patches,Kmax,wp.nact,hist_frac,hist_founders,split_at);
     if(w2)std::fprintf(lg,"# W2a season %d view %d signals %d rot %d sig_cost %d climate_every %d din %d\n",wp.season,wp.view,wp.signals,wp.rot,wp.sig_cost,climate_every,bc.Din);
     if(split_age)std::fprintf(lg,"# W1b split_age %d (split lineages take the parent's age)\n",split_age);
+    if(null_es)std::fprintf(lg,"# W1c null_es %d (random update signs: fitness ignored)\n",null_es);
     if(!archive.empty())lin[0].g->save(archive+"/egg_0.bin",0);}
   else std::fprintf(lg,"# resumed at epoch %d, threads %d\n",e0,threads);
   for(int e=e0;e<epochs;++e){
@@ -223,6 +226,7 @@ int main(int argc,char** argv){
     for(int f=0;f<F2;++f){long s=0;for(int k=0;k<Kmax;++k)if(lin[k].active)s+=fit[k][f];m+=s;m2+=(double)s*s;}
     for(int k=0;k<Kmax;++k){if(!lin[k].active)continue;std::vector<int> F(P);
       for(int p=0;p<P;++p){F[p]=fit[k][2*p]>fit[k][2*p+1]?1:fit[k][2*p]<fit[k][2*p+1]?-1:0;}
+      if(null_es)for(int p=0;p<P;++p)F[p]=(mixu(mixu(seed^0x4e11ULL)+((std::uint64_t)e<<24)+((std::uint64_t)lin[k].id<<12)+p)&1)?1:-1;  // W1c: fitness ignored
       const double al=std::max(alpha_floor,1.0/(0.015*lin[k].age+1));if(k==k0)alpha=al;ch+=evo::egg_update(*lin[k].g,lin[k].nz,F,al);++lin[k].age;}
     m/=F2;const double sd=std::sqrt(std::max(0.0,m2/F2-m*m));
     {std::vector<w::World> one{canon};std::vector<std::unique_ptr<evo::Stepper>> own;std::vector<evo::Stepper*> st(K,nullptr);

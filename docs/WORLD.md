@@ -254,6 +254,24 @@ Test:
 - **Decision.** If W1b is better, later phases inherit the age (W2a keeps the W1 rule, so it stays comparable to
   W1). If it is not, keep the W1 rule and record that the drift is harmless.
 
+### W1c protocol: null-ES control (fixed 2026-11-25, before the runs)
+
+Question: does the ES update add anything to W1, beyond lineage-level selection (who splits and who goes extinct)?
+
+Change: `-null_es 1`.
+- Each lineage's update uses random pair signs F_p (counter RNG) instead of signs from the fork fitness.
+- The update size, α schedule, splits, extinction, ancestors and the world are unchanged.
+- So lineages still drift by the same amount and still live or die in the canonical world, but their weights are
+  not moved by fitness.
+
+Test:
+- hist arm, seeds 1–2, 2000 epochs, otherwise the W1 settings.
+- **Primary.** W1 champions against W1c champions of the same seed at epochs 500, 1000, 1500 and 2000 (mirrored,
+  16 seeds, post-founder share).
+- **ES counts as working** if W1 wins with t > 3 at 2000 in both seeds.
+- **If not**, progress in W1 comes from lineage-level selection. Next, lower the drift (W1b) or raise P, before any
+  further phase relies on the ES update.
+
 ## 7. Implementation (planned files)
 
 - `src/w/world.{hpp,cpp}`: grid, resources, machines, agents, deterministic tick (counter RNG), copyable for forks.
