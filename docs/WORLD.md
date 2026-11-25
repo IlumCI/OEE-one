@@ -471,6 +471,32 @@ Post-founder share of the ablated copy:
   being forced. It supports the W2 premise: information that changes, here the other agents, selects for keeping
   it.
 
+### W2a seed 1 final, epoch 3000 (2026-11-26; docs/results/w2a/final_s1_3000.txt)
+
+Post-founder share of the ablated copy:
+
+| Run | Ablation | Seasons | Seasons off |
+|---|---|---|---|
+| signals | amnesia | 0.0002 (t −3744) | 0.422 (t −60) |
+| signals | shuffle | 0.063 (t −10) | 0.450 (t −26) |
+| signals | deaf | 0.469 (t −0.4) | 0.480 (t −17.5) |
+| no signals | amnesia | 0.126 (t −5.2) | 0.465 (t −7.7) |
+| no signals | shuffle | 0.188 (t −5.0) | 0.459 (t −19) |
+
+- **Memory:** pass in both arms. It pays most where the world changes.
+- **Signals:** a small use, visible only with seasons off (0.48, t −17.5). The seasonal arenas are too noisy to
+  resolve it (SE 0.07 against 0.001). So the pre-registered deaf criterion, measured in the training arenas, is not
+  met in seed 1.
+- **Era progress** (post-founder, 500 to 3000):
+
+  | Arm | Shares at 500, 750, …, 3000 |
+  |---|---|
+  | signals | 1.00, 0.97, 0.75, 0.94, 0.69, 0.72, 0.53, 0.44, 0.84, 0.34, 0.47 |
+  | no signals | 0.97, 0.72, 0.62, 0.48, 0.78, 0.66, 0.59, 0.32, 0.71, 0.43, 0.37 |
+
+  No collapse below 0.25 in either arm, consistent with W1b. Progress is strong up to about 1500 epochs, then
+  flat.
+
 ### W2a kill check, seed 1, epoch 1500 (2026-11-25; 16 mirrored seeds; docs/results/w2a/ablate_s1_1500.txt)
 
 Champion against its intact copy. Post-founder share of the ablated copy, in the training arenas (seasons) and in
