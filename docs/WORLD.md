@@ -272,6 +272,29 @@ Test:
 - **If not**, progress in W1 comes from lineage-level selection. Next, lower the drift (W1b) or raise P, before any
   further phase relies on the ES update.
 
+### W1d protocol: an opponent in every fork (fixed 2026-11-25, before the runs)
+
+Diagnosis from the W1 kill check (§9):
+- Competitive skill drifts whenever the canonical world holds a single lineage: 71–79% of epochs in seed 1, 12–40%
+  in seed 2.
+- In those epochs fitness is only the lineage's own biomass, as in W0. W0 showed that this selection does not keep
+  competitive skill (epoch 500 against epoch 400: 0.31).
+- An ancestor in one fork pair of four did not prevent the collapses.
+- So what the world runs out of is opponents, not resources or information.
+
+Change: `-hist_frac 1`. Every fork pair contains founders of one archived ancestor, drawn each epoch from the last
+32 champions (historical self-play against the archive, as in Digital Red Queen, arXiv:2601.03335). This changes
+the amount of an existing mechanism; nothing new is added.
+
+Test:
+- Seeds 1–2, 2000 epochs, otherwise the W1 settings.
+- **Primary.**
+  - Era comparisons from 500 to 2000: no collapse (no post-founder share below 0.25).
+  - At least 3 of 4 comparisons favour the later champion with t > 3, in both seeds.
+- **Secondary.** W1d champions against W1 hist champions of the same seed at 1000, 1500 and 2000.
+- **If it fails**, test capacity next (a larger world, where lineages can coexist), as the Geb joint-growth result
+  suggests.
+
 ## 7. Implementation (planned files)
 
 - `src/w/world.{hpp,cpp}`: grid, resources, machines, agents, deterministic tick (counter RNG), copyable for forks.
@@ -342,6 +365,35 @@ Post-founder share of the ablated copy:
 - So competition between lineages is what made memory pay. This is the first mechanism we have seen used without
   being forced. It supports the W2 premise: information that changes, here the other agents, selects for keeping
   it.
+
+### W1 kill check at epoch 1500 (2026-11-25; 16 seeds, mirrored; docs/results/w1/*_interim.tsv)
+
+The check ran after the runs had passed 1500, so it covers comparisons up to epoch 1575–2308.
+- **Not killed.**
+  - Many comparisons favour the later champion with t > 3 in every run.
+  - One lineage holds the world in 71%, 79%, 12% and 40% of epochs (hist s1, nohist s1, hist s2, nohist s2), all
+    below the 90% limit.
+- **Early progress everywhere.**
+  - Every comparison up to epoch 750 favours the later champion, post-founder 0.70–0.93, t +5 to +59.
+  - Up to 1000 this holds in seed 1, both arms (0.93 and 0.85).
+- **Then collapses.** Per run, 1–2 of 5–7 comparisons have the later champion far worse (post-founder < 0.25):
+
+  | Run | Collapses (post-founder share) |
+  |---|---|
+  | hist s1 | 1500: 0.11, 1750: 0.21 |
+  | nohist s1 | 1250: 0.04, 2000: 0.12 |
+  | hist s2 | 1000: 0.23 |
+  | nohist s2 | 1000: 0.004, 1750: 0.001 |
+
+  About 4 comparisons per run still improve (> 0.6).
+- **Not caused by young, high-α champions.** In nohist s1, lineage 39 alone held the world from 1250 to 2000, with
+  α falling from 0.30 to 0.07. Against earlier champions it scored 0.04, 0.38, 0.73 and 0.12.
+- **Reading.**
+  - With one lineage in the world, selection is the W0 objective, so competitive skill drifts.
+  - W1 runs out of opponents: competitive exclusion in a 32×32 world with about 35 agents.
+  - The next test is W1d (above).
+- **Priority change.** W1 seeds 3–5 are postponed behind W1b, W1c and W1d, which test the cause. The design they
+  would replicate already shows the same pattern in 4 of 4 runs.
 
 ### W1, first attempt (2026-11-25)
 
