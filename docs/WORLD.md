@@ -224,7 +224,7 @@ the view below:
 Runs:
 - 5 seeds, 3000 epochs, W1 settings plus `-season 300 -view 1 -signals 1 -regrow 16`.
 - Amended 2026-11-25, before any W2a run: plus `-split_age 1` (W1b result). The era-progress reference is W1b.
-  `-hist_frac` follows the W1d result.
+  `-hist_frac` stays 4 (W1d failed).
 - Baseline arm: the same with `-signals 0` (no channel), for the deaf comparison and for the era-progress
   comparison.
 
@@ -367,6 +367,27 @@ Post-founder share of the ablated copy:
 - So competition between lineages is what made memory pay. This is the first mechanism we have seen used without
   being forced. It supports the W2 premise: information that changes, here the other agents, selects for keeping
   it.
+
+### W1d result: fail (2026-11-25; 2000 epochs, 16 mirrored seeds; docs/results/w1/w1d_results.txt)
+
+- **Era progress, post-founder.** The pass condition was "no collapse, at least 3 of 4 comparisons with t > 3, both
+  seeds".
+
+  | | Seed 1 | Seed 2 |
+  |---|---|---|
+  | Collapses below 0.25 | 4: 1000 0.004, 1500 0.002, 2000 0.05 (and 750 0.30) | 4: 1000 0.06, 1250 0.04, 1750 0.21, 2000 0.29 |
+  | Comparisons with t > 3 | 3/7 | 3/7 |
+  | Mean share | 0.455 | 0.455 |
+
+- **Cycling.** In seed 1 the shares alternate 0.9996 / 0.002 / 0.995 / 0.05 from 1250 to 2000.
+- **Against W1 hist** (W1d share, post-founder): 0.75, 0.98 and 0.99 at 1000, 1500 and 2000 in seed 1. In seed 2:
+  0.25, 0.38 and 0.06 (t −102).
+- **Reading.**
+  - One ancestor per epoch, placed in every fork, makes each update chase that one opponent. With the W1 step
+    schedule this amplifies cycling.
+  - Opponent scarcity was not the main cause of the W1 collapses. The step-schedule reset was (W1b).
+- **Decision.** Keep `-hist_frac 4`. A variant that samples a different ancestor for each pair (a fixed mixture over
+  the archive) may behave differently; it is not tested here.
 
 ### W1b and W1c results (2026-11-25; 2000 epochs, 16 mirrored seeds; docs/results/w1/w1b_w1c_cross.txt)
 
