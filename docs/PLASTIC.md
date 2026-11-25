@@ -170,3 +170,41 @@ Mute test on the 620k checkpoint:
 - During these replays 9.4% of agents sent a signal.
 - Results: births -0.2% (t -0.18), population t -0.38, every behaviour |t| < 1.6.
 - No receivers. The rise is drift.
+
+### Final tests at 1M steps (end of the experiment)
+
+Freeze and mute tests on the final checkpoints: 500-step replays, 12 paired reseeded replicates each
+(docs/results/plastic/*_1M.txt).
+
+| Test | Births | Population | Behaviour |
+|---|---|---|---|
+| Freeze, s1 | +311 of about 49,700 (+0.6%, t +0.94) | -6.6 (t -2.19) | all \|t\| < 1.3 |
+| Freeze, s2 | -205 of about 48,100 (-0.4%, t -0.99) | +0.1 (t +0.02) | all \|t\| < 1.7 |
+| Mute, s1 | +182 (t +0.63) | -2.6 (t -0.72) | all \|t\| < 1.6 |
+| Mute, s2 | -7 (t -1.00) | +0.9 (t +1.00) | identical in 11 of 12 replicates |
+
+- Signal use at 1M: 0.9% of agents in s1 and 0.1% in s2. The 26% peak in s2 at 611k was not kept.
+- Learning had spread to 89% (s1) and 95% (s2) of agents. Switching it off has no consistent effect on births: the
+  sign differs between seeds, and the earlier small cost (485k–600k) is gone.
+
+### SP vs S arms at 1M (750k–1M, 2 seeds per arm)
+
+| Run | Mean population | Births per step | Mean genotype length |
+|---|---|---|---|
+| SP s1 | 426.4 | 97.3 | 542 |
+| SP s2 | 423.8 | 96.1 | 572 |
+| S s1 | 439.9 | 104.5 | 565 |
+| S s2 | 425.2 | 99.7 | 571 |
+
+The arm without plasticity has more births in both seeds (+7.4% and +3.7%). Two seeds per arm are too few for a
+claim, but the direction agrees with the freeze tests: plasticity is at best neutral here.
+
+### Verdict
+
+Across 7 freeze tests, 6 mute tests and the arm comparison, neither addition is used:
+- learning spreads as a passenger (near-neutral, occasionally slightly costly);
+- the free signal channel rises and falls by drift, with no receivers.
+
+The world gives nothing to learn within a lifetime and nothing to tell: its information is public and static. This
+result fixed the W2 design (docs/WORLD.md): add private and changing information before testing either mechanism
+again. The Geb ladder is frozen (PLAN.md), so this experiment is closed.

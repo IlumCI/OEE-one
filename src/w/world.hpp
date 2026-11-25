@@ -4,6 +4,7 @@
 // produces observations and consumes action logits.
 #pragma once
 #include <cstdint>
+#include <cstdio>
 #include <vector>
 
 namespace oee::w {
@@ -39,6 +40,8 @@ struct World{
   int count(int k) const;
   long resources() const;
   void move_slot(int from,int to);  // relabel an agent into another (empty) slot, e.g. on a lineage split
+  void save(std::FILE* f) const;     // full state, field by field (equal states give equal bytes)
+  bool load(std::FILE* f);
 };
 
 int act_of(const std::int8_t* logit,int n);  // argmax over the first n logits, ties to the lowest index

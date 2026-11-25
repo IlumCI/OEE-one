@@ -124,3 +124,7 @@ target_link_libraries(oee_w PRIVATE oee_w_core oee_evo_core)
 add_executable(test_w_world tests/w/test_world.cpp)
 target_link_libraries(test_w_world PRIVATE oee_w_core)
 add_test(NAME w_world COMMAND test_w_world)
+# resume is bit-exact and independent of the thread count. W1 settings with splits, ancestors, extinction of the
+# lineage in slot 0 with no split refilling it (crashed before 2026-11-25) and a reseed after all lineages died.
+add_test(NAME w_resume
+  COMMAND sh -c "B=$<TARGET_FILE:oee_w>; C='-pairs 4 -H 20 -L 12 -S 16 -founders 6 -lineages 3 -nact 7 -hist_frac 2 -hist_founders 4 -archive_every 2 -seed 3 -regrow 1 -base 2 -ck_every 4'; rm -f wr_a.ck wr_b.ck; $B $C -epochs 30 -threads 1 -ck wr_a.ck -log wr_a.txt && $B $C -epochs 12 -threads 2 -ck wr_b.ck -log wr_b.txt && $B $C -epochs 30 -threads 3 -ck wr_b.ck -log wr_b.txt && cmp wr_a.ck wr_b.ck && grep -v '^#' wr_a.txt | cut -f1-7,9- > wr_a.cut && grep -v '^#' wr_b.txt | cut -f1-7,9- > wr_b.cut && cmp wr_a.cut wr_b.cut && test $(grep -c -v '^#' wr_a.txt) = 30 && awk '!/^#/{r=$9;x=$13}END{exit !(r>0&&x>0)}' wr_a.txt")

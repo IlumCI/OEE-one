@@ -83,6 +83,31 @@ void World::tick(const std::int8_t* const* logits,std::vector<int>& born){
 long World::biomass(int k) const{long b=0;for(int s=0;s<p.S;++s){const Agent& a=ag[(std::size_t)k*p.S+s];if(a.alive)b+=a.energy;}return b;}
 int World::count(int k) const{int n=0;for(int s=0;s<p.S;++s)n+=ag[(std::size_t)k*p.S+s].alive;return n;}
 long World::resources() const{long r=0;for(auto x:res)r+=x;return r;}
+namespace {
+void wr(std::FILE* f,std::int64_t x){std::fwrite(&x,8,1,f);}
+bool rd(std::FILE* f,std::int64_t& x){return std::fread(&x,8,1,f)==1;}
+template<class T> void wv(std::FILE* f,const std::vector<T>& v){wr(f,(std::int64_t)v.size());if(!v.empty())std::fwrite(v.data(),sizeof(T),v.size(),f);}
+template<class T> bool rv(std::FILE* f,std::vector<T>& v){std::int64_t n=0;if(!rd(f,n)||n<0||n>(1<<26))return false;v.resize((std::size_t)n);
+  return n==0||std::fread(v.data(),sizeof(T),(std::size_t)n,f)==(std::size_t)n;}
+}  // namespace
+
+void World::save(std::FILE* f) const{
+  const std::int64_t q[]={p.L,p.S,p.K,p.patches,p.e0,p.ecap,p.base,p.move,p.turn,p.bite,p.repro_min,p.repro_give,p.repro_cost,p.max_age,p.regrow,
+    p.stoch,p.nact,p.atk_cost,p.atk_take,(std::int64_t)p.seed,t,(std::int64_t)next_id};
+  for(auto x:q){wr(f,x);}wv(f,res);wv(f,fert);wv(f,racc);wv(f,occ);wr(f,(std::int64_t)ag.size());
+  for(auto& a:ag){const std::int64_t r[]={a.x,a.y,a.dir,a.energy,a.age,a.lineage,a.alive,(std::int64_t)a.id};for(auto x:r)wr(f,x);}
+}
+bool World::load(std::FILE* f){
+  std::int64_t q[22];for(auto& x:q)if(!rd(f,x))return false;
+  int* ip[]={&p.L,&p.S,&p.K,&p.patches,&p.e0,&p.ecap,&p.base,&p.move,&p.turn,&p.bite,&p.repro_min,&p.repro_give,&p.repro_cost,&p.max_age,&p.regrow,
+    &p.stoch,&p.nact,&p.atk_cost,&p.atk_take};
+  for(int i=0;i<19;++i){*ip[i]=(int)q[i];}p.seed=(std::uint64_t)q[19];t=q[20];next_id=(std::uint64_t)q[21];
+  if(!rv(f,res)||!rv(f,fert)||!rv(f,racc)||!rv(f,occ)){return false;}std::int64_t n=0;if(!rd(f,n)||n<0||n>(1<<24)){return false;}ag.assign((std::size_t)n,Agent{});
+  for(auto& a:ag){std::int64_t r[8];for(auto& x:r)if(!rd(f,x))return false;
+    a.x=(int)r[0];a.y=(int)r[1];a.dir=(int)r[2];a.energy=(int)r[3];a.age=(int)r[4];a.lineage=(int)r[5];a.alive=r[6]!=0;a.id=(std::uint64_t)r[7];}
+  return (int)res.size()==p.L*p.L&&res.size()==fert.size()&&res.size()==racc.size()&&res.size()==occ.size()&&(int)ag.size()==p.K*p.S;
+}
+
 void World::move_slot(int from,int to){Agent& a=ag[from];if(!a.alive)return;ag[to]=a;ag[to].lineage=to/p.S;occ[a.y*p.L+a.x]=to;a=Agent{};}
 
 }  // namespace oee::w

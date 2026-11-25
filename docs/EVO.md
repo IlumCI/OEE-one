@@ -59,7 +59,15 @@ Human text: this run only checks the engine.
 - Results: validation 5.22 bits/byte at step 50 and 4.79 at step 200 (log: runs8/egg_p1024_s1/log.txt). It is
   learning.
 
-## 4. Next (World v1)
+## 4. Stepping a subset of rows
+
+`Stepper::step(obs, idx, m)` runs one step for only the m listed rows (compacted inputs and outputs). The other rows
+keep their recurrent state. World v1 uses it to step living agents only; per-row results equal those of the full
+step (test_evo_egg). Measured at W1 sizes (D=64, 2 layers, 4096 rows): about 6.3 µs per row-step on one thread, about
+16 GMAC/s. The int8 GEMM is under 5% of that time; the rest is per-row elementwise work (noise terms, layer norm,
+gates), which is the next thing to vectorise.
+
+## 5. Next (World v1)
 
 - Generalise the EGG core:
   - observation projection in place of the byte embedding;

@@ -3,19 +3,29 @@
 // Train:   oee_w -epochs N [-pairs 128] [-H 200] [-L 32] [-S 64] [-founders 16] [-layers 2] [-D 64] [-sig 4] [-seed 1]
 //                [-regrow 4] [-base 1] [-patches 6] [-threads 4] [-alpha_floor 0] [-archive DIR] [-archive_every 50]
 //                [-lineages 1] [-split_at 3S/4] [-nact 6] [-hist_frac 0] [-hist_founders 8] [-log FILE]
+//                [-ck FILE] [-ck_every 10]
 //          W0 = -lineages 1 -nact 6 -hist_frac 0 (bit-identical to the W0 binary).
 //          W1 = -lineages K -nact 7 (attack) -hist_frac 4 (ancestor in every 4th fork pair).
+//          -ck: checkpoint every ck_every epochs and at the end. If FILE exists at start, the run resumes from it
+//          (bit-exact with any thread count; the log is cut back to the checkpoint epoch and appended).
 //          Log: epoch canon_pop canon_biomass fork_fit_mean fork_fit_sd changed alpha sec reseeds canon_resources
-//               [W1: active splits extinct lineage_id:count,...] (fork fitness = mean lineage biomass over the episode)
+//               [W1: active splits extinct lineage_id:count,...]. Fork fitness = biomass of all evolving lineages
+//               summed over the episode / H; alpha of the first active lineage; active = lineages alive after the epoch.
 // Tourney: oee_w -tourney A.egg B.egg [-seeds 5] [-ticks 2000] [-founders 16] [-L 32] [-S 64] [-seed0 1000] [-nact 6]
-//          Two lineages in identical fresh arenas (A = lineage 0, B = lineage 1); prints per-seed biomass share of A.
+//                [-threads 4] (world flags must match training)
+//          Each seed is played twice with the lineage slots swapped (mirrored). Per game: final biomass share of A and
+//          integrated share (A's biomass summed over all ticks / both summed). Summary: mean_shareA (final share over
+//          games); mean_ishareA over seeds (mean of each mirrored pair) with SE, t against 0.5 and wins.
 // Epoch: copy the canonical world into 2P forks; fork 2p uses +noise, 2p+1 the same noise negated (same world seed:
 // common random numbers); each lineage has its own noise; fitness of lineage k = its biomass summed over the H ticks;
 // F_kp = sign(fit_k,2p - fit_k,2p+1); integer EGGROLL update per lineage; the canonical world then advances H ticks.
-// Lineage dynamics (W1): a lineage with no agents left goes extinct (archived); a lineage at >= split_at agents splits
-// (copy of its mean with 10% of weights moved one step; half of its agents move to the new lineage).
+// Brains are stepped only for living agents (dead slots are skipped; same results as stepping all slots).
+// Lineage dynamics (W1): a lineage with no agents left goes extinct (archived); if no lineage has agents left, the
+// first active one is reseeded instead. A lineage at >= split_at agents splits (copy of its mean with 10% of weights
+// moved one step; half of its agents move to the new lineage).
 // Historical self-play (W1): every hist_frac-th fork pair also contains hist_founders agents of one archived ancestor
-// mean (no noise, not updated), as in Digital Red Queen (arXiv:2601.03335).
+// mean (no noise, not updated), as in Digital Red Queen (arXiv:2601.03335). Ancestors are added every archive_every
+// epochs (last 32 kept).
 #include <algorithm>
 #include <chrono>
 #include <cmath>
@@ -23,6 +33,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <memory>
+#include <stdexcept>
 #include <string>
 #include <thread>
 #include <vector>
@@ -35,15 +46,18 @@ using namespace oee;
 namespace {
 std::uint64_t mixu(std::uint64_t x){x+=0x9e3779b97f4a7c15ULL;x=(x^(x>>30))*0xbf58476d1ce4e5b9ULL;x=(x^(x>>27))*0x94d049bb133111ebULL;return x^(x>>31);}
 // Run H ticks. Rows layout: row(k,i,s) = (k*nw + i)*S + s; st[k] null for lineages without agents in these worlds.
-// integ[k][i] (optional): lineage-k biomass summed over the ticks in world i.
+// Only living agents are observed and stepped. integ[k][i] (optional): lineage-k biomass summed over the ticks in world i.
 void run_worlds(std::vector<w::World>& ws,evo::Rows& rows,const std::vector<evo::Stepper*>& st,int S,int H,std::vector<std::vector<long>>* integ){
-  const int nw=(int)ws.size(),K=(int)st.size(),Din=w::World::kDin;
-  std::vector<std::int8_t> obs((std::size_t)K*nw*S*Din);std::vector<int> born;const int L=(int)(rows.state.size()/rows.R);
-  const std::vector<std::int8_t> zero((std::size_t)S*w::World::kV,0);std::vector<const std::int8_t*> outs(K,nullptr),lp(K);
+  const int nw=(int)ws.size(),K=(int)st.size(),Din=w::World::kDin,V=w::World::kV;const int L=(int)(rows.state.size()/rows.R);
+  std::vector<std::int8_t> obs((std::size_t)nw*S*Din),lgt((std::size_t)K*nw*S*V,0);std::vector<int> idx,born;
+  const std::vector<std::int8_t> zero((std::size_t)S*V,0);std::vector<const std::int8_t*> lp(K);
   for(int t=0;t<H;++t){
-    for(int k=0;k<K;++k){if(!st[k])continue;for(int i=0;i<nw;++i)for(int s=0;s<S;++s)ws[i].observe(k*S+s,obs.data()+((std::size_t)(k*nw+i)*S+s)*Din);}
-    for(int k=0;k<K;++k)outs[k]=st[k]?st[k]->step(obs.data()+(std::size_t)k*nw*S*Din):nullptr;
-    for(int i=0;i<nw;++i){for(int k=0;k<K;++k)lp[k]=outs[k]?outs[k]+(std::size_t)i*S*w::World::kV:zero.data();born.clear();ws[i].tick(lp.data(),born);
+    for(int k=0;k<K;++k){if(!st[k])continue;idx.clear();
+      for(int i=0;i<nw;++i)for(int s=0;s<S;++s)if(ws[i].ag[(std::size_t)k*S+s].alive){ws[i].observe(k*S+s,obs.data()+idx.size()*Din);idx.push_back(i*S+s);}
+      if(idx.empty())continue;
+      const std::int8_t* o=st[k]->step(obs.data(),idx.data(),(int)idx.size());
+      for(std::size_t j=0;j<idx.size();++j)std::memcpy(lgt.data()+((std::size_t)k*nw*S+idx[j])*V,o+j*V,V);}
+    for(int i=0;i<nw;++i){for(int k=0;k<K;++k)lp[k]=st[k]?lgt.data()+((std::size_t)k*nw+i)*S*V:zero.data();born.clear();ws[i].tick(lp.data(),born);
       for(int b:born){const int k=b/S,s=b%S;std::fill(rows.state.begin()+((std::size_t)(k*nw+i)*S+s)*L,rows.state.begin()+((std::size_t)(k*nw+i)*S+s+1)*L,0);}
       if(integ)for(int k=0;k<K;++k)if(st[k])(*integ)[k][i]+=ws[i].biomass(k);}
   }
@@ -55,11 +69,12 @@ void copy_weights(evo::Egg& d,const evo::Egg& s){
   d.repack();
 }
 struct Lin{std::unique_ptr<evo::Egg> g;evo::Noise nz;bool active=false;std::uint64_t id=0;int age=0;};
+constexpr std::int64_t kCkMagic=0x3130574b43454f4fLL;  // "OEECKW01"
 }  // namespace
 
 int main(int argc,char** argv){
-  int epochs=100,P=128,H=200,threads=4,layers=2,D=64,sig=4,archive_every=50,seeds=5,ticks=2000,Kmax=1,split_at=-1,hist_frac=0,hist_founders=8;double alpha_floor=0;
-  std::uint64_t seed=1,seed0=1000;std::string logf,archive,ta,tb;w::WParams wp;int founders=16;
+  int epochs=100,P=128,H=200,threads=4,layers=2,D=64,sig=4,archive_every=50,seeds=5,ticks=2000,Kmax=1,split_at=-1,hist_frac=0,hist_founders=8,ck_every=10;
+  double alpha_floor=0;std::uint64_t seed=1,seed0=1000;std::string logf,archive,ta,tb,ckf;w::WParams wp;int founders=16;
   for(int a=1;a<argc;a+=2){const char* s=argv[a];const char* v=a+1<argc?argv[a+1]:"";
     if(!std::strcmp(s,"-epochs"))epochs=std::atoi(v);else if(!std::strcmp(s,"-pairs"))P=std::atoi(v);else if(!std::strcmp(s,"-H"))H=std::atoi(v);
     else if(!std::strcmp(s,"-L"))wp.L=std::atoi(v);else if(!std::strcmp(s,"-S"))wp.S=std::atoi(v);else if(!std::strcmp(s,"-founders"))founders=std::atoi(v);
@@ -71,20 +86,33 @@ int main(int argc,char** argv){
     else if(!std::strcmp(s,"-regrow"))wp.regrow=std::atoi(v);else if(!std::strcmp(s,"-base"))wp.base=std::atoi(v);else if(!std::strcmp(s,"-patches"))wp.patches=std::atoi(v);
     else if(!std::strcmp(s,"-lineages"))Kmax=std::atoi(v);else if(!std::strcmp(s,"-split_at"))split_at=std::atoi(v);else if(!std::strcmp(s,"-nact"))wp.nact=std::atoi(v);
     else if(!std::strcmp(s,"-hist_frac"))hist_frac=std::atoi(v);else if(!std::strcmp(s,"-hist_founders"))hist_founders=std::atoi(v);
+    else if(!std::strcmp(s,"-ck"))ckf=v;else if(!std::strcmp(s,"-ck_every"))ck_every=std::max(1,std::atoi(v));
     else if(!std::strcmp(s,"-tourney")&&a+2<argc){ta=argv[a+1];tb=argv[a+2];++a;}
     else{std::fprintf(stderr,"unknown option %s\n",s);return 2;}}
   if(wp.S%16){std::fprintf(stderr,"-S must be a multiple of 16\n");return 2;}
   if(split_at<0)split_at=wp.S*3/4;
   const evo::EggCfg bc=brain_cfg(layers,D,sig);
 
-  if(!ta.empty()){  // tournament: A = lineage 0, B = lineage 1
-    evo::Egg A(bc,1),B(bc,2);A.load(ta);B.load(tb);double sum=0;
-    for(int k=0;k<seeds;++k){w::WParams q=wp;q.K=2;q.seed=seed0+k;w::World W;W.init(q,founders);
-      evo::Rows rows;rows.init(A,2*q.S);evo::Stepper sa(A,nullptr,rows,0,q.S),sb(B,nullptr,rows,q.S,q.S);
-      std::vector<w::World> one{W};std::vector<evo::Stepper*> st{&sa,&sb};run_worlds(one,rows,st,q.S,ticks,nullptr);W=one[0];
-      const long ba=W.biomass(0),bb=W.biomass(1);const double sh=ba+bb>0?(double)ba/(ba+bb):0.5;sum+=sh;
-      std::printf("seed %llu\tshareA %.4f\tbiomass %ld %ld\tcount %d %d\n",(unsigned long long)q.seed,sh,ba,bb,W.count(0),W.count(1));}
-    std::printf("mean_shareA %.4f\n",sum/seeds);return 0;
+  if(!ta.empty()){  // tournament, mirrored: game 2k has A in slot 0, game 2k+1 has A in slot 1 (same arena seed)
+    evo::Egg A(bc,1),B(bc,2);A.load(ta);B.load(tb);const int G=2*seeds;
+    std::vector<double> fs(G),is(G);std::vector<long> ba(G),bb(G);std::vector<int> na(G),nb(G);
+    auto game=[&](int gi){const int sw=gi%2;w::WParams q=wp;q.K=2;q.seed=seed0+gi/2;w::World W;W.init(q,founders);
+      evo::Rows rows;rows.init(A,2*q.S);evo::Stepper s0(sw?B:A,nullptr,rows,0,q.S),s1(sw?A:B,nullptr,rows,q.S,q.S);
+      std::vector<w::World> one{W};std::vector<evo::Stepper*> st{&s0,&s1};std::vector<std::vector<long>> ig(2,std::vector<long>(1,0));
+      run_worlds(one,rows,st,q.S,ticks,&ig);const w::World& Z=one[0];const int a=sw,b=1-sw;  // lineage slots of A and B
+      ba[gi]=Z.biomass(a);bb[gi]=Z.biomass(b);na[gi]=Z.count(a);nb[gi]=Z.count(b);
+      fs[gi]=ba[gi]+bb[gi]>0?(double)ba[gi]/(ba[gi]+bb[gi]):0.5;is[gi]=ig[a][0]+ig[b][0]>0?(double)ig[a][0]/(ig[a][0]+ig[b][0]):0.5;};
+    const int T=std::max(1,std::min(threads,G));std::vector<std::thread> th;
+    for(int ti=0;ti<T;++ti)th.emplace_back([&,ti]{for(int gi=ti;gi<G;gi+=T)game(gi);});
+    for(auto& x:th)x.join();
+    double sf=0,si=0,si2=0;int wins=0;
+    for(int gi=0;gi<G;++gi){sf+=fs[gi];std::printf("seed %llu\tswap %d\tshareA %.4f\tishareA %.4f\tbiomass %ld %ld\tcount %d %d\n",
+      (unsigned long long)(seed0+gi/2),gi%2,fs[gi],is[gi],ba[gi],bb[gi],na[gi],nb[gi]);}
+    for(int k=0;k<seeds;++k){const double d=(is[2*k]+is[2*k+1])/2;si+=d;si2+=d*d;wins+=d>0.5+1e-9;}
+    const double mi=si/seeds,se=seeds>1?std::sqrt(std::max(0.0,(si2-seeds*mi*mi)/(seeds-1))/seeds):0;
+    std::printf("mean_shareA %.4f\n",sf/G);
+    std::printf("mean_ishareA %.4f\tse %.4f\tt %.2f\twins %d/%d\n",mi,se,se>1e-9?(mi-0.5)/se:0.0,wins,seeds);
+    return 0;
   }
 
   const bool hist=hist_frac>0;const int K=Kmax+(hist?1:0),Kh=Kmax;  // lineage slot Kh holds the injected ancestor
@@ -92,21 +120,48 @@ int main(int argc,char** argv){
   std::vector<Lin> lin(Kmax);lin[0].g=std::make_unique<evo::Egg>(bc,seed);lin[0].active=true;std::uint64_t next_lid=1;
   evo::Rows rc;rc.init(*lin[0].g,K*wp.S);
   std::vector<std::unique_ptr<evo::Egg>> anc;  // archive of champion means for historical self-play
-  std::FILE* lg=logf.empty()?stdout:std::fopen(logf.c_str(),"w");if(!lg)return 2;
-  if(Kmax==1&&!hist)std::fprintf(lg,"# W0 L%d S%d founders %d H%d pairs %d brain L%d D%d sig%d params %ld threads %d seed %llu regrow %d base %d patches %d\n",
-    wp.L,wp.S,founders,H,P,layers,D,sig,lin[0].g->nparams(),threads,(unsigned long long)seed,wp.regrow,wp.base,wp.patches);
-  else std::fprintf(lg,"# W1 L%d S%d founders %d H%d pairs %d brain L%d D%d sig%d params %ld threads %d seed %llu regrow %d base %d patches %d lineages %d nact %d hist_frac %d hist_founders %d split_at %d\n",
-    wp.L,wp.S,founders,H,P,layers,D,sig,lin[0].g->nparams(),threads,(unsigned long long)seed,wp.regrow,wp.base,wp.patches,Kmax,wp.nact,hist_frac,hist_founders,split_at);
-  if(!archive.empty())lin[0].g->save(archive+"/egg_0.bin",0);
-  int reseeds=0,splits=0,extinct=0;const int Ls=bc.L*bc.D;
-  for(int e=0;e<epochs;++e){
+  int reseeds=0,splits=0,extinct=0,e0=0;const int Ls=bc.L*bc.D;
+  const std::vector<std::int64_t> fp={Kmax,P,H,founders,layers,D,sig,split_at,hist_frac,hist_founders,archive_every,(std::int64_t)std::llround(alpha_floor*1e9),
+    (std::int64_t)seed,wp.L,wp.S,wp.patches,wp.regrow,wp.base,wp.nact};  // settings a resumed run must share
+  auto save_ck=[&](int e){const std::string tmp=ckf+".tmp";std::FILE* f=std::fopen(tmp.c_str(),"wb");if(!f)return false;
+    auto w=[&](std::int64_t x){std::fwrite(&x,8,1,f);};w(kCkMagic);w((std::int64_t)fp.size());for(auto x:fp)w(x);
+    w(e);w(reseeds);w(splits);w(extinct);w((std::int64_t)next_lid);canon.save(f);w((std::int64_t)rc.state.size());std::fwrite(rc.state.data(),1,rc.state.size(),f);
+    for(auto& l:lin){w(l.active);w((std::int64_t)l.id);w(l.age);if(l.active)l.g->save(f,e);}
+    w((std::int64_t)anc.size());for(auto& a:anc)a->save(f,0);
+    const bool ok=std::fflush(f)==0&&!std::ferror(f);std::fclose(f);return ok&&std::rename(tmp.c_str(),ckf.c_str())==0;};
+  auto load_ck=[&](std::FILE* f)->int{  // epochs done, or -1
+    auto r=[&](std::int64_t& x){return std::fread(&x,8,1,f)==1;};std::int64_t x=0,n=0;
+    if(!r(x)||x!=kCkMagic||!r(n)||n!=(std::int64_t)fp.size())return -1;
+    for(std::size_t i=0;i<fp.size();++i){if(!r(x))return -1;if(x!=fp[i]){std::fprintf(stderr,"checkpoint has other settings (field %zu: %lld, now %lld)\n",i,(long long)x,(long long)fp[i]);return -1;}}
+    std::int64_t e,a,b,c,d;if(!r(e)||!r(a)||!r(b)||!r(c)||!r(d))return -1;reseeds=(int)a;splits=(int)b;extinct=(int)c;next_lid=(std::uint64_t)d;
+    if(!canon.load(f))return -1;
+    if(!r(n)||n!=(std::int64_t)rc.state.size()||std::fread(rc.state.data(),1,rc.state.size(),f)!=rc.state.size())return -1;
+    for(auto& l:lin){std::int64_t ac,id,ag;if(!r(ac)||!r(id)||!r(ag))return -1;l.active=ac!=0;l.id=(std::uint64_t)id;l.age=(int)ag;l.g.reset();
+      if(l.active){l.g=std::make_unique<evo::Egg>(bc,1);l.g->load(f);}}
+    if(!r(n)||n<0||n>1024){return -1;}anc.clear();for(std::int64_t i=0;i<n;++i){anc.push_back(std::make_unique<evo::Egg>(bc,1));anc.back()->load(f);}
+    return (int)e;};
+  if(!ckf.empty())if(std::FILE* f=std::fopen(ckf.c_str(),"rb")){int e=-1;try{e=load_ck(f);}catch(const std::exception&){e=-1;}std::fclose(f);
+    if(e<0){std::fprintf(stderr,"cannot resume from %s\n",ckf.c_str());return 2;}e0=e;}
+  if(e0>0&&!logf.empty()){std::vector<std::string> keep;  // cut the log back to the checkpoint
+    if(std::FILE* f=std::fopen(logf.c_str(),"r")){static char buf[1<<16];while(std::fgets(buf,sizeof buf,f))if(buf[0]=='#'||std::atoi(buf)<=e0)keep.push_back(buf);std::fclose(f);}
+    if(std::FILE* f=std::fopen(logf.c_str(),"w")){for(auto& s:keep)std::fputs(s.c_str(),f);std::fclose(f);}}
+  std::FILE* lg=logf.empty()?stdout:std::fopen(logf.c_str(),e0>0?"a":"w");if(!lg)return 2;
+  if(e0==0){
+    if(Kmax==1&&!hist)std::fprintf(lg,"# W0 L%d S%d founders %d H%d pairs %d brain L%d D%d sig%d params %ld threads %d seed %llu regrow %d base %d patches %d\n",
+      wp.L,wp.S,founders,H,P,layers,D,sig,lin[0].g->nparams(),threads,(unsigned long long)seed,wp.regrow,wp.base,wp.patches);
+    else std::fprintf(lg,"# W1 L%d S%d founders %d H%d pairs %d brain L%d D%d sig%d params %ld threads %d seed %llu regrow %d base %d patches %d lineages %d nact %d hist_frac %d hist_founders %d split_at %d\n",
+      wp.L,wp.S,founders,H,P,layers,D,sig,lin[0].g->nparams(),threads,(unsigned long long)seed,wp.regrow,wp.base,wp.patches,Kmax,wp.nact,hist_frac,hist_founders,split_at);
+    if(!archive.empty())lin[0].g->save(archive+"/egg_0.bin",0);}
+  else std::fprintf(lg,"# resumed at epoch %d, threads %d\n",e0,threads);
+  for(int e=e0;e<epochs;++e){
     const auto t0=std::chrono::steady_clock::now();
+    int k0=-1;for(int k=0;k<Kmax;++k)if(lin[k].active){k0=k;break;}  // one lineage is always active (reseeded if all die)
     for(int k=0;k<Kmax;++k)if(lin[k].active)lin[k].nz.gen(*lin[k].g,P,lin[k].id==0?seed:mixu(seed*31+lin[k].id),e);
     const int F2=2*P;std::vector<std::vector<long>> fit(Kmax,std::vector<long>(F2,0));
     const evo::Egg* an=(hist&&!anc.empty())?anc[mixu(seed^((std::uint64_t)e<<8))%anc.size()].get():nullptr;
     const int T=std::max(1,std::min(threads,F2));std::vector<std::thread> th;
     for(int ti=0;ti<T;++ti){const int f0=F2*ti/T,f1=F2*(ti+1)/T;
-      th.emplace_back([&,f0,f1]{const int nw=f1-f0;std::vector<w::World> ws(nw,canon);evo::Rows r;r.init(*lin[0].g,K*nw*wp.S);
+      th.emplace_back([&,f0,f1]{const int nw=f1-f0;std::vector<w::World> ws(nw,canon);evo::Rows r;r.init(*lin[k0].g,K*nw*wp.S);
         for(int i=0;i<nw;++i){const int f=f0+i,p=f/2;
           if(an&&p%hist_frac==0)ws[i].reseed_lineage(Kh,hist_founders,(std::uint64_t)e*P+p);  // same placement in both forks of the pair
           for(int k=0;k<K;++k)for(int s=0;s<wp.S;++s){const int row=(k*nw+i)*wp.S+s;r.pair[row]=p;r.sign[row]=k<Kmax?((f%2==0)?1:-1):0;
@@ -117,19 +172,19 @@ int main(int argc,char** argv){
         std::vector<std::vector<long>> integ(K,std::vector<long>(nw,0));run_worlds(ws,r,st,wp.S,H,&integ);
         for(int k=0;k<Kmax;++k)for(int i=0;i<nw;++i)fit[k][f0+i]=integ[k][i]/H;});}
     for(auto& x:th)x.join();
-    long ch=0;double alpha=0,m=0,m2=0;int nact_l=0;
+    long ch=0;double alpha=0,m=0,m2=0;
+    for(int f=0;f<F2;++f){long s=0;for(int k=0;k<Kmax;++k)if(lin[k].active)s+=fit[k][f];m+=s;m2+=(double)s*s;}
     for(int k=0;k<Kmax;++k){if(!lin[k].active)continue;std::vector<int> F(P);
       for(int p=0;p<P;++p){F[p]=fit[k][2*p]>fit[k][2*p+1]?1:fit[k][2*p]<fit[k][2*p+1]?-1:0;}
-      if(k==0)for(long f:fit[k]){m+=f;m2+=(double)f*f;}
-      const double al=std::max(alpha_floor,1.0/(0.015*lin[k].age+1));if(k==0)alpha=al;ch+=evo::egg_update(*lin[k].g,lin[k].nz,F,al);++lin[k].age;++nact_l;}
+      const double al=std::max(alpha_floor,1.0/(0.015*lin[k].age+1));if(k==k0)alpha=al;ch+=evo::egg_update(*lin[k].g,lin[k].nz,F,al);++lin[k].age;}
     m/=F2;const double sd=std::sqrt(std::max(0.0,m2/F2-m*m));
     {std::vector<w::World> one{canon};std::vector<std::unique_ptr<evo::Stepper>> own;std::vector<evo::Stepper*> st(K,nullptr);
       for(int k=0;k<Kmax;++k)if(lin[k].active){own.push_back(std::make_unique<evo::Stepper>(*lin[k].g,nullptr,rc,k*wp.S,wp.S));st[k]=own.back().get();}
       run_worlds(one,rc,st,wp.S,H,nullptr);canon=one[0];}
-    // lineage dynamics: extinction (or reseed if nothing is left), then splits
+    // lineage dynamics: extinction (or reseed of the first active lineage if nothing is left), then splits
     int alive_l=0;for(int k=0;k<Kmax;++k)if(lin[k].active&&canon.count(k)>0)++alive_l;
     for(int k=0;k<Kmax;++k){if(!lin[k].active||canon.count(k)>0)continue;
-      if(alive_l==0&&k==0){canon.reseed_lineage(0,founders,(std::uint64_t)e+1);std::fill(rc.state.begin(),rc.state.end(),0);++reseeds;continue;}
+      if(alive_l==0&&k==k0){canon.reseed_lineage(k,founders,(std::uint64_t)e+1);std::fill(rc.state.begin(),rc.state.end(),0);++reseeds;continue;}
       if(!archive.empty())lin[k].g->save(archive+"/extinct_L"+std::to_string(lin[k].id)+"_e"+std::to_string(e+1)+".bin",e+1);
       lin[k].active=false;lin[k].g.reset();++extinct;}
     for(int k=0;k<Kmax;++k){if(!lin[k].active||canon.count(k)<split_at)continue;int j=-1;for(int q=0;q<Kmax;++q)if(!lin[q].active){j=q;break;}if(j<0)break;
@@ -145,14 +200,14 @@ int main(int argc,char** argv){
     // champion (most abundant lineage): archived for tournaments and historical self-play
     int ck=-1;for(int k=0;k<Kmax;++k)if(lin[k].active&&(ck<0||canon.count(k)>canon.count(ck)))ck=k;
     const double sec=std::chrono::duration<double>(std::chrono::steady_clock::now()-t0).count();
-    long cb=0;int cp=0;for(int k=0;k<Kmax;++k){cb+=canon.biomass(k);cp+=canon.count(k);}
+    long cb=0;int cp=0,na=0;for(int k=0;k<Kmax;++k){cb+=canon.biomass(k);cp+=canon.count(k);na+=lin[k].active;}
     if(Kmax==1)std::fprintf(lg,"%d\t%d\t%ld\t%.1f\t%.1f\t%ld\t%.4f\t%.2f\t%d\t%ld\n",e+1,cp,cb,m,sd,ch,alpha,sec,reseeds,canon.resources());
     else{std::string cs;for(int k=0;k<Kmax;++k)if(lin[k].active)cs+=(cs.empty()?"":",")+std::to_string(lin[k].id)+":"+std::to_string(canon.count(k));
-      std::fprintf(lg,"%d\t%d\t%ld\t%.1f\t%.1f\t%ld\t%.4f\t%.2f\t%d\t%ld\t%d\t%d\t%d\t%s\n",e+1,cp,cb,m,sd,ch,alpha,sec,reseeds,canon.resources(),nact_l,splits,extinct,cs.c_str());}
+      std::fprintf(lg,"%d\t%d\t%ld\t%.1f\t%.1f\t%ld\t%.4f\t%.2f\t%d\t%ld\t%d\t%d\t%d\t%s\n",e+1,cp,cb,m,sd,ch,alpha,sec,reseeds,canon.resources(),na,splits,extinct,cs.c_str());}
     std::fflush(lg);
-    if(((e+1)%archive_every==0||e+1==epochs)&&ck>=0){
-      if(!archive.empty())lin[ck].g->save(archive+"/egg_"+std::to_string(e+1)+".bin",e+1);
-      if(hist){auto cpy=std::make_unique<evo::Egg>(bc,1);copy_weights(*cpy,*lin[ck].g);anc.push_back(std::move(cpy));if(anc.size()>32)anc.erase(anc.begin());}}
+    if(ck>=0&&!archive.empty()&&((e+1)%archive_every==0||e+1==epochs))lin[ck].g->save(archive+"/egg_"+std::to_string(e+1)+".bin",e+1);
+    if(ck>=0&&hist&&(e+1)%archive_every==0){auto cpy=std::make_unique<evo::Egg>(bc,1);copy_weights(*cpy,*lin[ck].g);anc.push_back(std::move(cpy));if(anc.size()>32)anc.erase(anc.begin());}
+    if(!ckf.empty()&&((e+1)%ck_every==0||e+1==epochs)&&!save_ck(e+1)){std::fprintf(stderr,"cannot write checkpoint %s\n",ckf.c_str());return 3;}
   }
   if(lg!=stdout)std::fclose(lg);
 }

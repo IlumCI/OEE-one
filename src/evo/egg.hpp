@@ -5,6 +5,7 @@
 // antithetic perturbations, sign fitness shaping, thresholded one-bin parameter updates.
 #pragma once
 #include <cstdint>
+#include <cstdio>
 #include <string>
 #include <vector>
 
@@ -29,6 +30,8 @@ struct Egg{
   void repack();  // after any weight change
   void save(const std::string& fn,long step) const;
   long load(const std::string& fn);  // returns the saved step
+  void save(std::FILE* f,long step) const;  // same record, appended to an open file (checkpoints)
+  long load(std::FILE* f);
 };
 
 // Rank-1 noise for one training step: per pair p and parameter k, int8 vectors A (length m or n) and B (length n).
@@ -62,6 +65,9 @@ class Stepper{
   Stepper(const Stepper&)=delete;Stepper& operator=(const Stepper&)=delete;
   // obs: n x Din (Din > 0); out: n x V int8 logits. Returns out.
   const std::int8_t* step(const std::int8_t* obs);
+  // Step only the m rows listed in idx (local indices in [0, n), any order): obs is m x Din, out m x V (compacted).
+  // Rows not listed keep their recurrent state. Per-row results equal those of the full step.
+  const std::int8_t* step(const std::int8_t* obs,const int* idx,int m);
  private:
   struct Impl;Impl* p_;
 };

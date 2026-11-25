@@ -30,5 +30,7 @@ int main(){
   {World w;w.init(p,6);std::vector<std::int8_t> o(World::kDin);int slot=-1;for(int s=0;s<p.K*p.S;++s)if(w.ag[s].alive){slot=s;break;}
     w.observe(slot,o.data());const Agent& a=w.ag[slot];CHECK(o[12]==(std::int8_t)(w.res[a.y*p.L+a.x]>>1)&&o[52]==64,"observation: centre cell is own cell, bias set");
     w.observe(p.S-1+0*slot,o.data());bool z=!w.ag[p.S-1].alive;if(z){bool all=true;for(auto x:o)all=all&&x==0;CHECK(all,"observation: empty slot gives zeros");}}
+  {World a;a.init(p,6);drive(a,40);std::FILE* f=std::tmpfile();a.save(f);std::rewind(f);World b;const bool ok=b.load(f);std::fclose(f);
+    CHECK(ok&&hash(a)==hash(b),"save/load: same state");drive(a,30);drive(b,30);CHECK(hash(a)==hash(b),"save/load: same future");}
   std::printf(fails?"%d FAILED\n":"all passed\n",fails);return fails?1:0;
 }

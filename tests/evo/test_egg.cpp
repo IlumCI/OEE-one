@@ -28,6 +28,18 @@ int main(){
   auto z0=run(2,false,1),z1=run(2,true,0);CHECK(z0==z1,"forward: no noise == sign 0");
   bool pm=false;for(int p=0;p<R/2;++p)pm=pm||f1[2*p]!=f1[2*p+1];CHECK(pm,"forward: antithetic members differ");
   bool same=true;for(int p=0;p<R/2;++p)same=same&&z0[2*p]==z0[2*p+1];CHECK(same,"forward: unperturbed pair members identical");
+  // stepper (observation input): stepping a listed subset of rows equals the full step on those rows; others keep state
+  {EggCfg co;co.L=2;co.D=64;co.V=16;co.Din=64;Egg h(co,4);const int Rr=48,Tt=6;Noise nh;nh.gen(h,Rr/2,3,0);
+    Rows ra,rb;ra.init(h,Rr);rb.init(h,Rr);for(int r=0;r<Rr;++r){ra.pair[r]=rb.pair[r]=r/2;ra.sign[r]=rb.sign[r]=r%2?-1:1;}
+    Stepper sa(h,&nh,ra,0,Rr),sb(h,&nh,rb,0,Rr);std::vector<int> idx;for(int r=Rr-1;r>=0;--r)if(r%3)idx.push_back(r);
+    std::vector<std::int8_t> ob((std::size_t)Rr*64),oc(idx.size()*64);bool eq=true;
+    for(int t=0;t<Tt;++t){for(std::size_t i=0;i<ob.size();++i)ob[i]=(std::int8_t)((i*29+t*7)%61-30);
+      for(std::size_t j=0;j<idx.size();++j)std::memcpy(oc.data()+j*64,ob.data()+(std::size_t)idx[j]*64,64);
+      const std::int8_t* la=sa.step(ob.data());const std::int8_t* lb=sb.step(oc.data(),idx.data(),(int)idx.size());
+      for(std::size_t j=0;j<idx.size();++j)eq=eq&&!std::memcmp(la+(std::size_t)idx[j]*16,lb+j*16,16);}
+    const std::size_t Ls=(std::size_t)co.L*co.D;bool st=true,kept=true;
+    for(int r=0;r<Rr;++r){if(r%3)st=st&&!std::memcmp(ra.state.data()+r*Ls,rb.state.data()+r*Ls,Ls);else for(std::size_t k=0;k<Ls;++k)kept=kept&&rb.state[r*Ls+k]==0;}
+    CHECK(eq&&st&&kept,"stepper: subset step equals full step on listed rows, other rows keep their state");}
   // update: alpha small -> few changes; F = 0 -> no change; determinism
   {Egg a(c,5);Noise n2;n2.gen(a,32,1,0);std::vector<int> F(32,0);const long ch0=egg_update(a,n2,F,0.5);
     for(int p=0;p<32;++p){F[p]=p%3==0?1:-1;}
