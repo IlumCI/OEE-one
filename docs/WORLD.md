@@ -525,6 +525,34 @@ Post-founder share of the ablated copy:
   No collapse below 0.25 in either arm, consistent with W1b. Progress is strong up to about 1500 epochs, then
   flat.
 
+### W2a seed 2 final, epoch 3000 (2026-11-26; docs/results/w2a/final_s2_3000.txt)
+
+| Run | Ablation | Seasons | Seasons off |
+|---|---|---|---|
+| signals | amnesia | 0.597 (t +1.5) | 0.463 (t −21) |
+| signals | shuffle | 0.005 (t −226) | 0.454 (t −19) |
+| signals | deaf | 0.473 (t −0.3) | 0.495 (t −5.6) |
+| no signals | amnesia | 0.097 (t −9.1) | 0.502 (t +0.8) |
+| no signals | shuffle | 0.096 (t −8.1) | 0.449 (t −28) |
+
+- **Era progress, post-founder** (shares at 500, 750, …, 3000):
+
+  | Arm | Shares |
+  |---|---|
+  | signals | 0.97, 0.84, 0.59, 0.65, 0.41, 0.50, 0.44, 0.47, 0.37, 0.52, 0.23 |
+  | no signals | 0.72, 0.78, 0.72, 0.47, 0.59, 0.44, 0.72, 0.53, 0.31, 0.48, 0.59 |
+
+  One collapse: signals, epoch 3000.
+- **Seeds 1–2 together:**
+  - Memory: the shuffle test costs in all 4 runs with seasons. Amnesia costs in 3 of 4. The no-signal seed-2 run is
+    the cleanest control: 0.097 with seasons against 0.50 without.
+  - Deafness never costs in the seasonal training arenas. It costs a little in static arenas in both seeds (0.480,
+    0.495).
+  - So the deaf half of the pass criterion has failed in seeds 1–2. It can still pass only if seeds 3–5 all pass.
+- **Reading.** Changing hidden information selects for memory, reliably. A free channel gives at most a small
+  advantage. As decided in the re-plan, signals are measured again inside W3, where machines create information
+  worth sharing.
+
 ### W2a kill check, seed 1, epoch 1500 (2026-11-25; 16 mirrored seeds; docs/results/w2a/ablate_s1_1500.txt)
 
 Champion against its intact copy. Post-founder share of the ablated copy, in the training arenas (seasons) and in

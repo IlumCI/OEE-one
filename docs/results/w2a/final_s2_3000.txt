@@ -1,0 +1,19 @@
+== w2_sig_s2 epoch 3000
+# champion runs8/w2_sig_s2/archive/egg_3000.bin; world: -S 64 -regrow 16 -nact 7 -season 300 -view 1 -ticks 2000 -signals 1
+amnesia	seasons	0.5574	0.0501	1.15	0.5974	0.0640	1.52
+amnesia	static	0.4641	0.0015	-24.55	0.4634	0.0018	-20.56
+shuffle	seasons	0.0759	0.0128	-33.01	0.0052	0.0022	-226.33
+shuffle	static	0.4565	0.0021	-20.80	0.4544	0.0024	-19.27
+deaf	seasons	0.4757	0.0635	-0.38	0.4732	0.0802	-0.33
+deaf	static	0.4944	0.0010	-5.51	0.4946	0.0010	-5.60
+== w2_nosig_s2 epoch 3000
+# champion runs8/w2_nosig_s2/archive/egg_3000.bin; world: -S 64 -regrow 16 -nact 7 -season 300 -view 1 -ticks 2000 -signals 0
+amnesia	seasons	0.1652	0.0372	-9.01	0.0972	0.0444	-9.07
+amnesia	static	0.5019	0.0020	0.95	0.5017	0.0023	0.77
+shuffle	seasons	0.1606	0.0418	-8.11	0.0964	0.0498	-8.10
+shuffle	static	0.4485	0.0017	-29.54	0.4493	0.0018	-28.13
+== era progress
+w2_sig_s2: 500:0.97 750:0.84 1000:0.59 1250:0.65 1500:0.41 1750:0.50 2000:0.44 2250:0.47 2500:0.37 2750:0.52 3000:0.23 
+w2_nosig_s2: 500:0.72 750:0.78 1000:0.72 1250:0.47 1500:0.59 1750:0.44 2000:0.72 2250:0.53 2500:0.31 2750:0.48 3000:0.59 
+
+[exited with code 0]
