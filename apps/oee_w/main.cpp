@@ -15,6 +15,9 @@
 //                [-threads 4] [-ablate amnesia] (world flags must match training)
 //                [-climate_ticks 1000] [-stats 1]
 //          -stats 1: per-genome behaviour over all games (action fractions, kills, births and deaths per agent-tick).
+//          -curve N: also print A's mean biomass share at every N ticks (over all games).
+//          mean_lshareA: integrated share over ticks after the founder generation (> skip, default max_age = 500); the
+//          founders' starting energy dominates the integrated share before that (docs/WORLD.md §9).
 //          -ablate amnesia: A's recurrent state is zeroed before every step (A without memory). -ablate deaf: A hears
 //          no symbols. With A = B this measures whether the genome uses the mechanism: ishareA < 0.5 means it pays.
 //          With seasons, each arena draws a new climate every climate_ticks ticks (training: climate_every*H).
@@ -80,7 +83,7 @@ constexpr std::int64_t kCkMagic=0x3130574b43454f4fLL;  // "OEECKW01"
 }  // namespace
 
 int main(int argc,char** argv){
-  int epochs=100,P=128,H=200,threads=4,layers=2,D=64,sig=4,archive_every=50,seeds=5,ticks=2000,Kmax=1,split_at=-1,hist_frac=0,hist_founders=8,ck_every=10,climate_every=5,climate_ticks=1000,stats=0;
+  int epochs=100,P=128,H=200,threads=4,layers=2,D=64,sig=4,archive_every=50,seeds=5,ticks=2000,Kmax=1,split_at=-1,hist_frac=0,hist_founders=8,ck_every=10,climate_every=5,climate_ticks=1000,stats=0,curve=0,skip=-1;
   double alpha_floor=0;std::uint64_t seed=1,seed0=1000;std::string logf,archive,ta,tb,ckf,ablate;w::WParams wp;int founders=16;
   for(int a=1;a<argc;a+=2){const char* s=argv[a];const char* v=a+1<argc?argv[a+1]:"";
     if(!std::strcmp(s,"-epochs"))epochs=std::atoi(v);else if(!std::strcmp(s,"-pairs"))P=std::atoi(v);else if(!std::strcmp(s,"-H"))H=std::atoi(v);
@@ -97,7 +100,7 @@ int main(int argc,char** argv){
     else if(!std::strcmp(s,"-season"))wp.season=std::atoi(v);else if(!std::strcmp(s,"-view"))wp.view=std::atoi(v);
     else if(!std::strcmp(s,"-signals"))wp.signals=std::atoi(v);else if(!std::strcmp(s,"-rot"))wp.rot=std::atoi(v);
     else if(!std::strcmp(s,"-sig_cost"))wp.sig_cost=std::atoi(v);else if(!std::strcmp(s,"-climate_every"))climate_every=std::max(1,std::atoi(v));
-    else if(!std::strcmp(s,"-climate_ticks"))climate_ticks=std::max(1,std::atoi(v));else if(!std::strcmp(s,"-stats"))stats=std::atoi(v);else if(!std::strcmp(s,"-ck_every"))ck_every=std::max(1,std::atoi(v));
+    else if(!std::strcmp(s,"-climate_ticks"))climate_ticks=std::max(1,std::atoi(v));else if(!std::strcmp(s,"-stats"))stats=std::atoi(v);else if(!std::strcmp(s,"-curve"))curve=std::max(0,std::atoi(v));else if(!std::strcmp(s,"-skip"))skip=std::max(0,std::atoi(v));else if(!std::strcmp(s,"-ck_every"))ck_every=std::max(1,std::atoi(v));
     else if(!std::strcmp(s,"-tourney")&&a+2<argc){ta=argv[a+1];tb=argv[a+2];++a;}
     else{std::fprintf(stderr,"unknown option %s\n",s);return 2;}}
   if(wp.S%16){std::fprintf(stderr,"-S must be a multiple of 16\n");return 2;}
@@ -110,12 +113,19 @@ int main(int argc,char** argv){
     if(ablate=="deaf"&&!wp.signals){std::fprintf(stderr,"-ablate deaf needs -signals 1\n");return 2;}
     evo::Egg A(bc,1),B(bc,2);A.load(ta);B.load(tb);const int G=2*seeds;
     std::vector<double> fs(G),is(G);std::vector<long> ba(G),bb(G);std::vector<int> na(G),nb(G);std::vector<std::vector<long>> gst(G);
+    const int nc=curve>0?(ticks+curve-1)/curve:0;std::vector<std::vector<double>> cv(G,std::vector<double>(nc,0.5));
+    const int sk=skip>=0?skip:wp.max_age;std::vector<double> ls(G,0.5);
     auto game=[&](int gi){const int sw=gi%2;w::WParams q=wp;q.K=2;q.seed=seed0+gi/2;w::World W;W.init(q,founders);
       evo::Rows rows;rows.init(A,2*q.S);evo::Stepper s0(sw?B:A,nullptr,rows,0,q.S),s1(sw?A:B,nullptr,rows,q.S,q.S);
       std::vector<w::World> one{W};std::vector<evo::Stepper*> st{&s0,&s1};std::vector<std::vector<long>> ig(2,std::vector<long>(1,0));
       std::vector<char> amn(2,0);amn[sw]=ablate=="amnesia";if(ablate=="deaf")one[0].deaf=1u<<sw;one[0].track=stats>0;
-      for(int t0=0;t0<ticks;t0+=climate_ticks){if(t0>0)one[0].set_climate((std::uint64_t)(t0/climate_ticks));
-        run_worlds(one,rows,st,q.S,std::min(climate_ticks,ticks-t0),&ig,&amn);}
+      const int step=curve>0?std::min(curve,climate_ticks):climate_ticks;long la=-1,lb=-1;
+      for(int t0=0;t0<ticks;){int n=std::min(step-t0%step,ticks-t0);if(t0<sk)n=std::min(n,sk-t0);  // segment ends at curve points, climate changes and skip
+        if(t0>0&&t0%climate_ticks==0)one[0].set_climate((std::uint64_t)(t0/climate_ticks));
+        run_worlds(one,rows,st,q.S,n,&ig,&amn);t0+=n;if(t0==sk){la=ig[sw][0];lb=ig[1-sw][0];}
+        if(curve>0&&t0%curve==0){const long x=one[0].biomass(sw),y=one[0].biomass(1-sw);cv[gi][t0/curve-1]=x+y>0?(double)x/(x+y):0.5;}}
+      if(la>=0){const long x=ig[sw][0]-la,y=ig[1-sw][0]-lb;ls[gi]=x+y>0?(double)x/(x+y):0.5;}
+
       const w::World& Z=one[0];const int a=sw,b=1-sw;  // lineage slots of A and B
       ba[gi]=Z.biomass(a);bb[gi]=Z.biomass(b);na[gi]=Z.count(a);nb[gi]=Z.count(b);
       if(stats){gst[gi].assign(32,0);for(int j=0;j<16;++j){gst[gi][j]=Z.stat[(std::size_t)a*16+j];gst[gi][16+j]=Z.stat[(std::size_t)b*16+j];}}
@@ -132,8 +142,12 @@ int main(int argc,char** argv){
       for(int g=0;g<2;++g){long tot[16]={0};for(int gi=0;gi<G;++gi)for(int j=0;j<16;++j)tot[j]+=gst[gi][16*g+j];const double T=std::max(1L,tot[14]);
         std::printf("stats %s agent_ticks %ld",g?"B":"A",tot[14]);for(int j=0;j<7;++j)std::printf(" %s %.3f",nm[j],tot[j]/T);
         std::printf(" kills/kt %.2f births/kt %.2f starved/kt %.2f aged/kt %.2f killed/kt %.2f symbol %.3f\n",1e3*tot[8]/T,1e3*tot[9]/T,1e3*tot[10]/T,1e3*tot[11]/T,1e3*tot[12]/T,tot[13]/T);}}
+    if(curve>0){std::printf("curve");for(int c=0;c<nc;++c){double m=0;for(int gi=0;gi<G;++gi)m+=cv[gi][c];std::printf(" %d:%.3f",(c+1)*curve,m/G);}std::printf("\n");}
     std::printf("mean_shareA %.4f\n",sf/G);
     std::printf("mean_ishareA %.4f\tse %.4f\tt %.2f\twins %d/%d\n",mi,se,se>1e-9?(mi-0.5)/se:0.0,wins,seeds);
+    {double s1=0,s2=0;int w=0;for(int k=0;k<seeds;++k){const double d=(ls[2*k]+ls[2*k+1])/2;s1+=d;s2+=d*d;w+=d>0.5+1e-9;}
+      const double ml=s1/seeds,sl=seeds>1?std::sqrt(std::max(0.0,(s2-seeds*ml*ml)/(seeds-1))/seeds):0;
+      std::printf("mean_lshareA %.4f\tse %.4f\tt %.2f\twins %d/%d\tafter tick %d\n",ml,sl,sl>1e-9?(ml-0.5)/sl:0.0,w,seeds,sk);}
     return 0;
   }
 

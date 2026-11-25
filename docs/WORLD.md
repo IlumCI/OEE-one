@@ -113,6 +113,16 @@ world's rules change with its own state (Adams et al. 2017).
      mirroring), single games ended at 0.0, 0.3, 0.9, 1.0 and 1.0.
    - Test: mean over seeds of each mirrored pair's integrated share against 0.5, with SE and t. Use 16 seeds
      (32 games); "A beats B" means t > 3.
+   - Post-founder share (added 2026-11-25 after the first W1 data; reported next to the protocol statistic):
+     - Definition: the same integrated share, counted only after the founder generation has died (ticks > 500, the
+       maximum age).
+     - Why: founders start with 200 energy each, so before tick 500 the integrated share mostly measures how much
+       starting energy a genome keeps, not who wins.
+     - Example: in nohist s1, the epoch-500 champion against the epoch-250 one has share 0.33 at tick 500, 0.86 at
+       tick 750 and 0.94 at tick 2000. Integrated share over all ticks: 0.477 (t −2.3). Post-founder share: 0.778
+       (t +10.3).
+     - Tools: `-curve 250` prints the share over time; `mean_lshareA` is printed by the tournament, w1_eval.sh and
+       ciao.py.
    - Tool: `oee_w -tourney A.egg B.egg -seeds 16 -threads 4` plus the training world flags.
 2. **Held-out generated arenas.**
    - Worlds from the same generator with seeds and parameter ranges never used in training, including harder
