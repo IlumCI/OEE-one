@@ -303,6 +303,28 @@ Test:
 - In the static W0 world, the memory it evolved is a handicap in competition. This agrees with PLASTIC.md: with
   nothing to know, keeping information does not pay. It sets the W2 change rates.
 
+### W1 interim: memory (2026-11-25, epoch-750 champions, 8 seeds each)
+
+Two tests, each a champion against its intact copy:
+- **amnesia:** the recurrent state is zeroed every step;
+- **shuffle:** agents get each other's states every step. State values stay realistic, but the agent loses its own
+  history.
+
+Post-founder share of the ablated copy:
+
+| Run | Amnesia | Shuffle |
+|---|---|---|
+| hist s1 | 0.091 (t −59) | 0.165 (t −17) |
+| nohist s1 | 0.223 (t −16) | 0.338 (t −8) |
+| hist s2 | 0.002 (t −332) | 0.100 (t −21) |
+| nohist s2 | 0.111 (t −34) | 0.121 (t −31) |
+
+- In W1, all four champions act on their own history.
+- In W0 (one lineage, no competitors), the same kind of memory was a handicap: amnesic copy 0.70.
+- So competition between lineages is what made memory pay. This is the first mechanism we have seen used without
+  being forced. It supports the W2 premise: information that changes, here the other agents, selects for keeping
+  it.
+
 ### W1, first attempt (2026-11-25)
 
 - Both runs (hist, nohist) crashed at epoch 12.
