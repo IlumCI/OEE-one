@@ -135,7 +135,7 @@ world's rules change with its own state (Adams et al. 2017).
 |---|---|---|---|
 | W0 | One lineage, resources only, fork/evaluate/update loop | Within 500 epochs the evolved mean beats the initial mean in tournaments (share ≥ 0.7, 5 seeds, outside the drift band) | Engine or world bug: fix before going on |
 | W1 | Several lineages, splitting and extinction, historical self-play | Tournament share against the epoch-(t−Δ) means stays above the drift band for 5k epochs; less non-transitivity with the archive than without (paired runs) | Diagnose what runs out (resources, information, affordances) before adding mechanisms |
-| W2 | Seasonal, patchy, hidden resources; evolved plasticity; signals | Freeze and mute ablations each cost fitness (t > 3) | Change the information structure (what is private, how fast it changes); do not add more mechanisms |
+| W2 | Seasonal, patchy, hidden resources; signals (W2a); evolved plasticity (W2b) | Amnesia and deaf ablations each cost fitness (t > 3); in W2b also freeze | Change the information structure (what is private, how fast it changes); do not add more mechanisms |
 | W3 | Programmable matter, write action | Wiping artifacts costs fitness (t > 3); the number of distinct functional artifact types grows | Machine costs or instruction set wrong; adjust and re-test |
 | W4 | State-dependent physics, observer measure | Observer compression progress stays positive; held-out-arena fitness keeps rising | Write up, rethink |
 
@@ -158,6 +158,57 @@ world's rules change with its own state (Adams et al. 2017).
   - The later champion wins (t > 3) in at least three quarters of the era comparisons, in both seeds of at least
     one arm.
   - The cyclic share is lower with ancestors than without, in each seed pair.
+
+### W2a protocol (fixed 2026-11-25, before the code)
+
+Literature that sets the parameters:
+- **Plasticity needs change.** Its benefit is proportional to the rate of environmental change and is zero in a
+  static world. Social information only lowers its cost (Le 2026, arXiv:2611.10986). The same holds in our data:
+  PLASTIC.md, and the W0 amnesia test below.
+- **Change faster than a lifetime.** Learning changes the course of evolution only when the environment cycles
+  faster than an individual's lifetime, at a rate matched to the speed of learning (Bennati et al.,
+  arXiv:1710.00352).
+- **Conventions need asymmetry and two-way agents.** They emerged when every agent both speaks and listens, and the
+  speaker knows what the listener does not (Toquebiau et al., arXiv:2611.00006).
+
+World changes (`-season T -view 1 -signals 1`; all off by default, so W0/W1 are unchanged):
+- **Seasons.**
+  - Each of the 6 patches is productive for half of a cycle (a triangle wave in integer arithmetic), with its own
+    phase. Some patch is always in season, and where that is keeps moving.
+  - The period is drawn from [T/2, 3T/2) with T = 300 ticks, below the 500-tick maximum age.
+  - Period and phases are redrawn every 5 epochs (1000 ticks), so the timing changes between generations and
+    cannot be inherited.
+  - Out of season, resources above the current capacity rot by 1 per tick, so a patch really disappears.
+- **Hidden resources.** Resources are visible only within radius 1 (3×3). Agents and signals stay visible in the 5×5
+  window, so whoever stands on food knows something its neighbours do not.
+- **Signals.**
+  - Every tick each agent also emits one of 4 symbols (0 is silence), sampled from logits 8–11 in parallel with its
+    action. There is no cost (cheap talk).
+  - The observation adds the symbol of each agent in the 5×5 window and the agent's own last symbol (Din = 128).
+  - Signals are heard across lineages (eavesdropping is possible). Fitness is lineage biomass, so interests are
+    shared within a lineage.
+
+Measurement:
+- **Ablations.** Mirrored tournaments of a champion against its intact copy:
+  - `-ablate amnesia`: the recurrent state is zeroed before every step;
+  - `-ablate deaf`: heard symbols are zeroed.
+  - A mechanism counts as used when the ablated copy's share is below 0.5 with t < −3.
+  - The same ablations in arenas with seasons off are the control: they test whether change is what makes memory
+    pay.
+- **Era progress** as in W1.
+
+Runs:
+- 5 seeds, 3000 epochs, W1 settings plus `-season 300 -view 1 -signals 1`.
+- Baseline arm: `-season 300 -view 1 -signals 0` (no channel), for the deaf comparison and for the era-progress
+  comparison.
+
+Pass, kill and plasticity:
+- **Pass.** In at least 3 of 5 seeds, the final champion loses under amnesia and under deaf (t < −3). Era progress is
+  no worse than W1.
+- **Kill (epoch 1500).** If neither ablation costs anything in any seed, change the information structure: shorter
+  period, smaller view, slower redraw. Do not add mechanisms.
+- **W2b (plasticity).** Start it only if amnesia shows that memory pays. Then test whether fast weights add to the
+  GRU state, with a freeze ablation.
 
 ## 7. Implementation (planned files)
 
@@ -200,6 +251,13 @@ world's rules change with its own state (Adams et al. 2017).
   - This is expected. W0 selects for biomass with no competitor present, so after the foraging plateau the traits
     that matter in competition drift.
   - Competitive ability is what W1 selects for.
+
+### W0 amnesia test (2026-11-25)
+
+- The epoch-500 W0 champion, memoryless (recurrent state zeroed every step), against its intact copy: 0.698 ± 0.014,
+  t +14.5, 16/16 seeds.
+- In the static W0 world, the memory it evolved is a handicap in competition. This agrees with PLASTIC.md: with
+  nothing to know, keeping information does not pay. It sets the W2 change rates.
 
 ### W1, first attempt (2026-11-25)
 
