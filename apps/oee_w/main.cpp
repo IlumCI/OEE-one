@@ -6,6 +6,7 @@
 //                [-ck FILE] [-ck_every 10] [W2a: -season T -view R -signals 1 -rot 1 -sig_cost 0 -climate_every 5]
 //                [-split_age 1: a split lineage takes its parent's age, so its update fraction alpha (W1b)]
 //                [-null_es 1: updates use random pair signs instead of fitness signs (null control, W1c)]
+//                [-hist_pair 1: every fork pair holds an ancestor drawn for that pair from the archive (W1e)]
 //          W0 = -lineages 1 -nact 6 -hist_frac 0 (bit-identical to the W0 binary).
 //          W1 = -lineages K -nact 7 (attack) -hist_frac 4 (ancestor in every 4th fork pair).
 //          -ck: checkpoint every ck_every epochs and at the end. If FILE exists at start, the run resumes from it
@@ -60,12 +61,20 @@ std::uint64_t mixu(std::uint64_t x){x+=0x9e3779b97f4a7c15ULL;x=(x^(x>>30))*0xbf5
 // Only living agents are observed and stepped. integ[k][i] (optional): lineage-k biomass summed over the ticks in world i.
 // amn (optional, analysis), per lineage: 1 = recurrent state zeroed before every step (no memory); 2 = states rotated
 // among the lineage's living agents before every step (realistic state values, but not the agent's own history).
-void run_worlds(std::vector<w::World>& ws,evo::Rows& rows,const std::vector<evo::Stepper*>& st,int S,int H,std::vector<std::vector<long>>* integ,const std::vector<char>* amn=nullptr){
+// pf (optional): lineage kp is stepped by one stepper per world (pf[i] covers rows (kp*nw+i)*S.. of world i), e.g. a
+// different ancestor in each fork pair; st[kp] must then be non-null (any of them).
+void run_worlds(std::vector<w::World>& ws,evo::Rows& rows,const std::vector<evo::Stepper*>& st,int S,int H,std::vector<std::vector<long>>* integ,
+                const std::vector<char>* amn=nullptr,const std::vector<evo::Stepper*>* pf=nullptr,int kp=-1){
   const int nw=(int)ws.size(),K=(int)st.size(),Din=ws[0].din(),V=w::World::kV;const int L=(int)(rows.state.size()/rows.R);
   std::vector<std::int8_t> obs((std::size_t)nw*S*Din),lgt((std::size_t)K*nw*S*V,0);std::vector<int> idx,born;
   const std::vector<std::int8_t> zero((std::size_t)S*V,0);std::vector<const std::int8_t*> lp(K);
   for(int t=0;t<H;++t){
     for(int k=0;k<K;++k){if(!st[k])continue;idx.clear();
+      if(pf&&k==kp){for(int i=0;i<nw;++i){if(!(*pf)[i])continue;idx.clear();  // one stepper per world
+          for(int s=0;s<S;++s)if(ws[i].ag[(std::size_t)k*S+s].alive){ws[i].observe(k*S+s,obs.data()+idx.size()*Din);idx.push_back(s);}
+          if(idx.empty())continue;const std::int8_t* o=(*pf)[i]->step(obs.data(),idx.data(),(int)idx.size());
+          for(std::size_t j=0;j<idx.size();++j)std::memcpy(lgt.data()+(((std::size_t)k*nw+i)*S+idx[j])*V,o+j*V,V);}
+        continue;}
       for(int i=0;i<nw;++i)for(int s=0;s<S;++s)if(ws[i].ag[(std::size_t)k*S+s].alive){ws[i].observe(k*S+s,obs.data()+idx.size()*Din);idx.push_back(i*S+s);}
       if(idx.empty())continue;
       if(amn&&(*amn)[k]==1)for(int j:idx)std::fill(rows.state.begin()+((std::size_t)k*nw*S+j)*L,rows.state.begin()+((std::size_t)k*nw*S+j+1)*L,0);
@@ -90,7 +99,7 @@ constexpr std::int64_t kCkMagic=0x3130574b43454f4fLL;  // "OEECKW01"
 }  // namespace
 
 int main(int argc,char** argv){
-  int epochs=100,P=128,H=200,threads=4,layers=2,D=64,sig=4,archive_every=50,seeds=5,ticks=2000,Kmax=1,split_at=-1,hist_frac=0,hist_founders=8,ck_every=10,climate_every=5,climate_ticks=1000,stats=0,curve=0,skip=-1,split_age=0,null_es=0;
+  int epochs=100,P=128,H=200,threads=4,layers=2,D=64,sig=4,archive_every=50,seeds=5,ticks=2000,Kmax=1,split_at=-1,hist_frac=0,hist_founders=8,ck_every=10,climate_every=5,climate_ticks=1000,stats=0,curve=0,skip=-1,split_age=0,null_es=0,hist_pair=0;
   double alpha_floor=0;std::uint64_t seed=1,seed0=1000;std::string logf,archive,ta,tb,ckf,ablate;w::WParams wp;int founders=16;
   for(int a=1;a<argc;a+=2){const char* s=argv[a];const char* v=a+1<argc?argv[a+1]:"";
     if(!std::strcmp(s,"-epochs"))epochs=std::atoi(v);else if(!std::strcmp(s,"-pairs"))P=std::atoi(v);else if(!std::strcmp(s,"-H"))H=std::atoi(v);
@@ -107,7 +116,7 @@ int main(int argc,char** argv){
     else if(!std::strcmp(s,"-season"))wp.season=std::atoi(v);else if(!std::strcmp(s,"-view"))wp.view=std::atoi(v);
     else if(!std::strcmp(s,"-signals"))wp.signals=std::atoi(v);else if(!std::strcmp(s,"-rot"))wp.rot=std::atoi(v);
     else if(!std::strcmp(s,"-sig_cost"))wp.sig_cost=std::atoi(v);else if(!std::strcmp(s,"-climate_every"))climate_every=std::max(1,std::atoi(v));
-    else if(!std::strcmp(s,"-climate_ticks"))climate_ticks=std::max(1,std::atoi(v));else if(!std::strcmp(s,"-stats"))stats=std::atoi(v);else if(!std::strcmp(s,"-curve"))curve=std::max(0,std::atoi(v));else if(!std::strcmp(s,"-skip"))skip=std::max(0,std::atoi(v));else if(!std::strcmp(s,"-split_age"))split_age=std::atoi(v);else if(!std::strcmp(s,"-null_es"))null_es=std::atoi(v);else if(!std::strcmp(s,"-ck_every"))ck_every=std::max(1,std::atoi(v));
+    else if(!std::strcmp(s,"-climate_ticks"))climate_ticks=std::max(1,std::atoi(v));else if(!std::strcmp(s,"-stats"))stats=std::atoi(v);else if(!std::strcmp(s,"-curve"))curve=std::max(0,std::atoi(v));else if(!std::strcmp(s,"-skip"))skip=std::max(0,std::atoi(v));else if(!std::strcmp(s,"-split_age"))split_age=std::atoi(v);else if(!std::strcmp(s,"-null_es"))null_es=std::atoi(v);else if(!std::strcmp(s,"-hist_pair"))hist_pair=std::atoi(v);else if(!std::strcmp(s,"-ck_every"))ck_every=std::max(1,std::atoi(v));
     else if(!std::strcmp(s,"-tourney")&&a+2<argc){ta=argv[a+1];tb=argv[a+2];++a;}
     else{std::fprintf(stderr,"unknown option %s\n",s);return 2;}}
   if(wp.S%16){std::fprintf(stderr,"-S must be a multiple of 16\n");return 2;}
@@ -169,6 +178,8 @@ int main(int argc,char** argv){
   std::vector<std::int64_t> fp2=fp;if(w2){for(std::int64_t x:{wp.season,wp.view,wp.signals,wp.rot,wp.sig_cost,climate_every})fp2.push_back(x);}
   if(split_age)fp2.push_back(1000+split_age);
   if(null_es)fp2.push_back(2000+null_es);
+  if(hist_pair)fp2.push_back(3000+hist_pair);
+  if(hist_pair&&!hist){std::fprintf(stderr,"-hist_pair needs -hist_frac > 0\n");return 2;}
   auto save_ck=[&](int e){const std::string tmp=ckf+".tmp";std::FILE* f=std::fopen(tmp.c_str(),"wb");if(!f)return false;
     auto w=[&](std::int64_t x){std::fwrite(&x,8,1,f);};w(kCkMagic);w((std::int64_t)fp2.size());for(auto x:fp2)w(x);
     w(e);w(reseeds);w(splits);w(extinct);w((std::int64_t)next_lid);canon.save(f);w((std::int64_t)rc.state.size());std::fwrite(rc.state.data(),1,rc.state.size(),f);
@@ -200,6 +211,7 @@ int main(int argc,char** argv){
     if(w2)std::fprintf(lg,"# W2a season %d view %d signals %d rot %d sig_cost %d climate_every %d din %d\n",wp.season,wp.view,wp.signals,wp.rot,wp.sig_cost,climate_every,bc.Din);
     if(split_age)std::fprintf(lg,"# W1b split_age %d (split lineages take the parent's age)\n",split_age);
     if(null_es)std::fprintf(lg,"# W1c null_es %d (random update signs: fitness ignored)\n",null_es);
+    if(hist_pair)std::fprintf(lg,"# W1e hist_pair %d (an ancestor drawn for each fork pair)\n",hist_pair);
     if(!archive.empty())lin[0].g->save(archive+"/egg_0.bin",0);}
   else std::fprintf(lg,"# resumed at epoch %d, threads %d\n",e0,threads);
   for(int e=e0;e<epochs;++e){
@@ -212,14 +224,18 @@ int main(int argc,char** argv){
     const int T=std::max(1,std::min(threads,F2));std::vector<std::thread> th;
     for(int ti=0;ti<T;++ti){const int f0=F2*ti/T,f1=F2*(ti+1)/T;
       th.emplace_back([&,f0,f1]{const int nw=f1-f0;std::vector<w::World> ws(nw,canon);evo::Rows r;r.init(*lin[k0].g,K*nw*wp.S);
+        const bool hp=hist_pair&&!anc.empty();std::vector<const evo::Egg*> anp(nw,nullptr);  // W1e: an ancestor per pair
+        if(hp)for(int i=0;i<nw;++i){const int p=(f0+i)/2;anp[i]=anc[mixu(seed^((std::uint64_t)e<<8)^((std::uint64_t)p<<40))%anc.size()].get();}
         for(int i=0;i<nw;++i){const int f=f0+i,p=f/2;
-          if(an&&p%hist_frac==0)ws[i].reseed_lineage(Kh,hist_founders,(std::uint64_t)e*P+p);  // same placement in both forks of the pair
+          if(hp||(an&&p%hist_frac==0))ws[i].reseed_lineage(Kh,hist_founders,(std::uint64_t)e*P+p);  // same placement in both forks of the pair
           for(int k=0;k<K;++k)for(int s=0;s<wp.S;++s){const int row=(k*nw+i)*wp.S+s;r.pair[row]=p;r.sign[row]=k<Kmax?((f%2==0)?1:-1):0;
             std::copy(rc.state.begin()+(std::size_t)(k*wp.S+s)*Ls,rc.state.begin()+(std::size_t)(k*wp.S+s+1)*Ls,r.state.begin()+(std::size_t)row*Ls);}}
         std::vector<std::unique_ptr<evo::Stepper>> own;std::vector<evo::Stepper*> st(K,nullptr);
         for(int k=0;k<Kmax;++k)if(lin[k].active){own.push_back(std::make_unique<evo::Stepper>(*lin[k].g,&lin[k].nz,r,k*nw*wp.S,nw*wp.S));st[k]=own.back().get();}
-        if(an){own.push_back(std::make_unique<evo::Stepper>(*an,nullptr,r,Kh*nw*wp.S,nw*wp.S));st[Kh]=own.back().get();}
-        std::vector<std::vector<long>> integ(K,std::vector<long>(nw,0));run_worlds(ws,r,st,wp.S,H,&integ);
+        std::vector<evo::Stepper*> pf;
+        if(hp){pf.assign(nw,nullptr);for(int i=0;i<nw;++i){own.push_back(std::make_unique<evo::Stepper>(*anp[i],nullptr,r,(Kh*nw+i)*wp.S,wp.S));pf[i]=own.back().get();}st[Kh]=pf[0];}
+        else if(an){own.push_back(std::make_unique<evo::Stepper>(*an,nullptr,r,Kh*nw*wp.S,nw*wp.S));st[Kh]=own.back().get();}
+        std::vector<std::vector<long>> integ(K,std::vector<long>(nw,0));run_worlds(ws,r,st,wp.S,H,&integ,nullptr,hp?&pf:nullptr,Kh);
         for(int k=0;k<Kmax;++k)for(int i=0;i<nw;++i)fit[k][f0+i]=integ[k][i]/H;});}
     for(auto& x:th)x.join();
     long ch=0;double alpha=0,m=0,m2=0;

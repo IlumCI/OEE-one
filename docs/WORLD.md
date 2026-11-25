@@ -312,9 +312,10 @@ Change: `-hist_pair 1`.
 
 Test:
 - W1b settings (`-split_age 1 -hist_frac 4` plus `-hist_pair 1`; hist_pair implies an ancestor in every pair).
-- Seeds 1–2, 2000 epochs; seeds 3–5 if it passes.
-- **Primary.** Collapses (post-founder < 0.25) in era comparisons 500–2000: fewer than W1b on the same seeds (W1b
-  s1–s2: 0). Mean post-founder era share at least W1b's (0.84, 0.71).
+- 2000 epochs. Seeds 3–4 first, where W1b collapsed, then seeds 1, 2 and 5.
+- **Primary, over all 5 seeds.**
+  - At most 1 collapse (post-founder < 0.25) in the 35 era comparisons from 500 to 2000 (W1b: 3).
+  - Mean post-founder era share at least 0.70 (W1b's).
 - **Secondary.** W1e against W1b champions at 1000, 1500 and 2000.
 - **If it fails**, test capacity (a larger world) next.
 
