@@ -3,7 +3,7 @@
 
 Usage: ciao.py BIN RUNDIR [--every 250] [--seeds 16] [--threads 4] [--upto E] [--world "-S 64 -regrow 2 -nact 7"]
 Plays every pair of champions archived every `every` epochs (mirrored seeds, integrated share; cached in
-RUNDIR/ciao_<every>.tsv, so reruns only play new pairs), then:
+RUNDIR/ciao_<every>_s<seeds>.tsv, so reruns only play new pairs), then:
 - A_ij = logit(p_ij), p_ij = share of i against j (clipped to [0.01, 0.99]);
 - transitive part r_i - r_j with r = row means of A; cyclic part = A minus that (combinatorial Hodge decomposition,
   Balduzzi et al. 2018, arXiv:1806.02643);
@@ -34,7 +34,7 @@ def main():
     ap.add_argument('--world',default='-S 64 -regrow 2 -nact 7 -ticks 2000');a=ap.parse_args()
     arch=os.path.join(a.run,'archive')
     E=sorted(int(m[1]) for f in os.listdir(arch) for m in [re.match(r'egg_(\d+)\.bin$',f)] if m and int(m[1])%a.every==0 and (a.upto<=0 or int(m[1])<=a.upto))
-    cache=os.path.join(a.run,f'ciao_{a.every}.tsv');P={};Q={}  # P: integrated share (all ticks), Q: after founders
+    cache=os.path.join(a.run,f'ciao_{a.every}_s{a.seeds}.tsv');P={};Q={}  # P: integrated share (all ticks), Q: after founders
     if os.path.exists(cache):
         for l in open(cache):
             x=l.split()
