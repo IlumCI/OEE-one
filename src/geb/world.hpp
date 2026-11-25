@@ -179,7 +179,7 @@ class World {
   LockStats lock_stats() const;
   bool is_locked(int c) const{return locked(c);}
   long collab() const {return collab_;}
-  void set_deaf(int d){deaf_=d;}  // analysis only (not saved): 1 = no agent senses neighbours, 2 = random half (by id) deaf
+  void set_deaf(int d){deaf_=d;}  // analysis only (not saved): 1 = no agent senses neighbours, 2 = random half (by id) deaf, 3 = '0011' signal outputs inaudible
   static bool deaf_half(std::uint64_t id){id^=id>>33;id*=0xff51afd7ed558ccdULL;id^=id>>33;return id&1;}
   Ann::Rule5 pend_{};bool pend_set_=false;  // plasticity rule for the agent being constructed (set by reproduce)
   Ann::Rule5 child_rule(const Organism* a,const Organism* b);

@@ -117,6 +117,7 @@ void Organism::copy_net_inputs_from_neighbourhood() {
           const bool match = (x.packed && oc.packed) ? packed_is_prefix(x.tbits, x.tn, oc)
                                                      : x.test.is_start_of(out.node->character);
           if (!match) continue;
+          if(w_.deaf_==3&&kSignal.span().is_start_of(out.node->character))continue;  // analysis: signal outputs muted
           if (scale < 0) {
             const long d = static_cast<long>(std::sqrt(static_cast<double>(dx * dx + dy * dy)));
             scale = static_cast<int>(World::kCopyScale64AtDistance1 / d);

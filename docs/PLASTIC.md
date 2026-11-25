@@ -94,3 +94,40 @@ Results:
 
 At this stage the rule has spread (s1 has learners 1.0), but it is close to a passenger. It
 changes behaviour slightly and fitness not at all.
+
+### Freeze and signal-mute tests at about 485k steps
+
+Method:
+- **Freeze test:** same method as at 190k.
+- **Mute test:** a new analysis mode, deaf 3, makes outputs starting `0011` inaudible to every
+  listener. Every other output is still heard. It is run as `freeze.py ... mute`.
+- Raw output is in docs/results/plastic/.
+
+Results:
+
+| Test | Births | Behaviour |
+|---|---|---|
+| Freeze, s1 | -516 of about 51,000 (-1.0%, t -1.7) | move +0.2 points (t +2.9); all others \|t\| < 1.7 |
+| Freeze, s2 | -301 of about 48,600 (t -0.9) | nothing (all \|t\| < 0.8) |
+| Mute, s2 | +253 (t +0.63) | nothing (all \|t\| < 1.5) |
+
+- **Freeze:**
+  - In s1, learning leans towards a small cost, though not significantly. Its only clear
+    effect is slightly more moving.
+  - The 195k behaviour effects (attack, turn) did not persist.
+- **Mute:**
+  - At this checkpoint, 12.6% of s2 agents had an active signal output during the replays.
+  - The signal had risen from 0.2% to 7.5% over 40 minutes.
+  - Muting it changes nothing, so it is sent but not used: it spreads by drift, with no
+    receivers.
+- **Consistency check:** the learning-on rows for s2 equal the heard rows exactly. That is
+  expected, since both use the same checkpoint and seeds.
+
+At 485k steps the two additions are still neutral: learning is near a passenger, and the
+signal channel is unheard.
+
+Why this might be, from the literature on the evolution of communication:
+- Senders and receivers have to co-evolve before either pays.
+- A channel with no effect until receivers exist sits at a fitness plateau.
+
+Planned measurements continue to 1M.
