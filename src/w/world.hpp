@@ -62,6 +62,10 @@ struct World{
   int sig_off() const{return p.matter?12:8;}
   bool ext() const{return p.season>0||p.signals>0||p.view!=2||p.matter>0;}  // W2a/W3 state present
   int wipe(int k);  // analysis: machines made by lineage k (and their copies) become empty; returns how many
+  // test arenas (W3 generality): place n machines with random programs on empty cells; program length 1-16 with
+  // P(length > l) = cont^l (shorter programs are likelier, as in a simplicity prior), instructions uniform over kCode;
+  // store `store`, no owner lineage. Returns how many were placed.
+  int seed_programs(int n,std::uint64_t salt,int store,double cont);
   // census of machines that lived at least min_age ticks: machines, walls, distinct tapes, distinct effect classes
   void census(int min_age,int& machines,int& walls,int& tapes,int& classes) const;
   void set_climate(std::uint64_t salt);  // seasons: draw a new period and phases

@@ -166,6 +166,16 @@ void World::run_machines(){
       ip=(ip+1)&15;}
     mip[c]=(std::uint8_t)ip;mh0[c]=(std::uint8_t)h0;mh1[c]=(std::uint8_t)h1;}
 }
+int World::seed_programs(int n,std::uint64_t salt,int store,double cont){
+  if(!p.matter)return 0;const int N=p.L*p.L;int placed=0;const std::uint64_t ct=(std::uint64_t)std::llround(std::clamp(cont,0.0,1.0)*65536);
+  for(std::uint64_t i=0;placed<n&&i<(std::uint64_t)64*N;++i){const std::uint64_t h=mix(mix(p.seed^0x9a11ULL)+(salt<<20)+i);const int c=(int)(h%N);
+    if(occ[c]>=0||mat[c])continue;
+    make_machine(c,(int)((h>>32)&3),-1);mbt[c]=-1;mst[c]=(std::int16_t)std::min(1000,store);
+    std::uint64_t g=mix(h^0x5eedULL);int len=1;while(len<16&&(g&0xffff)<ct){++len;g=mix(g);}
+    std::uint64_t b=mix(h^0xb17eULL);for(int j=0;j<len;++j){tape[(std::size_t)c*16+j]=kCode[(b>>(4*j))&15];}
+    ++placed;}
+  return placed;
+}
 int World::wipe(int k){int n=0;if(!p.matter)return 0;for(int c=0;c<p.L*p.L;++c)if(mat[c]==1&&mlin[c]==k){kill_machine(c);++n;}return n;}
 void World::census(int min_age,int& machines,int& walls,int& tapes,int& classes) const{
   machines=walls=tapes=classes=0;if(!p.matter)return;std::vector<std::uint64_t> th;bool cls[16]={false};

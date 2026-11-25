@@ -378,8 +378,22 @@ Measures:
    - Count distinct machine tapes (by hash) that live at least 100 ticks in the canonical world.
    - Group them by effect: net resource moved, copies made, walls built.
    - Track the number of effect classes over epochs.
-3. **Generality.** Champions at epoch e against e−500 in a widening generator of unseen worlds (size 24–64,
-   patches 3–10, season period 150–600, machine cost ×0.5–2), 16 seeds each.
+3. **Generality** (`tools/w/generality.sh`; refined 2026-11-26, before any W3 run).
+   - Champions at epoch e against e−500 in 64 arenas the run never saw.
+   - Each arena draws its own settings (`-gen 1`): side 24–64, patches 3–10, season period 150–600, machine costs
+     ×0.5–2.
+   - Each arena is seeded with random machine programs (`-arena_progs 24` at side 32, scaled with area).
+     - Program length: P(length > l) = 0.7^l. Instructions are uniform over the 16 codes. Shorter, simpler
+       programs are therefore likelier, a crude simplicity prior over environments.
+     - This follows Legg and Hutter's universal intelligence: performance across computable environments, weighted
+       towards simple ones (arXiv:0712.3329, maximised by AIXI, arXiv:cs/0004001).
+   - Two scores:
+     - **solo:** each genome alone in the same arenas. Mean log ratio of post-founder biomass with t; also survival
+       counts and the median. This is the absolute measure.
+     - **head-to-head:** post-founder share.
+   - Calibration run (seed 1, epochs 100 and 200): 100 vs 0 gives solo +10.4 (t 6.2), surviving 14/16 vs 1/16.
+     200 vs 100 gives solo +0.56 (t 1.3) while head-to-head is 0.72 (t 4.4): better in fights, not yet better
+     alone. The two scores measure different things.
 4. **Open-endedness.**
    - Our own int8 observer is trained online by EGGROLL on the canonical world-state log; no human data.
    - Novelty is its loss on new history before updating.
@@ -390,7 +404,8 @@ Measures:
 Pass (epoch 3000):
 - The wipe ablation costs fitness in at least 3 of 5 seeds.
 - The number of effect classes is still growing over the last 1000 epochs, in at least 3 of 5 seeds.
-- Generality: the later champion wins in the held-out generator in at least 3 of 4 comparisons, pooled over seeds.
+- Generality: the later champion's solo score is positive with t > 3 in at least 3 of 4 comparisons (pooled over
+  seeds). The head-to-head score is reported beside it.
 
 Kill (epoch 1500):
 - Agents write or activate machines no more often than in the null arm (random-weight agents in the same world),
