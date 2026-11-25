@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <stdexcept>
 
 namespace oee::w {
 
@@ -18,6 +19,7 @@ int act_sample(const std::int8_t* l,std::uint64_t bits,int n){
 }
 
 void World::init(const WParams& pp,int founders){
+  if(pp.L<5)throw std::invalid_argument("World: L must be at least 5");
   p=pp;t=0;next_id=1;const int N=p.L*p.L;res.assign(N,0);fert.assign(N,0);racc.assign(N,0);occ.assign(N,-1);ag.assign((std::size_t)p.K*p.S,Agent{});
   std::vector<double> f(N,0);
   for(int i=0;i<p.patches;++i){const std::uint64_t h=mix(p.seed*0x51ed27ULL+i);const double cx=(h&0xffff)/65536.0*p.L,cy=((h>>16)&0xffff)/65536.0*p.L;
@@ -62,12 +64,13 @@ void World::reseed_lineage(int k,int founders,std::uint64_t salt){
 
 void World::observe(int slot,std::int8_t* o) const{
   std::fill(o,o+din(),0);const Agent& a=ag[slot];if(!a.alive)return;
-  const int fx=FX[a.dir],fy=FY[a.dir],rx=-fy,ry=fx;int i=0;  // right = forward rotated clockwise
-  const bool hear=p.signals&&!((deaf>>a.lineage)&1);
-  for(int v=2;v>=-2;--v)for(int u=-2;u<=2;++u,++i){
-    const int x=((a.x+v*fx+u*rx)%p.L+p.L)%p.L,y=((a.y+v*fy+u*ry)%p.L+p.L)%p.L;const int c=y*p.L+x;
-    if(std::max(std::abs(u),std::abs(v))<=p.view)o[i]=(std::int8_t)(res[c]>>1);const int q=occ[c];
-    if(q>=0&&q!=slot){o[25+i]=(std::int8_t)(ag[q].lineage==a.lineage?64:-64);if(hear)o[53+i]=(std::int8_t)(32*ag[q].sig);}}
+  const int L=p.L,fx=FX[a.dir],fy=FY[a.dir],rx=-fy,ry=fx,lin=a.lineage;int i=0;  // right = forward rotated clockwise
+  const bool hear=p.signals&&!((deaf>>lin)&1);
+  auto wr=[L](int z){return z<0?z+L:(z>=L?z-L:z);};  // offsets are at most 4 and L >= 5: one wrap suffices
+  for(int v=2;v>=-2;--v){const int bx=a.x+v*fx,by=a.y+v*fy;
+    for(int u=-2;u<=2;++u,++i){const int c=wr(by+u*ry)*L+wr(bx+u*rx);
+      if(std::max(std::abs(u),std::abs(v))<=p.view)o[i]=(std::int8_t)(res[c]>>1);const int q=occ[c];
+      if(q>=0&&q!=slot){o[25+i]=(std::int8_t)(ag[q].lineage==lin?64:-64);if(hear)o[53+i]=(std::int8_t)(32*ag[q].sig);}}}
   o[50]=(std::int8_t)std::min(127,a.energy/8);o[51]=(std::int8_t)std::min(127,a.age/4);o[52]=64;
   if(p.signals)o[78]=(std::int8_t)(32*a.sig);
 }
