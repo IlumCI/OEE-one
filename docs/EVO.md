@@ -59,13 +59,25 @@ Human text: this run only checks the engine.
 - Results: validation 5.22 bits/byte at step 50 and 4.79 at step 200 (log: runs8/egg_p1024_s1/log.txt). It is
   learning.
 
-## 4. Stepping a subset of rows
+## 4. Stepping a subset of rows, and vector kernels
 
-`Stepper::step(obs, idx, m)` runs one step for only the m listed rows (compacted inputs and outputs). The other rows
-keep their recurrent state. World v1 uses it to step living agents only; per-row results equal those of the full
-step (test_evo_egg). Measured at W1 sizes (D=64, 2 layers, 4096 rows): about 6.3 µs per row-step on one thread, about
-16 GMAC/s. The int8 GEMM is under 5% of that time; the rest is per-row elementwise work (noise terms, layer norm,
-gates), which is the next thing to vectorise.
+- `Stepper::step(obs, idx, m)` runs one step for only the m listed rows (compacted inputs and outputs), in chunks of
+  256 rows so the buffers stay in L2. The other rows keep their recurrent state. World v1 uses it to step living
+  agents only. Per-row results equal those of the full step (test_evo_egg).
+- AVX-512 kernels for the per-row work. Each is bit-identical to the scalar code (test_evo_egg compares both paths;
+  `use_simd(false)` forces scalar):
+  - **layer norm:** the floor division as a 32-bit multiply-shift, exact for |x| <= 127², checked exhaustively;
+  - **rank-1 noise:** the dot product and the fused int8 conversion;
+  - **GRU gates** and the residual add.
+- Speed at W1 sizes (D=64, 2 layers, one thread, machine shared with 4 runs):
+
+  | Rows | Before | After |
+  |---|---|---|
+  | 4096 | 6.6 µs per row-step (16 GMAC/s) | 1.1 µs (93 GMAC/s) |
+  | 512 | 6.0 µs | 1.4 µs |
+
+- W0 and W1 logs are reproduced exactly by the new binary.
+- What is left: AMX tile stores and the int8 conversion of the outputs, each about a fifth of the time.
 
 ## 5. Next (World v1)
 

@@ -13,6 +13,8 @@ static int fails=0;
 int main(){
   {bool ok=true;for(int m=1;m<128&&ok;++m)for(int x=-65535;x<=65535;++x){int q=x/m;if((x%m!=0)&&(x<0))--q;if(egg_fdiv(x,m)!=q){ok=false;break;}}
     CHECK(ok,"layer norm floor division exact for all |x| < 2^16, 1 <= m <= 127");}
+  {bool ok=true;for(int m=1;m<128&&ok;++m)for(int x=-16129;x<=16129;++x){int q=x/m;if((x%m!=0)&&(x<0))--q;if(egg_fdiv14(x,m)!=q){ok=false;break;}}
+    CHECK(ok,"layer norm 32-bit floor division exact for all |x| <= 127*127, 1 <= m <= 127");}
   EggCfg c;c.L=2;c.D=64;
   {Egg a(c,1),b(c,1),d(c,2);bool same=true,diff=false;for(std::size_t k=0;k<a.mats.size();++k){same=same&&a.mats[k]->w==b.mats[k]->w;diff=diff||a.mats[k]->w!=d.mats[k]->w;}
     CHECK(same&&diff,"init: same seed same weights, other seed differs");
@@ -27,9 +29,12 @@ int main(){
   auto f1=run(1,true,1),f3=run(3,true,1);CHECK(f1==f3,"forward: identical with 1 and 3 threads");
   auto z0=run(2,false,1),z1=run(2,true,0);CHECK(z0==z1,"forward: no noise == sign 0");
   bool pm=false;for(int p=0;p<R/2;++p)pm=pm||f1[2*p]!=f1[2*p+1];CHECK(pm,"forward: antithetic members differ");
+  {use_simd(false);auto s1=run(1,true,1),s0=run(1,false,1);use_simd(true);auto v0=run(1,false,1);
+    char msg[96];std::snprintf(msg,sizeof msg,"forward: vector kernels equal scalar code (simd %s)",simd_on()?"on":"unavailable");CHECK(s1==f1&&s0==v0,msg);}
   bool same=true;for(int p=0;p<R/2;++p)same=same&&z0[2*p]==z0[2*p+1];CHECK(same,"forward: unperturbed pair members identical");
   // stepper (observation input): stepping a listed subset of rows equals the full step on those rows; others keep state
-  {EggCfg co;co.L=2;co.D=64;co.V=16;co.Din=64;Egg h(co,4);const int Rr=48,Tt=6;Noise nh;nh.gen(h,Rr/2,3,0);
+  // (427 listed rows: more than one 256-row chunk)
+  {EggCfg co;co.L=2;co.D=64;co.V=16;co.Din=64;Egg h(co,4);const int Rr=640,Tt=6;Noise nh;nh.gen(h,Rr/2,3,0);
     Rows ra,rb;ra.init(h,Rr);rb.init(h,Rr);for(int r=0;r<Rr;++r){ra.pair[r]=rb.pair[r]=r/2;ra.sign[r]=rb.sign[r]=r%2?-1:1;}
     Stepper sa(h,&nh,ra,0,Rr),sb(h,&nh,rb,0,Rr);std::vector<int> idx;for(int r=Rr-1;r>=0;--r)if(r%3)idx.push_back(r);
     std::vector<std::int8_t> ob((std::size_t)Rr*64),oc(idx.size()*64);bool eq=true;
@@ -39,7 +44,13 @@ int main(){
       for(std::size_t j=0;j<idx.size();++j)eq=eq&&!std::memcmp(la+(std::size_t)idx[j]*16,lb+j*16,16);}
     const std::size_t Ls=(std::size_t)co.L*co.D;bool st=true,kept=true;
     for(int r=0;r<Rr;++r){if(r%3)st=st&&!std::memcmp(ra.state.data()+r*Ls,rb.state.data()+r*Ls,Ls);else for(std::size_t k=0;k<Ls;++k)kept=kept&&rb.state[r*Ls+k]==0;}
-    CHECK(eq&&st&&kept,"stepper: subset step equals full step on listed rows, other rows keep their state");}
+    CHECK(eq&&st&&kept,"stepper: subset step equals full step on listed rows, other rows keep their state");
+    Rows rc2,rv2;rc2.init(h,Rr);rv2.init(h,Rr);for(int r=0;r<Rr;++r){rc2.pair[r]=rv2.pair[r]=r/2;rc2.sign[r]=rv2.sign[r]=r%2?-1:1;}
+    Stepper sc(h,&nh,rc2,0,Rr),sv(h,&nh,rv2,0,Rr);bool same2=true;
+    for(int t=0;t<3*Tt;++t){for(std::size_t i=0;i<ob.size();++i)ob[i]=(std::int8_t)((i*13+t*5)%255-127);  // full int8 range
+      use_simd(false);const std::int8_t* q0=sc.step(ob.data());const std::vector<std::int8_t> a0(q0,q0+(std::size_t)Rr*16);
+      use_simd(true);const std::int8_t* q1=sv.step(ob.data());same2=same2&&!std::memcmp(a0.data(),q1,(std::size_t)Rr*16);}
+    CHECK(same2&&rc2.state==rv2.state,"stepper: vector kernels equal scalar code over 18 steps (logits and state)");}
   // update: alpha small -> few changes; F = 0 -> no change; determinism
   {Egg a(c,5);Noise n2;n2.gen(a,32,1,0);std::vector<int> F(32,0);const long ch0=egg_update(a,n2,F,0.5);
     for(int p=0;p<32;++p){F[p]=p%3==0?1:-1;}

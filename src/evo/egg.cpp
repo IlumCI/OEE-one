@@ -6,6 +6,9 @@
 #include <cstring>
 #include <stdexcept>
 #include <thread>
+#if defined(__AVX512BW__)
+#include <immintrin.h>
+#endif
 
 #include "evo/gemm.hpp"
 
@@ -48,7 +51,72 @@ const Div& divs(){static Div d;return d;}
 // branch-free: floor(x/m) = x>=0 ? x/m : -((-x+m-1)/m), each unsigned quotient by multiply-shift
 inline int fdiv_g(int x,int m,std::uint64_t g){const int t=x>=0?x:m-1-x;const int q=(int)(((std::uint64_t)t*g)>>32);return x>=0?q:-q;}
 inline int fdiv(int x,int m){return fdiv_g(x,m,divs().mg[m]);}
+// Same quotient in 32 bits for the layer norm, where |x| <= 127*127: floor(t/m) for 0 <= t < 2^14 is (t*M)>>k with
+// k = 14+ceil(log2 m), M = ceil(2^k/m). t*M < 2^30, and exact since t*(M*m-2^k) < 2^14*m <= 2^k (checked in tests).
+struct DivM{int k[128],M[128];DivM(){k[0]=M[0]=0;for(int m=1;m<128;++m){int l=0;while((1<<l)<m)++l;k[m]=14+l;M[m]=(int)(((1LL<<k[m])+m-1)/m);}}};
+const DivM& divm(){static DivM d;return d;}
+inline int fdiv14(int x,int m){const DivM& d=divm();const int t=x>=0?x:m-1-x;const int q=(int)(((unsigned)t*(unsigned)d.M[m])>>d.k[m]);return x>=0?q:-q;}
+bool g_simd=true;
+#if defined(__AVX512BW__)
+// One layer-norm row (D a multiple of 64): o = I8(floor(x*w/m)), m = clamp(sum|x| >> s2, 1, 127). Equals the scalar path.
+inline void ln_row(const std::int8_t* x,const std::int8_t* w,std::int8_t* o,int D,int s2){
+  __m512i sad=_mm512_setzero_si512();
+  for(int j=0;j<D;j+=64)sad=_mm512_add_epi64(sad,_mm512_sad_epu8(_mm512_abs_epi8(_mm512_loadu_si512(x+j)),_mm512_setzero_si512()));
+  const long sum=_mm512_reduce_add_epi64(sad);const int m=std::max(1,std::min(127,(int)(sum>>s2)));const DivM& d=divm();
+  const __m512i vm1=_mm512_set1_epi32(m-1),vM=_mm512_set1_epi32(d.M[m]),lo=_mm512_set1_epi32(-127),hi=_mm512_set1_epi32(127),z=_mm512_setzero_si512();
+  const __m128i vk=_mm_cvtsi32_si128(d.k[m]);
+  for(int j=0;j<D;j+=16){
+    const __m512i p=_mm512_mullo_epi32(_mm512_cvtepi8_epi32(_mm_loadu_si128((const __m128i*)(x+j))),_mm512_cvtepi8_epi32(_mm_loadu_si128((const __m128i*)(w+j))));
+    const __mmask16 ng=_mm512_cmplt_epi32_mask(p,z);const __m512i t=_mm512_mask_sub_epi32(p,ng,vm1,p);
+    __m512i q=_mm512_srl_epi32(_mm512_mullo_epi32(t,vM),vk);q=_mm512_mask_sub_epi32(q,ng,z,q);
+    _mm_storeu_si128((__m128i*)(o+j),_mm512_cvtepi32_epi8(_mm512_min_epi32(hi,_mm512_max_epi32(lo,q))));}
+}
+// sum of x[j]*b[j] over n (multiple of 32) int8 pairs
+inline std::int32_t dot8(const std::int8_t* x,const std::int8_t* b,int n){__m512i acc=_mm512_setzero_si512();
+  for(int j=0;j<n;j+=32)acc=_mm512_add_epi32(acc,_mm512_madd_epi16(_mm512_cvtepi8_epi16(_mm256_loadu_si256((const __m256i*)(x+j))),_mm512_cvtepi8_epi16(_mm256_loadu_si256((const __m256i*)(b+j)))));
+  return _mm512_reduce_add_epi32(acc);}
+// out[o] = I8((c[o] + ((sd*A[o]) >> sh)) >> ds) for o < m (multiple of 16); A null: I8(c[o] >> ds)
+inline void conv_row(const std::int32_t* c,const std::int8_t* A,std::int32_t sd,int sh,int ds,std::int8_t* out,int m){
+  const __m512i lo=_mm512_set1_epi32(-127),hi=_mm512_set1_epi32(127),vsd=_mm512_set1_epi32(sd);const __m128i vsh=_mm_cvtsi32_si128(sh),vds=_mm_cvtsi32_si128(ds);
+  for(int o=0;o<m;o+=16){__m512i v=_mm512_loadu_si512(c+o);
+    if(A)v=_mm512_add_epi32(v,_mm512_sra_epi32(_mm512_mullo_epi32(vsd,_mm512_cvtepi8_epi32(_mm_loadu_si128((const __m128i*)(A+o)))),vsh));
+    v=_mm512_sra_epi32(v,vds);_mm_storeu_si128((__m128i*)(out+o),_mm512_cvtepi32_epi8(_mm512_min_epi32(hi,_mm512_max_epi32(lo,v))));}
+}
+inline __m512i ld8(const std::int8_t* p){return _mm512_cvtepi8_epi32(_mm_loadu_si128((const __m128i*)p));}
+inline void st8(std::int8_t* p,__m512i v){_mm_storeu_si128((__m128i*)p,_mm512_cvtepi32_epi8(_mm512_min_epi32(_mm512_set1_epi32(127),_mm512_max_epi32(_mm512_set1_epi32(-127),v))));}
+// GRU gate (G.8): f = I8(f + us + bf); fh = I8(((f+127)*s) >> 8)
+inline void gru_f(std::int8_t* f,const std::int8_t* us,const std::int8_t* bf,const std::int8_t* s,std::int8_t* fh,int D){
+  const __m512i c=_mm512_set1_epi32(127);
+  for(int j=0;j<D;j+=16){__m512i v=_mm512_add_epi32(_mm512_add_epi32(ld8(f+j),ld8(us+j)),ld8(bf+j));st8(f+j,v);v=ld8(f+j);
+    st8(fh+j,_mm512_srai_epi32(_mm512_mullo_epi32(_mm512_add_epi32(v,c),ld8(s+j)),8));}
+}
+// GRU state (G.8): hh = I8(wh + uh + bh); h = I8(s + I8(((f+127)*(hh-s)) >> 8)); s = h; y = I8(y + h)
+inline void gru_h(const std::int8_t* f,const std::int8_t* wh,const std::int8_t* uh,const std::int8_t* bh,std::int8_t* s,std::int8_t* y,int D){
+  const __m512i c=_mm512_set1_epi32(127),lo=_mm512_set1_epi32(-127);
+  for(int j=0;j<D;j+=16){const __m512i hh=_mm512_min_epi32(c,_mm512_max_epi32(lo,_mm512_add_epi32(_mm512_add_epi32(ld8(wh+j),ld8(uh+j)),ld8(bh+j))));
+    const __m512i sv=ld8(s+j);
+    const __m512i t=_mm512_min_epi32(c,_mm512_max_epi32(lo,_mm512_srai_epi32(_mm512_mullo_epi32(_mm512_add_epi32(ld8(f+j),c),_mm512_sub_epi32(hh,sv)),8)));
+    const __m512i h=_mm512_min_epi32(c,_mm512_max_epi32(lo,_mm512_add_epi32(sv,t)));
+    _mm_storeu_si128((__m128i*)(s+j),_mm512_cvtepi32_epi8(h));st8(y+j,_mm512_add_epi32(ld8(y+j),h));}
+}
+// y = I8(y + a) over n bytes (n multiple of 64): saturating add, then -128 -> -127
+inline void add8(std::int8_t* y,const std::int8_t* a,std::size_t n){const __m512i lo=_mm512_set1_epi8(-127);
+  for(std::size_t k=0;k<n;k+=64)_mm512_storeu_si512(y+k,_mm512_max_epi8(lo,_mm512_adds_epi8(_mm512_loadu_si512(y+k),_mm512_loadu_si512(a+k))));}
+constexpr bool kSimd=true;
+#else
+constexpr bool kSimd=false;
+inline void ln_row(const std::int8_t*,const std::int8_t*,std::int8_t*,int,int){}
+inline std::int32_t dot8(const std::int8_t*,const std::int8_t*,int){return 0;}
+inline void conv_row(const std::int32_t*,const std::int8_t*,std::int32_t,int,int,std::int8_t*,int){}
+inline void gru_f(std::int8_t*,const std::int8_t*,const std::int8_t*,const std::int8_t*,std::int8_t*,int){}
+inline void gru_h(const std::int8_t*,const std::int8_t*,const std::int8_t*,const std::int8_t*,std::int8_t*,std::int8_t*,int){}
+inline void add8(std::int8_t*,const std::int8_t*,std::size_t){}
+#endif
 }  // namespace
+
+void use_simd(bool on){g_simd=on;}
+bool simd_on(){return kSimd&&g_simd;}
+int egg_fdiv14(int x,int m){return fdiv14(x,m);}
 
 long Egg::nparams() const{long n=0;for(auto* m:mats)n+=(long)m->m*m->n;for(auto* v:vecs)n+=v->n;return n;}
 
@@ -142,7 +210,10 @@ struct Fwd{
     const int ds=4+ilog2(M.n)/2,npad=(nn+15)/16*16;
     for(int b0=0;b0<npad;b0+=64){const int bn=std::min(64,npad-b0);
       gemm(U+(std::size_t)b0*M.n,M.n,M.p.data(),c,M.m,bn,M.m,M.n);
+      const bool fast=simd_on()&&M.n<=1024&&M.n%32==0&&M.m%16==0;
       for(int bi=0;bi<bn&&b0+bi<nn;++bi){const int i=b0+bi,r=R(i),s=nz?rows.sign[r]:0;const std::int32_t* ci=c+(std::size_t)bi*M.m;std::int8_t* oi=out+(std::size_t)i*M.m;
+        if(fast){if(!s){conv_row(ci,nullptr,0,0,ds,oi,M.m);continue;}
+          const int p=rows.pair[r];const std::int32_t sd=s*dot8(U+(std::size_t)i*M.n,nz->B(M.id,p),M.n);conv_row(ci,nz->A(M.id,p),sd,sh,ds,oi,M.m);continue;}
         if(!s){for(int o=0;o<M.m;++o)oi[o]=c8i(ci[o]>>ds);continue;}
         const int p=rows.pair[r];const std::int8_t* B=nz->B(M.id,p);const std::int8_t* A=nz->A(M.id,p);const std::int8_t* x=U+(std::size_t)i*M.n;
         std::int32_t dot=0;for(int j=0;j<M.n;++j)dot+=(std::int32_t)x[j]*B[j];
@@ -152,6 +223,7 @@ struct Fwd{
   }
   void ln(const Vec& w,const std::int8_t* in,std::int8_t* out){
     const int s2=ilog2(D);
+    if(simd_on()&&D%64==0){for(int i=0;i<nn;++i)ln_row(in+(std::size_t)i*D,pvr(w,R(i)),out+(std::size_t)i*D,D,s2);return;}
     for(int i=0;i<nn;++i){const std::int8_t* x=in+(std::size_t)i*D;std::int8_t* o=out+(std::size_t)i*D;
       std::int32_t sum=0;for(int j=0;j<D;++j)sum+=std::abs((int)x[j]);const int m=std::max(1,std::min(127,(int)(sum>>s2)));
       const std::int8_t* wv=pvr(w,R(i));const std::uint64_t gm=divs().mg[m];for(int j=0;j<D;++j)o[j]=c8i(fdiv_g((int)x[j]*(int)wv[j],m,gm));}
@@ -176,19 +248,23 @@ struct Fwd{
         mm(Ly.Wf,u.data(),f.data(),acc.data());
         for(int i=0;i<nn;++i)std::memcpy(a.data()+(std::size_t)i*D,rows.state.data()+((std::size_t)R(i)*L+l)*D,D);  // s
         mm(Ly.Uf,a.data(),b2.data(),acc.data());
+        const bool vg=simd_on()&&D%16==0;
         for(int i=0;i<nn;++i){std::int8_t* fi=f.data()+(std::size_t)i*D;const std::int8_t* us=b2.data()+(std::size_t)i*D;const std::int8_t* s=a.data()+(std::size_t)i*D;std::int8_t* hh=fh.data()+(std::size_t)i*D;
-          const std::int8_t* bf=pvr(Ly.bf,R(i));for(int j=0;j<D;++j){fi[j]=c8i((int)fi[j]+(int)us[j]+(int)bf[j]);hh[j]=c8i((((int)fi[j]+127)*(int)s[j])>>8);}}
+          const std::int8_t* bf=pvr(Ly.bf,R(i));if(vg){gru_f(fi,us,bf,s,hh,D);continue;}
+          for(int j=0;j<D;++j){fi[j]=c8i((int)fi[j]+(int)us[j]+(int)bf[j]);hh[j]=c8i((((int)fi[j]+127)*(int)s[j])>>8);}}
         mm(Ly.Wh,u.data(),z.data(),acc.data());  // u@Wh (into z, first D columns used)
         mm(Ly.Uh,fh.data(),b2.data(),acc.data());
         for(int i=0;i<nn;++i){const std::int8_t* fi=f.data()+(std::size_t)i*D;const std::int8_t* wh=z.data()+(std::size_t)i*D;const std::int8_t* uh=b2.data()+(std::size_t)i*D;
           std::int8_t* s=rows.state.data()+((std::size_t)R(i)*L+l)*D;std::int8_t* yi=y.data()+(std::size_t)i*D;
-          const std::int8_t* bh=pvr(Ly.bh,R(i));for(int j=0;j<D;++j){const int hh=c8i((int)wh[j]+(int)uh[j]+(int)bh[j]);
+          const std::int8_t* bh=pvr(Ly.bh,R(i));if(vg){gru_h(fi,wh,uh,bh,s,yi,D);continue;}
+          for(int j=0;j<D;++j){const int hh=c8i((int)wh[j]+(int)uh[j]+(int)bh[j]);
             const int h=c8i((int)s[j]+(int)c8i((((int)fi[j]+127)*(hh-(int)s[j]))>>8));s[j]=(std::int8_t)h;yi[j]=c8i((int)yi[j]+h);}}
         // MLP (Appendix G.7)
         ln(Ly.ln2,y.data(),u.data());
         mm(Ly.m1,u.data(),z.data(),acc.data());
         mm(Ly.m2,z.data(),a.data(),acc.data());
-        for(std::size_t k=0;k<(std::size_t)nn*D;++k)y[k]=c8i((int)y[k]+(int)a[k]);
+        if(simd_on()&&((std::size_t)nn*D)%64==0)add8(y.data(),a.data(),(std::size_t)nn*D);
+        else for(std::size_t k=0;k<(std::size_t)nn*D;++k)y[k]=c8i((int)y[k]+(int)a[k]);
       }
       ln(g.lnout,y.data(),u.data());mm(g.head,u.data(),lg.data(),acc.data());
     }
@@ -205,11 +281,15 @@ struct Fwd{
 };
 }  // namespace
 
-struct Stepper::Impl{Fwd f;Impl(const Egg& g,const Noise* nz,Rows& rows,int r0,int n):f(g,nz,rows,r0,n){}};
+struct Stepper::Impl{Fwd f;std::vector<std::int8_t> out;Impl(const Egg& g,const Noise* nz,Rows& rows,int r0,int n):f(g,nz,rows,r0,n){}};
 Stepper::Stepper(const Egg& g,const Noise* nz,Rows& rows,int r0,int n):p_(new Impl(g,nz,rows,r0,n)){if(g.c.Din<=0)throw std::runtime_error("Stepper needs Din > 0");}
 Stepper::~Stepper(){delete p_;}
 const std::int8_t* Stepper::step(const std::int8_t* obs){p_->f.step(nullptr,obs);return p_->f.lg.data();}
-const std::int8_t* Stepper::step(const std::int8_t* obs,const int* idx,int m){p_->f.step(nullptr,obs,idx,m);return p_->f.lg.data();}
+const std::int8_t* Stepper::step(const std::int8_t* obs,const int* idx,int m){
+  auto& f=p_->f;const int V=f.g.c.V,Din=f.g.c.Din,C=256;if(m<=C){f.step(nullptr,obs,idx,m);return f.lg.data();}
+  if(p_->out.size()<(std::size_t)m*V)p_->out.resize((std::size_t)m*V);
+  for(int c0=0;c0<m;c0+=C){const int cn=std::min(C,m-c0);f.step(nullptr,obs+(std::size_t)c0*Din,idx+c0,cn);std::memcpy(p_->out.data()+(std::size_t)c0*V,f.lg.data(),(std::size_t)cn*V);}
+  return p_->out.data();}
 
 void run_rows(const Egg& g,const Noise* nz,Rows& rows,const std::uint8_t* tok,int T,std::int64_t* fit,int threads){
   const int R=rows.R;const int blocks=(R+31)/32;threads=std::max(1,std::min(threads,blocks));

@@ -72,6 +72,9 @@ class Stepper{
   struct Impl;Impl* p_;
 };
 
+void use_simd(bool on);  // false: scalar elementwise code (tests); results are identical either way
+bool simd_on();
+int egg_fdiv14(int x,int m);  // the 32-bit floor division of the vector layer norm (exposed for tests)
 double egg_macs_per_token(const EggCfg& c);  // multiply-accumulates of one forward step for one row
 int egg_fdiv(int x,int m);  // floor(x/m) as used by the integer layer norm (exposed for tests)
 
