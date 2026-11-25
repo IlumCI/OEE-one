@@ -80,6 +80,8 @@ void World::tick(const std::int8_t* const* logits,std::vector<int>& born){
   for(int s:order){const int k=s/p.S;const std::int8_t* l=logits[k]+(std::size_t)(s%p.S)*kV;
     act[s]=p.stoch?act_sample(l,mix(mix(p.seed^0xac7ULL)+((std::uint64_t)t<<24)+ag[s].id),p.nact):act_of(l,p.nact);  // same draws in mirrored forks
     if(p.signals)ag[s].sig=act_sample(l+8,mix(mix(p.seed^0x5197ULL)+((std::uint64_t)t<<24)+ag[s].id),4);}  // heard next tick
+  if(track&&stat.size()<(std::size_t)p.K*16)stat.assign((std::size_t)p.K*16,0);
+  if(track)for(int s:order){const int k=ag[s].lineage;++stat[(std::size_t)k*16+act[s]];++stat[(std::size_t)k*16+14];if(ag[s].sig>0)++stat[(std::size_t)k*16+13];}
   for(int s:order){Agent& a=ag[s];if(!a.alive)continue;const int c=a.y*p.L+a.x;
     const int fc=((a.y+FY[a.dir]+p.L)%p.L)*p.L+(a.x+FX[a.dir]+p.L)%p.L;
     switch(act[s]){
@@ -90,16 +92,16 @@ void World::tick(const std::int8_t* const* logits,std::vector<int>& born){
       case 5:if(a.energy>=p.repro_min&&occ[fc]<0){const int k=a.lineage;int j=-1;
           for(int q=0;q<p.S;++q)if(!ag[(std::size_t)k*p.S+q].alive){j=q;break;}
           if(j>=0){const int cs=k*p.S+j;Agent& b=ag[cs];b=Agent{};b.x=fc%p.L;b.y=fc/p.L;b.dir=a.dir;b.energy=p.repro_give;b.lineage=k;b.alive=true;b.id=next_id++;
-            occ[fc]=cs;a.energy-=p.repro_give+p.repro_cost;born.push_back(cs);}}
+            occ[fc]=cs;a.energy-=p.repro_give+p.repro_cost;born.push_back(cs);if(track)++stat[(std::size_t)k*16+9];}}
         break;
       case 6:{const int q=occ[fc];a.energy-=p.atk_cost;
         if(q>=0&&ag[q].alive){Agent& v=ag[q];const int take=std::min(v.energy,p.atk_take);v.energy-=take;a.energy=std::min(p.ecap,a.energy+take);
-          if(v.energy<=0){v.alive=false;occ[fc]=-1;}}
+          if(v.energy<=0){v.alive=false;occ[fc]=-1;if(track){++stat[(std::size_t)a.lineage*16+8];++stat[(std::size_t)v.lineage*16+12];}}}
         break;}
       default:break;}
   }
   for(int s=0;s<p.K*p.S;++s){Agent& a=ag[s];if(!a.alive)continue;a.energy-=p.base+(a.sig>0?p.sig_cost:0);++a.age;
-    if(a.energy<=0||a.age>p.max_age){a.alive=false;occ[a.y*p.L+a.x]=-1;}}
+    if(a.energy<=0||a.age>p.max_age){a.alive=false;occ[a.y*p.L+a.x]=-1;if(track)++stat[(std::size_t)a.lineage*16+(a.energy<=0?10:11)];}}
   if(p.season>0){int w[64];for(int i=0;i<p.patches&&i<64;++i)w[i]=prod((int)((t+ph[i])%per),per);  // seasonal capacity, rot above it
     for(int c=0;c<N;++c){int cp=0;for(int i=0;i<p.patches&&i<64;++i)cp+=fp[(std::size_t)i*N+c]*w[i];cp=std::min(255,cp>>8);
       if(res[c]>cp){res[c]=(std::uint8_t)std::max(cp,(int)res[c]-p.rot);continue;}

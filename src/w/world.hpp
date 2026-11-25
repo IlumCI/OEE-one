@@ -39,6 +39,9 @@ struct World{
   std::vector<std::uint8_t> fp;        // seasons: fertility of each patch separately (patches x cells)
   int per=0;std::vector<int> ph;       // seasons: current period and per-patch phase (ticks)
   std::uint32_t deaf=0;                // analysis: lineages (bit k) that hear no symbols (not saved)
+  // analysis: per-lineage counters when track is set (not saved): stat[k*16+a] actions a = 0..6, +8 kills made,
+  // +9 births, +10 starved, +11 died of age, +12 killed, +13 non-zero symbols, +14 agent-ticks
+  bool track=false;std::vector<long> stat;
   int din() const{return p.signals?128:64;}
   bool ext() const{return p.season>0||p.signals>0||p.view!=2;}  // W2a state present
   void set_climate(std::uint64_t salt);  // seasons: draw a new period and phases
