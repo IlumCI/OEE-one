@@ -297,6 +297,27 @@ Test:
 - **If it fails**, test capacity next (a larger world, where lineages can coexist), as the Geb joint-growth result
   suggests.
 
+### W1e protocol: a different ancestor in each fork pair (fixed 2026-11-25, before the runs)
+
+Basis:
+- After W1b, the remaining collapses all happen in single-lineage epochs, where fitness has no competitor.
+- W1d put one ancestor, drawn per epoch, into every pair. Updates then chased that one opponent, and cycling got
+  worse.
+
+Change: `-hist_pair 1`.
+- Every fork pair contains founders of an archived ancestor drawn for that pair (both forks of the pair share it).
+- One epoch's update therefore estimates fitness against a mixture over the archive: up to 32 champions among 64
+  pairs. This is fictitious-play style historical self-play.
+- It is a different way of sampling the existing ancestor mechanism; no new mechanism is added.
+
+Test:
+- W1b settings (`-split_age 1 -hist_frac 4` plus `-hist_pair 1`; hist_pair implies an ancestor in every pair).
+- Seeds 1–2, 2000 epochs; seeds 3–5 if it passes.
+- **Primary.** Collapses (post-founder < 0.25) in era comparisons 500–2000: fewer than W1b on the same seeds (W1b
+  s1–s2: 0). Mean post-founder era share at least W1b's (0.84, 0.71).
+- **Secondary.** W1e against W1b champions at 1000, 1500 and 2000.
+- **If it fails**, test capacity (a larger world) next.
+
 ## 7. Implementation (planned files)
 
 - `src/w/world.{hpp,cpp}`: grid, resources, machines, agents, deterministic tick (counter RNG), copyable for forks.
@@ -367,6 +388,33 @@ Post-founder share of the ablated copy:
 - So competition between lineages is what made memory pay. This is the first mechanism we have seen used without
   being forced. It supports the W2 premise: information that changes, here the other agents, selects for keeping
   it.
+
+### W1b replication, seeds 3–5 (2026-11-25; docs/results/w1/w1b_replication.txt)
+
+- **Primary test, W1b against W1 hist at epoch 2000** (post-founder share of W1b):
+
+  | Seed | Share |
+  |---|---|
+  | 1 | 0.998 |
+  | 2 | 0.941 |
+  | 3 | 0.990 (t +222) |
+  | 4 | 0.817 (t +6.5) |
+  | 5 | 0.968 (t +64) |
+
+  W1b is better in 5 of 5 seeds. At intermediate checkpoints it loses twice: seed 4 at 1500 (0.22) and seed 5 at
+  500 (0.016).
+- **Era progress, 500–2000** (post-founder):
+
+  | | W1b, 5 seeds | W1 hist, 5 seeds |
+  |---|---|---|
+  | Mean share | 0.70 (0.84, 0.71, 0.72, 0.61, 0.62) | ≈ 0.55 |
+  | Collapses below 0.25, out of 35 comparisons | 3 | 8 |
+
+  W1b's collapses: s3 at 1500 (0.09), s4 at 1500 (0.08) and at 2000 (0.05).
+- **Correction.** The earlier statement "no collapses" came from 2 seeds and does not hold with 5. W1b reduces
+  collapses; it does not remove them.
+- **All three W1b collapses happen with a single lineage in the canonical world.** The monoculture effect remains
+  once the drift is fixed. The next test is W1e (§6).
 
 ### W1 final verdict (2026-11-25; 5000 epochs, 2 seeds × 2 arms, 16 mirrored seeds; docs/results/w1/)
 
