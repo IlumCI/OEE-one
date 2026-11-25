@@ -10,14 +10,16 @@
 
 namespace oee::evo {
 
-struct EggCfg{int L=6,D=256,V=256,sig=4;};  // layers, width (power of 4), vocabulary (bytes), sigma = 2^-sig
+// layers, width (power of 4), outputs (byte vocabulary, or actions; multiple of 16), sigma = 2^-sig,
+// Din: 0 = byte-embedding input (language model), > 0 = int8 observation vector of that size (multiple of 64)
+struct EggCfg{int L=6,D=256,V=256,sig=4,Din=0;};
 
 struct Mat{int m=0,n=0,id=0;std::vector<std::int8_t> w,p;};  // w: m x n (out, in); p: packed w^T for gemm
 struct Vec{int n=0,id=0;std::vector<std::int8_t> w;};
 
 struct Egg{
   EggCfg c;
-  Mat emb,head;Vec lnout;
+  Mat emb,inp,head;Vec lnout;  // emb (V x D) when Din == 0, inp (D x Din) when Din > 0
   struct Layer{Vec ln1,ln2,bf,bh;Mat Wf,Uf,Wh,Uh,m1,m2;};
   std::vector<Layer> ly;
   std::vector<Mat*> mats;std::vector<Vec*> vecs;  // registries (ids index the noise streams)
@@ -50,6 +52,19 @@ void run_rows(const Egg& g,const Noise* nz,Rows& rows,const std::uint8_t* tok,in
 // Integer EGGROLL update from per-pair shaped fitness F[p] in {-1,0,1}; alpha = fraction of parameters to move.
 // Returns the number of parameters changed.
 long egg_update(Egg& g,const Noise& nz,const std::vector<int>& F,double alpha);
+
+// Single-threaded stepping over rows [r0, r0+n) of `rows`: one forward step per call, recurrent state kept in rows.state.
+// Construct after setting rows.sign / rows.pair (perturbed vector parameters are cached per row).
+class Stepper{
+ public:
+  Stepper(const Egg& g,const Noise* nz,Rows& rows,int r0,int n);
+  ~Stepper();
+  Stepper(const Stepper&)=delete;Stepper& operator=(const Stepper&)=delete;
+  // obs: n x Din (Din > 0); out: n x V int8 logits. Returns out.
+  const std::int8_t* step(const std::int8_t* obs);
+ private:
+  struct Impl;Impl* p_;
+};
 
 double egg_macs_per_token(const EggCfg& c);  // multiply-accumulates of one forward step for one row
 int egg_fdiv(int x,int m);  // floor(x/m) as used by the integer layer norm (exposed for tests)

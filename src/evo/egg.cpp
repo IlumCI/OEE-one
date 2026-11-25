@@ -54,10 +54,12 @@ long Egg::nparams() const{long n=0;for(auto* m:mats)n+=(long)m->m*m->n;for(auto*
 
 Egg::Egg(const EggCfg& cc,std::uint64_t seed):c(cc){
   const int D=c.D,V=c.V;ilog2(D);if((ilog2(D)&1))throw std::runtime_error("EGG: D must be a power of 4");
+  if(c.Din<0||c.Din%64||V%16)throw std::runtime_error("EGG: Din must be a multiple of 64, V of 16");
   auto mat=[&](Mat& M,int m,int n){M.m=m;M.n=n;M.id=(int)mats.size();mats.push_back(&M);};
   auto vec=[&](Vec& v,int n,int init){v.n=n;v.id=(int)vecs.size();vecs.push_back(&v);v.w.assign(n,(std::int8_t)init);};
   ly.resize(c.L);
-  mat(emb,V,D);mat(head,V,D);vec(lnout,D,16);
+  if(c.Din==0)mat(emb,V,D);else mat(inp,D,c.Din);  // same registry order as before for the language model
+  mat(head,V,D);vec(lnout,D,16);
   for(auto& l:ly){vec(l.ln1,D,16);vec(l.ln2,D,16);vec(l.bf,D,0);vec(l.bh,D,0);
     mat(l.Wf,D,D);mat(l.Uf,D,D);mat(l.Wh,D,D);mat(l.Uh,D,D);mat(l.m1,4*D,D);mat(l.m2,D,4*D);}
   for(auto* M:mats){M->w.resize((std::size_t)M->m*M->n);fill_gauss(M->w.data(),M->w.size(),mix(seed*0x100000001b3ULL+(std::uint64_t)M->id)<<20);}
@@ -65,22 +67,24 @@ Egg::Egg(const EggCfg& cc,std::uint64_t seed):c(cc){
 }
 
 void Egg::repack(){
-  for(auto* M:mats){if(M==&emb)continue;  // emb is a lookup table
+  for(auto* M:mats){if(M==&emb)continue;  // emb is a lookup table (inp is a matmul and is packed)
     std::vector<std::int8_t> t((std::size_t)M->n*M->m);for(int i=0;i<M->m;++i)for(int j=0;j<M->n;++j)t[(std::size_t)j*M->m+i]=M->w[(std::size_t)i*M->n+j];
     M->p=pack_b(t.data(),M->n,M->m);}
 }
 
 void Egg::save(const std::string& fn,long step) const{
   std::FILE* f=std::fopen(fn.c_str(),"wb");if(!f)throw std::runtime_error("cannot write "+fn);
-  const std::uint64_t magic=0x31474745ULL;std::fwrite(&magic,8,1,f);std::fwrite(&c,sizeof c,1,f);std::fwrite(&step,sizeof step,1,f);
+  const std::uint64_t magic=0x32474745ULL;std::fwrite(&magic,8,1,f);std::fwrite(&c,sizeof c,1,f);std::fwrite(&step,sizeof step,1,f);
   for(auto* M:mats){std::fwrite(M->w.data(),1,M->w.size(),f);}
   for(auto* v:vecs){std::fwrite(v->w.data(),1,v->w.size(),f);}
   std::fclose(f);
 }
 long Egg::load(const std::string& fn){
   std::FILE* f=std::fopen(fn.c_str(),"rb");if(!f)throw std::runtime_error("cannot read "+fn);
-  std::uint64_t magic=0;EggCfg cc;long step=0;bool ok=std::fread(&magic,8,1,f)==1&&magic==0x31474745ULL&&std::fread(&cc,sizeof cc,1,f)==1&&std::fread(&step,sizeof step,1,f)==1
-    &&cc.L==c.L&&cc.D==c.D&&cc.V==c.V;
+  std::uint64_t magic=0;EggCfg cc;long step=0;bool ok=std::fread(&magic,8,1,f)==1&&(magic==0x31474745ULL||magic==0x32474745ULL);
+  if(ok)ok=std::fread(&cc,magic==0x31474745ULL?4*sizeof(int):sizeof cc,1,f)==1;  // v1: {L,D,V,sig}, Din = 0
+  if(ok&&magic==0x31474745ULL)cc.Din=0;
+  ok=ok&&std::fread(&step,sizeof step,1,f)==1&&cc.L==c.L&&cc.D==c.D&&cc.V==c.V&&cc.Din==c.Din;
   for(auto* M:mats){ok=ok&&std::fread(M->w.data(),1,M->w.size(),f)==M->w.size();}
   for(auto* v:vecs){ok=ok&&std::fread(v->w.data(),1,v->w.size(),f)==v->w.size();}
   std::fclose(f);if(!ok)throw std::runtime_error("bad EGG checkpoint "+fn);c.sig=cc.sig;repack();return step;
@@ -88,7 +92,7 @@ long Egg::load(const std::string& fn){
 
 int egg_fdiv(int x,int m){return fdiv(x,m);}
 
-double egg_macs_per_token(const EggCfg& c){return (double)c.L*12*c.D*c.D+(double)c.V*c.D;}
+double egg_macs_per_token(const EggCfg& c){return (double)c.L*12*c.D*c.D+(double)c.V*c.D+(double)c.Din*c.D;}
 
 void Noise::gen(const Egg& g,int PP,std::uint64_t seed,long step){
   P=PP;const std::size_t K=g.mats.size()+g.vecs.size();offA.resize(K);offB.resize(K);lenA.resize(K);lenB.resize(K);
@@ -146,14 +150,18 @@ struct Fwd{
       std::int32_t sum=0;for(int j=0;j<D;++j)sum+=std::abs((int)x[j]);const int m=std::max(1,std::min(127,(int)(sum>>s2)));
       const std::int8_t* wv=pvr(w,r0+i);const std::uint64_t gm=divs().mg[m];for(int j=0;j<D;++j)o[j]=c8i(fdiv_g((int)x[j]*(int)wv[j],m,gm));}
   }
-  void run(const std::uint8_t* tok,int T,std::int64_t* fit){
-    const int L=g.c.L,V=g.c.V;const std::int32_t* E2=exp2_table();std::vector<std::int8_t> lg((std::size_t)((n+15)/16*16)*V);
-    for(int t=0;t<T;++t){
-      for(int i=0;i<n;++i){const int r=r0+i;const int tk=tok[(std::size_t)r*(T+1)+t];std::int8_t* yi=y.data()+(std::size_t)i*D;
-        const std::int8_t* w=g.emb.w.data()+(std::size_t)tk*D;const int s=rows.sign[r];
-        if(nz&&s){const int p=rows.pair[r];const int at=s*(int)nz->A(g.emb.id,p)[tk];const std::int8_t* B=nz->B(g.emb.id,p);
+  std::vector<std::int8_t> lg,ob;  // logits (npad x V); padded observations (npad x Din)
+  // One forward step for all n rows. tk: n input bytes (Din == 0) or obs: n x Din (Din > 0). Logits go to lg.
+  void step(const std::uint8_t* tk,const std::int8_t* obs){
+    const int L=g.c.L,V=g.c.V,npad=(n+15)/16*16;if(lg.size()<(std::size_t)npad*V)lg.assign((std::size_t)npad*V,0);
+    if(g.c.Din>0){if(ob.size()<(std::size_t)npad*g.c.Din)ob.assign((std::size_t)npad*g.c.Din,0);
+      std::memcpy(ob.data(),obs,(std::size_t)n*g.c.Din);mm(g.inp,ob.data(),y.data(),acc.data());}
+    else for(int i=0;i<n;++i){const int r=r0+i;const int t0=tk[i];std::int8_t* yi=y.data()+(std::size_t)i*D;
+        const std::int8_t* w=g.emb.w.data()+(std::size_t)t0*D;const int s=rows.sign[r];
+        if(nz&&s){const int p=rows.pair[r];const int at=s*(int)nz->A(g.emb.id,p)[t0];const std::int8_t* B=nz->B(g.emb.id,p);
           for(int j=0;j<D;++j)yi[j]=c8i((int)w[j]+((at*(int)B[j])>>sh));}
         else std::memcpy(yi,w,D);}
+    {
       for(int l=0;l<L;++l){const auto& Ly=g.ly[l];
         ln(Ly.ln1,y.data(),u.data());
         // GRU (Appendix G.8)
@@ -175,12 +183,24 @@ struct Fwd{
         for(std::size_t k=0;k<(std::size_t)n*D;++k)y[k]=c8i((int)y[k]+(int)a[k]);
       }
       ln(g.lnout,y.data(),u.data());mm(g.head,u.data(),lg.data(),acc.data());
+    }
+  }
+  void run(const std::uint8_t* tok,int T,std::int64_t* fit){
+    const int V=g.c.V;const std::int32_t* E2=exp2_table();std::vector<std::uint8_t> tk(n);
+    for(int t=0;t<T;++t){
+      for(int i=0;i<n;++i)tk[i]=tok[(std::size_t)(r0+i)*(T+1)+t];
+      step(tk.data(),nullptr);
       for(int i=0;i<n;++i){const int r=r0+i;const int tgt=tok[(std::size_t)r*(T+1)+t+1];const std::int8_t* li=lg.data()+(std::size_t)i*V;
         std::int64_t se=0;for(int v=0;v<V;++v)se+=E2[(int)li[v]+128];fit[r]+=(int)li[tgt]+128-log2_16(se);}
     }
   }
 };
 }  // namespace
+
+struct Stepper::Impl{Fwd f;Impl(const Egg& g,const Noise* nz,Rows& rows,int r0,int n):f(g,nz,rows,r0,n){}};
+Stepper::Stepper(const Egg& g,const Noise* nz,Rows& rows,int r0,int n):p_(new Impl(g,nz,rows,r0,n)){if(g.c.Din<=0)throw std::runtime_error("Stepper needs Din > 0");}
+Stepper::~Stepper(){delete p_;}
+const std::int8_t* Stepper::step(const std::int8_t* obs){p_->f.step(nullptr,obs);return p_->f.lg.data();}
 
 void run_rows(const Egg& g,const Noise* nz,Rows& rows,const std::uint8_t* tok,int T,std::int64_t* fit,int threads){
   const int R=rows.R;const int blocks=(R+31)/32;threads=std::max(1,std::min(threads,blocks));
