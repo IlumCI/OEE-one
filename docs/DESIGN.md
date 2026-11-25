@@ -10,6 +10,9 @@ as features to exploit rather than limits to avoid.
 
 ### 1.1 Position on transformers
 
+> Superseded 2026-11-25 (docs/PLAN.md §0 rule 2): no pretrained models of any kind in the system or its loop, not
+> even as temporary scaffolding. Only self-evolved models. The text below is kept as history.
+
 Next-token prediction optimises imitation of a fixed distribution and contains no
 objective term for producing novelty outside it. It is therefore not treated as a path
 to open-endedness. Transformers are used only as temporary scaffolding under the policy
@@ -87,6 +90,8 @@ Sandboxed compute. Capability tripwires driven by the instrumentation layer
 (cf. arXiv:2502.04512).
 
 ## 4. Transformer scaffold policy
+
+> Retired 2026-11-25 (docs/PLAN.md §0 rule 2). Kept as history.
 
 ### 4.1 Boundary
 - Transformers are never part of any genotype, phenotype or reproduction step. They sit

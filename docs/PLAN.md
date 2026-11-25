@@ -1,4 +1,105 @@
-# OEE-one implementation plan: language, structure, first milestone (Geb-class L2)
+# OEE-one plan: open-ended evolution toward ASI
+
+Current version 2026-11-25. Sections 0–3 are binding. The original M1 plan is kept below as history.
+
+## 0. Rules for every agent working in this repository
+
+1. **Goal.** Capability that keeps growing without human data, produced by open-ended evolution, toward ASI.
+   Success is measured as growth in capability, not novelty alone.
+2. **No human knowledge as a training signal.**
+   - No pretrained models of any kind inside the system or its loop: proprietary or open, large or small, local or
+     remote.
+   - Only models we evolve ourselves.
+   - Reason (owner's thesis): models trained on human data inherit human limits. Getting past them requires the
+     system's own experience in a world that keeps producing new challenges.
+3. **Local compute only.** No paid or remote model APIs. The container is CPU-only (4 cores, Intel AMX int8 and bf16,
+   no GPU, ever). Design for int8.
+4. **Fitness comes only from the world.** That means survival, energy, reproduction, and competition with other
+   evolved agents and archived ancestors. Never select on human benchmarks or human-written text.
+5. **Measure progress without humans:**
+   - ancestor tournaments (primary; tools/tourney, docs/TOURNEY.md);
+   - held-out procedurally generated arenas;
+   - ablations (freeze, mute, wipe);
+   - observer compression progress (docs/WORLD.md §5).
+   Every claim needs a control: the same-era drift band, null shadows, or paired seeds. With ±17-point drift on
+   2 seeds, use at least 5 seeds.
+6. **Fix a kill criterion before each experiment and write it in the doc first.** When progress flattens:
+   - Diagnose what the world runs out of (resources, information, affordances) before adding a mechanism.
+   - Do not keep adding mechanisms to the same substrate. That was the failure mode of the Geb ladder: L3 v4–v9,
+     L4a/b, EGC 1–3, M5 v1–v3.
+7. **The optimiser is evolution:** integer EGGROLL in src/evo, plus evolved lifetime plasticity. Gradient training is
+   not part of the system.
+8. **Before design decisions, consult arXiv** (CLAUDE.md), and record the papers used in the design doc.
+9. **Stay at the frontier.** Current anchors:
+   - Hughes et al. 2406.04268: open-endedness is novelty plus learnability.
+   - Clune 1905.10985: AI-generating algorithms; evolve architecture, learning rule and environments.
+   - EGGROLL 2511.16652: integer evolution strategies at scale.
+   - POET 1901.01753: co-evolving agents and environments.
+   - Digital Red Queen 2601.03335: historical self-play suppresses cycling.
+   - Silver & Sutton 2025: the era of experience.
+
+## 1. Evidence so far
+
+| Line | Result | Where |
+|---|---|---|
+| Geb port (L2) | Reproduces Channon's Class 3 activity. Runs freeze, and are rescued by rollback. | RESULTS.md, SCALING.md |
+| Complexity | Tracks capacity: plateau at 9–10 at fixed size; about 12 when world and neuron limit grow together (v8). | L3.md |
+| Kin colonies, colony reproduction, division of labour (L3) | Diversity rises, bounded by capacity (D/N about 0.3). | L3.md |
+| Locks (L4) | No gain over no locks (5 seeds); scale test negative so far. | L4.md |
+| Signals | Listening is causal, but it carries action broadcasts. A free channel goes unused: 4 mute tests, no receivers. | SIGNALS.md, PLASTIC.md |
+| Lifetime plasticity | Spreads without benefit: 5 freeze tests, slight cost at 485k–600k. | PLASTIC.md |
+| Tournaments | 1.5M beats 250k at 0.98–1.00, still 0.98 at the old neuron limit. Neighbouring eras are within drift (2 seeds). | TOURNEY.md |
+| L0 Flow-Lenia, L1 BFF | Localisation and replicators work. Selection beyond drift in L0 (6/6). | L0.md, M3.md |
+| Engine | EGG plus integer EGGROLL on AMX, tested. enwik8 calibration 8.7 → 4.8 bits/byte by step 200. Paper: evolution beat backprop at equal data (3.40 vs 3.58) at about 180× compute. | EVO.md |
+| Hardware | AMX int8: 2.2 TOPS per thread on raw tiles; our GEMM 0.79 TOPS per thread. About 10^20 int8 operations a year. | EVO.md |
+
+What the evidence says:
+- **Selection in these worlds produces real strategic progress** (tournaments).
+- **The fixed Geb world caps it.** Its affordances are hand-designed, it holds no information worth learning or
+  telling, and its only open-ended dimension was the capacity we scheduled.
+- **The next system must put the open-endedness in the world.** Agents are each other's challenges, they construct
+  things that persist, and the rules change with the world's state. Brains are evolved int8 learners.
+
+## 2. Roadmap
+
+Main line: World v1, docs/WORLD.md. Each phase has a pass criterion fixed in advance:
+
+| Phase | Adds | Pass criterion |
+|---|---|---|
+| W0 | One lineage, resources, fork/evaluate/update loop | Evolved mean beats initial mean, share ≥ 0.7 over 5 seeds |
+| W1 | Several lineages, splitting and extinction, historical self-play | Tournament progress above the drift band for 5k epochs; less non-transitivity with the archive |
+| W2 | Private and changing information, evolved plasticity, signals | Freeze and mute ablations cost fitness (t > 3) |
+| W3 | Programmable matter (BFF-like tapes), write action | Wiping artifacts costs fitness; distinct functional artifact types keep growing |
+| W4 | State-dependent physics, observer measure | Observer compression progress stays positive; held-out-arena fitness keeps rising |
+
+Status of older lines:
+- **Geb ladder (L2–L4): frozen.** Its code stays for tournaments and comparison.
+  - The L4 scale runs (runs6 l4L*) may finish, or be paused (they are checkpointed) when W phases need the CPU.
+  - Do not start new Geb variants.
+- **L0 (Flow-Lenia) and L1 (BFF) are ingredients, not separate lines:**
+  - BFF-like tapes become W3 machines.
+  - L0's state-dependent rules inform W4.
+  - The EGC (evolvable genetic code) results inform how machine code is encoded.
+- **EGG on enwik8 is engine calibration only:** human text, so not on the critical path.
+- **Transformer scaffold policy (DESIGN.md §1.1, §4): retired by rule 2.**
+- **Plasticity and signal runs (runs6 pl*):** finish to 1M, record the final freeze and mute tests in PLASTIC.md,
+  then stop.
+
+## 3. Risks and open questions
+
+- **Compute.** About 10^20 operations a year here, against about 10^41 for biological evolution (Cotra 2020). Progress
+  has to come from world design and efficient int8 evolution, not scale.
+- **ES with many interacting agents is noisy.** Mirrored forks, sign shaping and historical self-play are the
+  countermeasures. Raise the population before changing anything else.
+- **Measuring capability without humans is unsolved.** Held-out generated arenas may stay narrow, and the observer
+  measure (compression progress) is new. Cross-check the measures against each other.
+- **Plateaus will come.** Rule 6 applies: diagnose what runs out, and change the world, not the bolt-ons.
+
+---
+
+# History: original implementation plan (M1, 2026-11)
+
+## OEE-one implementation plan: language, structure, first milestone (Geb-class L2)
 
 ## Context
 The repository has `docs/DESIGN.md` (layers L0-L5, measurement, transformer scaffold

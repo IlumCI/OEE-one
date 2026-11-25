@@ -1,5 +1,21 @@
 # Operating rules for this repository
 
+## Direction (read first; binding)
+- Goal: open-ended evolution toward ASI. Plan and rules: docs/PLAN.md §0–3. Current build: docs/WORLD.md
+  (World v1, phases W0–W4). Engine: src/evo (integer EGGROLL on AMX int8), docs/EVO.md.
+- No human knowledge as a training signal:
+  - no pretrained models in the system or its loop (open or proprietary, local or remote);
+  - only self-evolved models;
+  - local compute only.
+- Fitness comes from the world only.
+- Measure progress without humans, always against a control:
+  - ancestor tournaments (docs/TOURNEY.md);
+  - held-out generated arenas;
+  - ablations.
+- Before each experiment, write down its kill criterion. When progress flattens, diagnose what the world runs out
+  of before adding mechanisms. Do not keep adding mechanisms to the same substrate.
+- The Geb ladder (L2–L4) is frozen: do not start new Geb variants.
+
 ## Long runs (mandatory)
 - While any simulation is running, a harness-tracked Monitor must ALWAYS be armed
   (20-minute status loop, timeout 30 min). Re-arm it immediately on every expiry notice.
