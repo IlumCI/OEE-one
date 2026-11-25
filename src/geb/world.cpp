@@ -712,6 +712,7 @@ std::unique_ptr<Organism> World::reproduce(Organism* a, Organism* b, int cx64, i
     if (p_.second_shadow) pending_shadow2_ = breed_second_shadow();
     if(p_.plastic&2){pend_=child_rule(p1,p2);pend_set_=true;}
     auto o = std::make_unique<Organism>(*this, std::move(child), cx64, cy64);
+    o->anc=p1->anc;o->mark=p1->mark;  // BFF heredity: the child is what p1's code wrote
     ++num_reproductions_;
     return o;
   }
@@ -721,6 +722,7 @@ std::unique_ptr<Organism> World::reproduce(Organism* a, Organism* b, int cx64, i
     if (p_.second_shadow) pending_shadow2_ = breed_second_shadow();
     if(p_.plastic&2){pend_=child_rule(p1,p2);pend_set_=true;}
     auto o = std::make_unique<Organism>(*this, std::move(child), cx64, cy64);
+    o->anc=p1->anc;o->mark=p1->mark;  // BFF heredity: the child is what p1's code wrote
     ++num_reproductions_;
     return o;
   }
@@ -759,7 +761,9 @@ std::unique_ptr<Organism> World::reproduce(Organism* a, Organism* b, int cx64, i
   }
   if (p_.second_shadow) pending_shadow2_ = breed_second_shadow();
   if(p_.plastic&2){pend_=child_rule(p1,p2);pend_set_=true;}
-    auto o = std::make_unique<Organism>(*this, std::move(child), cx64, cy64);
+  const float an=(cp1*p1->anc+(len2-cp2)*p2->anc)/float(std::max(1,cp1+len2-cp2));  // genome share by segment length
+  auto o = std::make_unique<Organism>(*this, std::move(child), cx64, cy64);
+  o->anc=an;o->mark=p1->mark;  // p1 is a random one of the two parents
   ++num_reproductions_;
   return o;
 }

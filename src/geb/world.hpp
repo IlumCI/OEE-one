@@ -99,6 +99,8 @@ class Organism : public Ann {
   mutable std::uint32_t bfs_mark = 0;  // group_size traversal stamp (not part of the state)
   // L3 v6: exponential moving averages of reproduce / kill firing (fixed point, 1<<16 = 1).
   int ema_rep = 0, ema_kill = 0;
+  float anc = 0.f;  // analysis: share of the genome descended from tournament population A (tools/tourney; not saved)
+  std::uint8_t mark = 0;  // analysis: uniparental marker, copied from the randomly chosen first parent (neutral under drift; not saved)
   bool warrior() const { return ema_kill > ema_rep; }
 
  private:

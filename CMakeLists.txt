@@ -56,6 +56,8 @@ add_executable(netdump tools/netdump/main.cpp)
 target_link_libraries(netdump PRIVATE oee_geb_core)
 add_executable(signals tools/signals/main.cpp)
 target_link_libraries(signals PRIVATE oee_geb_core)
+add_executable(tourney tools/tourney/main.cpp)
+target_link_libraries(tourney PRIVATE oee_geb_core)
 add_test(NAME mspd_sanity COMMAND python3 -I ${CMAKE_SOURCE_DIR}/tests/test_mspd.py)
 
 # M3: BFF primordial soup (arXiv:2406.19108), bit-exact with cubff bff_noheads.
