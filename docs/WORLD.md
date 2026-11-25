@@ -223,6 +223,8 @@ the view below:
 
 Runs:
 - 5 seeds, 3000 epochs, W1 settings plus `-season 300 -view 1 -signals 1 -regrow 16`.
+- Amended 2026-11-25, before any W2a run: plus `-split_age 1` (W1b result). The era-progress reference is W1b.
+  `-hist_frac` follows the W1d result.
 - Baseline arm: the same with `-signals 0` (no channel), for the deaf comparison and for the era-progress
   comparison.
 
@@ -365,6 +367,54 @@ Post-founder share of the ablated copy:
 - So competition between lineages is what made memory pay. This is the first mechanism we have seen used without
   being forced. It supports the W2 premise: information that changes, here the other agents, selects for keeping
   it.
+
+### W1b and W1c results (2026-11-25; 2000 epochs, 16 mirrored seeds; docs/results/w1/w1b_w1c_cross.txt)
+
+**W1c null-ES control** (W1 champions against W1c champions of the same seed and epoch; share of W1, post-founder):
+
+| Epoch | Seed 1 | Seed 2 |
+|---|---|---|
+| 500 | 0.837 (t +16) | 0.944 (t +70) |
+| 1000 | 0.993 (t +487) | 0.979 (t +144) |
+| 1500 | 0.999 (t +2200) | 0.860 (t +10) |
+| 2000 | 0.997 (t +777), 16/16 | 0.998 (t +928), 16/16 |
+
+- Pass: the ES update works. W1's progress comes from the fitness-driven update, not from lineage-level selection
+  alone.
+- Without it there is little progress between eras:
+  - post-founder t > 3 in 1/7 (s1) and 4/7 (s2) comparisons;
+  - t < −3 in 2 each;
+  - mean post-founder share 0.42 and 0.54.
+
+**W1b, split lineages keep the parent's age** (W1b champions against W1 hist champions; share of W1b,
+post-founder):
+
+| Epoch | Seed 1 | Seed 2 |
+|---|---|---|
+| 500 | 0.804 (t +11) | 0.896 (t +16) |
+| 1000 | 0.941 (t +56) | 0.905 (t +41) |
+| 1500 | 0.997 (t +621) | 0.763 (t +17) |
+| 2000 | 0.998 (t +722), 16/16 | 0.941 (t +52), 16/16 |
+
+- Pass: W1b is better at every checkpoint in both seeds.
+- Era progress, post-founder:
+
+  | Run | Comparisons with t > 3 | With t < −3 | Mean share |
+  |---|---|---|---|
+  | W1b s1 | 6/7 | 0 | 0.84 |
+  | W1b s2 | 4/7 | 0 | 0.71 |
+  | W1 hist s1, same seed | 4/7 | 2 | 0.57 |
+  | W1 hist s2, same seed | 4/5 | 1 | 0.66 |
+
+  So the collapses disappear in both W1b seeds.
+- **Reading.**
+  - The restart of the step schedule at every split was the main defect.
+  - Each new lineage spent its first ~100 epochs moving most of its weights at random. This erased what the parent
+    had learned and produced the collapses, beside the monoculture effect.
+- **Decision (per the W1b protocol).** Later phases use `-split_age 1`.
+  - W2a has not started yet. It is amended before its runs to use `-split_age 1`, since running it on the rule now
+    known to be worse would waste the compute.
+  - Its era-progress reference becomes W1b instead of W1.
 
 ### W1 kill check at epoch 1500 (2026-11-25; 16 seeds, mirrored; docs/results/w1/*_interim.tsv)
 
