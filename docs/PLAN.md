@@ -1,6 +1,6 @@
 # OEE-one plan: open-ended evolution toward ASI
 
-Current version 2026-11-25. Sections 0–3 are binding. The original M1 plan is kept below as history.
+Current version 2026-11-25. Sections 0–4 are binding. The original M1 plan is kept below as history.
 
 ## 0. Rules for every agent working in this repository
 
@@ -14,6 +14,12 @@ Current version 2026-11-25. Sections 0–3 are binding. The original M1 plan is 
      system's own experience in a world that keeps producing new challenges.
 3. **Local compute only.** No paid or remote model APIs. The container is CPU-only (4 cores, Intel AMX int8 and bf16,
    no GPU, ever). Design for int8.
+   - **Containment.** Evolved agents never get access to real networks, real devices or the internet, directly or
+     through anything they build.
+   - Digital richness comes from substrates emulated inside the sandbox: programmable matter (W3), later an
+     emulated computer without external connectivity (W3b).
+   - Reason: a system selected for survival and reproduction that can reach real networks is a self-replicating
+     program on other people's machines. It cannot be recalled, and it would end the project.
 4. **Fitness comes only from the world.** That means survival, energy, reproduction, and competition with other
    evolved agents and archived ancestors. Never select on human benchmarks or human-written text.
 5. **Measure progress without humans:**
@@ -65,15 +71,25 @@ What the evidence says:
 
 ## 2. Roadmap
 
-Main line: World v1, docs/WORLD.md. Each phase has a pass criterion fixed in advance:
+Main line: World v1, docs/WORLD.md. Each phase has a pass criterion fixed in advance.
 
-| Phase | Adds | Pass criterion |
-|---|---|---|
-| W0 | One lineage, resources, fork/evaluate/update loop | Evolved mean beats initial mean, share ≥ 0.7 over 5 seeds |
-| W1 | Several lineages, splitting and extinction, historical self-play | Tournament progress above the drift band for 5k epochs; less non-transitivity with the archive |
-| W2 | Private and changing information, signals (W2a); evolved plasticity (W2b) | Amnesia and deaf ablations cost fitness (t > 3); W2b also freeze |
-| W3 | Programmable matter (BFF-like tapes), write action | Wiping artifacts costs fitness; distinct functional artifact types keep growing |
-| W4 | State-dependent physics, observer measure | Observer compression progress stays positive; held-out-arena fitness keeps rising |
+Re-plan 2026-11-25 (owner decision):
+- Stop authoring the world's problems feature by feature. Seasons and signals were problems designed by us, which
+  is the same ceiling as human data.
+- Move to a substrate whose possibility space is unbounded: programmable matter that agents and machines write,
+  copy and run (W3). From then on the world's challenges come from other agents and their constructions.
+- Measure generality (a widening generator of unseen worlds) and open-endedness (novelty plus learnability to our
+  own observer) from W3 on, instead of waiting for W4.
+
+| Phase | Adds | Pass criterion | Status |
+|---|---|---|---|
+| W0 | One lineage, resources, fork/evaluate/update loop | Evolved mean beats initial mean | Done (trivial) |
+| W1 | Several lineages, splits, extinction, historical self-play | Sustained era progress; less cycling with ancestors | Progress fails; cycling halved (pass) |
+| W1b–e | Step-schedule fix (b), null-ES control (c), ancestor exposure (d, e) | Per protocol | b pass (adopted), c pass, d fail, e running |
+| W2a | Seasons, hidden resources, signals | Amnesia and deaf ablations cost fitness | Running; memory pays with seasons (both seeds), signals unused |
+| **W3** | **Programmable matter: cell tapes, machines that run, copy and build; agents write and read code** | **Wiping artifacts costs fitness; distinct functional artifact types keep growing; held-out generality rises** | **Next (design: WORLD.md §4, protocol §6)** |
+| W3b | Emulated computer inside the sandbox (files, processes, no external network) | To be fixed after W3 | Option |
+| W4 | State-dependent physics (machines change local rules) | Observer compression progress stays positive | After W3 |
 
 Status of older lines:
 - **Geb ladder (L2–L4): frozen.** Its code stays for tournaments and comparison.
@@ -84,6 +100,8 @@ Status of older lines:
   - BFF-like tapes become W3 machines.
   - L0's state-dependent rules inform W4.
   - The EGC (evolvable genetic code) results inform how machine code is encoded.
+- **W2 has no further variants after the W2a runs.** Signals and memory are measured again inside W3, where
+  machines create information worth sharing.
 - **EGG on enwik8 is engine calibration only:** human text, so not on the critical path.
 - **Transformer scaffold policy (DESIGN.md §1.1, §4): retired by rule 2.**
 - **Plasticity and signal runs (runs6 pl*):** done at 1M (PLASTIC.md, verdict). Closed.
@@ -101,6 +119,26 @@ Status of older lines:
 ---
 
 # History: original implementation plan (M1, 2026-11)
+
+## 4. Usefulness and funding track (2026-11-25)
+
+The research must produce things of use before it produces ASI, so that it can be financed. None of these feed
+human data into the system's training (rule 2).
+
+1. **The engine.** Integer evolution strategies on commodity CPUs (AMX int8, no GPU), bit-exact, resumable, 6× faster
+   than at the start of World v1. This is a library for black-box optimisation, controllers and game AI where
+   gradients are unavailable.
+2. **Applied open-ended search on simulators.**
+   - External problems that come with their own simulator become worlds: scheduling, logistics, network defence in
+     simulated ranges, materials and design spaces with physics models.
+   - Evolved solutions are evaluated offline, and people decide on deployment.
+   - The evolved system is never connected to the real systems.
+3. **Publications and tools**, each with controls:
+   - The step-schedule reset in lineage-level ES, and its fix (W1b). The null-ES control (W1c).
+   - Memory pays only when information changes (W2a).
+   - Evaluation without human benchmarks: mirrored tournaments, the post-founder share, Hodge cyclic share.
+4. **Funding routes:** grants for high-risk science, compute grants and research partners. Each one needs items 1–3
+   as evidence.
 
 ## OEE-one implementation plan: language, structure, first milestone (Geb-class L2)
 

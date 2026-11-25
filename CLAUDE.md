@@ -1,8 +1,11 @@
 # Operating rules for this repository
 
 ## Direction (read first; binding)
-- Goal: open-ended evolution toward ASI. Plan and rules: docs/PLAN.md §0–3. Current build: docs/WORLD.md
-  (World v1, phases W0–W4). Engine: src/evo (integer EGGROLL on AMX int8), docs/EVO.md.
+- Goal: open-ended evolution toward ASI. Plan and rules: docs/PLAN.md §0–4. Current build: docs/WORLD.md
+  (World v1, phases W0–W4; main line now W3 programmable matter, re-plan 2026-11-25). Engine: src/evo (integer
+  EGGROLL on AMX int8), docs/EVO.md.
+- Containment (binding): evolved agents never get real network, device or internet access, directly or through
+  anything they build. Digital richness comes from substrates emulated inside the sandbox.
 - No human knowledge as a training signal:
   - no pretrained models in the system or its loop (open or proprietary, local or remote);
   - only self-evolved models;

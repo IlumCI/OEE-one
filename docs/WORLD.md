@@ -92,12 +92,52 @@ change what others face.
   the cell in front), emit signal (byte).
 - Each action has a cost in energy.
 
-**Programmable matter (W3).**
-- A cell whose material is "machine" runs its tape for up to 8 instructions per tick.
-- Instructions are BFF-like, from our L1 work: move resource in or out, test resource, write mark, copy the tape to a
-  neighbour (replication), and from W4, set a local physics parameter within bounds.
-- Running a machine costs resource, which keeps machine replicators in check.
-- Agents program machines through the write action.
+**Programmable matter (W3; design fixed 2026-11-25 after the re-plan, PLAN.md §2).**
+
+Literature and our own data that fix the choices:
+- Self-replicators arise spontaneously in soups of BFF programs that interact, with no fitness function
+  (Agüera y Arcas et al., arXiv:2406.19108). We reproduced this in L1/M3 (docs/M3.md).
+- Whether replication is possible depends on the structure of the substrate, not on how rich its dynamics look
+  (self-replication phase diagram, arXiv:2603.25239). So we keep a substrate where replication is known to occur:
+  BFF-like tapes with two heads.
+- Niche construction with ecological inheritance drives open-endedness (Chiba et al. 2020). So artifacts persist
+  and are inherited by whoever finds them.
+
+Cells:
+- Each cell has a material: empty, machine or wall.
+- A machine cell holds a 16-byte tape, an instruction pointer, two heads, a direction, a resource store and its
+  creator's lineage. The lineage is analysis-only and is used by the wipe ablation.
+
+Machines:
+- A machine runs up to 8 instructions per tick, and pays 1 resource from its store for every 8.
+- With an empty store it halts. After 200 halted ticks it decays to empty, so dead constructions do not pile up.
+- Instructions are one byte each; unknown bytes do nothing:
+  - BFF core: `< > { } + - . , [ ]`.
+  - World operations:
+    - `E` takes up to 8 resource from its cell into the store (harvest).
+    - `D` drops up to 8 from the store onto the cell in front (deliver or farm).
+    - `S` writes the resource level of the cell in front into the tape at head 0 (sense).
+    - `C` copies the tape into the cell in front, if it is empty, making a new machine there (replicate; costs 16
+      store).
+    - `W` makes the cell in front a wall (costs 32), or opens a wall (costs 32).
+    - `R` turns the machine (direction + tape value at head 1).
+- Replicating, harvesting machines compete with agents for resources. That is a new kind of opponent and resource
+  that nobody designed.
+
+Agents (in addition to the W2a actions):
+- **write.** Writes an instruction code into the front cell's tape at the agent's write position, then advances
+  the position. The code is sampled from 16 extra logits, so V = 32. Costs 1 energy.
+- **make machine / unmake.** Turns the empty front cell into a machine with a zeroed tape and a store of 0, or turns
+  a machine back to empty and recovers its store. Costs 10 energy.
+- **feed.** Moves up to 20 energy from the agent into the front machine's store.
+- Observation additions (Din 128):
+  - the material of each window cell;
+  - the 16 tape bytes and the store of the machine in front.
+- Walls block movement, attack and observation of resources behind them.
+
+What makes this open-ended: the instruction set is universal (BFF is Turing complete). Machines can copy
+themselves, harvest, deliver, sense and build. What an agent faces is therefore made by other agents and by
+machines, not by us.
 
 **State-dependent physics (W4).** Machines can change local regrowth and movement costs within fixed bounds, so the
 world's rules change with its own state (Adams et al. 2017).
@@ -318,6 +358,47 @@ Test:
   - Mean post-founder era share at least 0.70 (W1b's).
 - **Secondary.** W1e against W1b champions at 1000, 1500 and 2000.
 - **If it fails**, test capacity (a larger world) next.
+
+### W3 protocol (fixed 2026-11-25, before the code)
+
+Settings:
+- W1b rules (`-split_age 1`), ancestors as decided by W1e, seasons and view 1 from W2a (memory pays there), signals
+  on.
+- Programmable matter on (`-matter 1`). Viability is calibrated first, as in W2a: machine costs are adjusted until
+  populations persist. Calibration happens before the runs and is recorded.
+- 5 seeds, 3000 epochs.
+- Control arm: the same with `-matter 0` (no machines: agents cannot write and the world has no tapes).
+
+Measures:
+1. **Wipe ablation.**
+   - A champion against its intact copy, mirrored.
+   - In one slot, every machine made by that lineage is reset to empty every 100 ticks.
+   - Machines pay if the wiped copy loses (post-founder share < 0.5, t < −3).
+2. **Functional artifact diversity.**
+   - Count distinct machine tapes (by hash) that live at least 100 ticks in the canonical world.
+   - Group them by effect: net resource moved, copies made, walls built.
+   - Track the number of effect classes over epochs.
+3. **Generality.** Champions at epoch e against e−500 in a widening generator of unseen worlds (size 24–64,
+   patches 3–10, season period 150–600, machine cost ×0.5–2), 16 seeds each.
+4. **Open-endedness.**
+   - Our own int8 observer is trained online by EGGROLL on the canonical world-state log; no human data.
+   - Novelty is its loss on new history before updating.
+   - Learnability is the loss drop after updating.
+   - Open-ended while both stay positive (Hughes et al., arXiv:2406.04268).
+5. **Era progress** as in W1.
+
+Pass (epoch 3000):
+- The wipe ablation costs fitness in at least 3 of 5 seeds.
+- The number of effect classes is still growing over the last 1000 epochs, in at least 3 of 5 seeds.
+- Generality: the later champion wins in the held-out generator in at least 3 of 4 comparisons, pooled over seeds.
+
+Kill (epoch 1500):
+- Agents write or activate machines no more often than in the null arm (random-weight agents in the same world),
+  and the wipe ablation costs nothing in any seed.
+- Then change machine costs or the instruction set, as the W3 row of the phase table says. Do not add mechanisms.
+
+W3b option: an emulated computer inside the sandbox (files, processes, no external network) as a richer digital
+substrate. Its protocol will be fixed after W3.
 
 ## 7. Implementation (planned files)
 
