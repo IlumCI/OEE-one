@@ -74,7 +74,8 @@ Main line: World v1, docs/WORLD.md. Each phase has a pass criterion fixed in adv
 
 Status of older lines:
 - **Geb ladder (L2–L4): frozen.** Its code stays for tournaments and comparison.
-  - The L4 scale runs (runs6 l4L*) may finish, or be paused (they are checkpointed) when W phases need the CPU.
+  - The L4 scale runs (runs6 l4L*) were paused on 2026-11-25 to free the CPU for World v1. They stopped at 1.96M,
+    1.76M, 1.60M and 1.63M steps. They are checkpointed and can be resumed by uncommenting them in runs6/runs.txt.
   - Do not start new Geb variants.
 - **L0 (Flow-Lenia) and L1 (BFF) are ingredients, not separate lines:**
   - BFF-like tapes become W3 machines.

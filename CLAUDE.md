@@ -26,6 +26,8 @@
   (runs3: all L80 runs paused at checkpoints; uncomment in runs3/runs.txt and start
    MAX_PROCS=1 nohup tools/supervise_runs.sh runs3 runs3/bin 60 to resume)
   (MAX_PROCS=11 nohup tools/supervise_runs.sh runs6 runs6/bin 60 >> runs6/supervisor.out 2>&1 &)
+  (runs6: L4 scale runs l4L* paused 2026-11-25 at 1.60-1.96M steps; to resume, uncomment them in runs6/runs.txt)
+  (runs8: World v1 runs are not supervised and have no resume yet; after a restart relaunch from runs8/<run>/cmd.txt)
 - Keep working between events; do not idle.
 
 ## Commits
