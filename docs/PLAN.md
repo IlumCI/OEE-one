@@ -49,7 +49,8 @@ Current version 2026-11-25. Sections 0–3 are binding. The original M1 plan is 
 | Signals | Listening is causal, but it carries action broadcasts. A free channel goes unused: 6 mute tests to 1M, no receivers. | SIGNALS.md, PLASTIC.md |
 | Lifetime plasticity | Spreads without benefit: 7 freeze tests to 1M, no consistent effect. The arm without it has more births (2 seeds). | PLASTIC.md |
 | World v1 W0 | Passes trivially. The evolved memory is a handicap in competition: the memoryless copy wins 0.70 (t +14.5). | WORLD.md §9 |
-| World v1 W1 (interim, 2026-11-25) | Era progress beyond t > 3 by epoch 500, after correcting for founder energy. A champion's memory pays (amnesia loses 0.11, t −51; 1 seed). | WORLD.md §9 |
+| World v1 W1 (5000 epochs) | Sustained progress fails: at best 68% and 47% of era comparisons; collapses. Historical self-play halves cycling (cyclic share 0.10–0.13 vs 0.25–0.27). Memory used by 3 of 4 final champions. | WORLD.md §9 |
+| W1b / W1c / W1d | ES works (null-ES control loses 0.997). A split lineage keeping its parent's step schedule beats W1 0.94–0.998, with no collapses (2 seeds; 3 more running). One ancestor in every fork makes cycling worse. | WORLD.md §9 |
 | Tournaments | 1.5M beats 250k at 0.98–1.00, still 0.98 at the old neuron limit. Neighbouring eras are within drift (2 seeds). | TOURNEY.md |
 | L0 Flow-Lenia, L1 BFF | Localisation and replicators work. Selection beyond drift in L0 (6/6). | L0.md, M3.md |
 | Engine | EGG plus integer EGGROLL on AMX, tested. enwik8 calibration 8.7 → 4.8 bits/byte by step 200. Paper: evolution beat backprop at equal data (3.40 vs 3.58) at about 180× compute. | EVO.md |

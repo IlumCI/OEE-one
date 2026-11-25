@@ -368,6 +368,57 @@ Post-founder share of the ablated copy:
   being forced. It supports the W2 premise: information that changes, here the other agents, selects for keeping
   it.
 
+### W1 final verdict (2026-11-25; 5000 epochs, 2 seeds × 2 arms, 16 mirrored seeds; docs/results/w1/)
+
+Era progress, e against e−250 (19 comparisons per run), post-founder share:
+
+| Run | t > 3 | t < −3 | Mean share | Rank correlation of epoch and rating |
+|---|---|---|---|---|
+| hist s1 | 13 | 5 | 0.606 | +0.70 |
+| hist s2 | 9 | 7 | 0.512 | +0.04 |
+| nohist s1 | 9 | 5 | 0.526 | +0.24 |
+| nohist s2 | 9 | 9 | 0.519 | +0.41 |
+
+- **Sustained progress: fail.** The criterion was at least 3/4 of comparisons with t > 3 in both seeds of one arm.
+  The best arm reached 68% and 47%.
+- **Non-transitivity: pass.** Cyclic share of the 21×21 champion matrix:
+
+  | Seed | Ancestors, post-founder | No ancestors, post-founder | Ancestors, all ticks | No ancestors, all ticks |
+  |---|---|---|---|---|
+  | 1 | 0.102 | 0.253 | 0.057 | 0.208 |
+  | 2 | 0.127 | 0.272 | 0.111 | 0.174 |
+
+  Historical self-play cuts cycling in both seeds, as in Digital Red Queen.
+- **Memory of the final champions** (share of the ablated copy, post-founder):
+
+  | Run | Amnesia | Shuffle |
+  |---|---|---|
+  | hist s1 | 0.047 | 0.062 |
+  | hist s2 | 0.041 | 0.119 |
+  | nohist s2 | 0.042 | 0.057 |
+  | nohist s1 | 0.95 (zeroing helps) | exactly 0.50 (every agent carries the same state) |
+
+  So 3 of 4 champions use memory; nohist s1's has lost individual memory.
+- **Held-out arena** (48×48, 4 patches, regrowth 1; post-founder share at 2000, 3000, 4000, 5000 against 1000
+  epochs earlier):
+
+  | Run | 2000 | 3000 | 4000 | 5000 |
+  |---|---|---|---|---|
+  | hist s1 | 0.31 | 0.60 | 0.83 | 0.94 |
+  | nohist s1 | 0.17 | 0.68 | 0.79 | 0.05 |
+  | hist s2 | 0.89 | 0.49 | 0.17 | 0.69 |
+  | nohist s2 | 0.16 | 0.74 | 0.36 | 0.48 |
+
+  Only hist s1 improves steadily in the held-out arena.
+- **Diagnosis** (W1b, W1c, W1d below):
+  - The ES update works.
+  - The main defect is the step-schedule reset at every split. W1b removes the collapses up to 2000 epochs.
+  - More ancestor exposure with one ancestor per epoch increases cycling.
+- **Next.**
+  - W1b-long: hist arm, seeds 1–2, extended by resume from 2000 to 5000 epochs.
+  - Pass if at least 3/4 of comparisons (post-founder) have t > 3 and no share falls below 0.25, in both seeds.
+    Fixed before the extension.
+
 ### W1d result: fail (2026-11-25; 2000 epochs, 16 mirrored seeds; docs/results/w1/w1d_results.txt)
 
 - **Era progress, post-founder.** The pass condition was "no collapse, at least 3 of 4 comparisons with t > 3, both
