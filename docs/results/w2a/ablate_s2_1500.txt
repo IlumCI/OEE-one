@@ -1,0 +1,16 @@
+== w2_sig_s2 epoch 1500
+# champion runs8/w2_sig_s2/archive/egg_1500.bin; world: -S 64 -regrow 16 -nact 7 -season 300 -view 1 -ticks 2000 -signals 1
+amnesia	seasons	0.4016	0.0708	-1.39	0.4079	0.0878	-1.05
+amnesia	static	0.5767	0.0044	17.55	0.5691	0.0045	15.32
+shuffle	seasons	0.0856	0.0150	-27.55	0.0174	0.0107	-44.92
+shuffle	static	0.4711	0.0013	-21.88	0.4693	0.0014	-21.33
+deaf	seasons	0.4337	0.0343	-1.93	0.4201	0.0412	-1.94
+deaf	static	0.4935	0.0012	-5.38	0.4942	0.0014	-4.04
+== w2_nosig_s2 epoch 1500
+# champion runs8/w2_nosig_s2/archive/egg_1500.bin; world: -S 64 -regrow 16 -nact 7 -season 300 -view 1 -ticks 2000 -signals 0
+amnesia	seasons	0.5108	0.0711	0.15	0.5307	0.0846	0.36
+amnesia	static	0.5090	0.0010	8.63	0.5085	0.0012	7.13
+shuffle	seasons	0.1572	0.0424	-8.08	0.0936	0.0503	-8.08
+shuffle	static	0.4605	0.0019	-21.09	0.4597	0.0023	-17.51
+
+[exited with code 0]

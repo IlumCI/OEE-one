@@ -412,6 +412,26 @@ arenas with seasons off (control):
 - **Not killed:** memory ablation costs fitness. The signal question stays open until epoch 3000 and the other
   seeds.
 
+Seed 2, epoch 1500 (docs/results/w2a/ablate_s2_1500.txt):
+
+| Run | Ablation | Seasons | Seasons off |
+|---|---|---|---|
+| signals s2 | shuffle | 0.017 (t −45) | 0.469 (t −21) |
+| signals s2 | amnesia | 0.408 (t −1.0) | 0.569 (t +15) |
+| signals s2 | deaf | 0.420 (t −1.9) | 0.494 (t −4.0) |
+| no signals s2 | shuffle | 0.094 (t −8.1) | 0.460 (t −18) |
+| no signals s2 | amnesia | 0.531 (t +0.4) | 0.509 (t +7) |
+
+- **Own history matters because of the seasons, in both seeds and both arms.** Shuffle in seasons gives 0.0001,
+  0.017, 0.094 and 0.094; with seasons off, 0.43–0.49.
+- **Amnesia (zeroed state) is inconsistent:**
+  - seed 1, signals: 0.0007;
+  - seed 2: 0.41 and 0.53.
+  - A blank state seems to be a workable fallback for the seed-2 champions; someone else's history is not.
+  - Shuffle is the more reliable memory test. The protocol statistic is amnesia, and both are reported.
+- **First trace of signal use.** Deafness costs a little in seed 2 with seasons off (0.494, t −4.0). It is
+  significant but small, and not significant with seasons on (t −1.9).
+
 ### W1b replication, seeds 3–5 (2026-11-25; docs/results/w1/w1b_replication.txt)
 
 - **Primary test, W1b against W1 hist at epoch 2000** (post-founder share of W1b):
