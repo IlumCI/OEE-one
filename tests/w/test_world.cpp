@@ -53,5 +53,36 @@ int main(){
     std::vector<std::int8_t> o(e.din());e.observe(0,o.data());
     CHECK(o[7]==50&&o[2]==0&&o[25+7]==-64&&o[53+7]==64&&o[78]==96,"W2a observation: hidden beyond view 1, neighbour symbol heard, own symbol");
     e.deaf=1;e.observe(0,o.data());CHECK(o[53+7]==0&&o[78]==96&&o[25+7]==-64,"W2a observation: deaf hears no symbols, still sees the agent");}
+  // W3: machines and the agent actions that build and program them
+  {WParams q;q.L=16;q.S=16;q.K=1;q.seed=9;q.nact=10;q.matter=1;q.regrow=0;q.stoch=0;const int L=q.L;
+    auto blank=[&](World& w){w.init(q,0);for(auto& r:w.res)r=0;};
+    auto put=[&](World& w,int c,const char* code,int store,int dir,int h0=0){w.mat[c]=1;for(int j=0;j<16;++j)w.tape[(std::size_t)c*16+j]=0;
+      for(int j=0;code[j];++j)w.tape[(std::size_t)c*16+j]=(std::uint8_t)code[j];w.mst[c]=(std::int16_t)store;w.mdir[c]=(std::uint8_t)dir;w.mip[c]=0;w.mh0[c]=(std::uint8_t)h0;w.mh1[c]=0;
+      w.mbt[c]=-1;w.mlin[c]=0;};
+    std::vector<std::int8_t> nol((std::size_t)q.S*32,0);const std::int8_t* l1[1]={nol.data()};std::vector<int> born;
+    {World w;blank(w);const int c=5*L+5;w.res[c]=100;put(w,c,"E",50,0);w.tick(l1,born);
+      CHECK(w.mst[c]==57&&w.res[c]==92,"W3 machine: E harvests 8 from its cell, one store per tick of running");}
+    {World w;blank(w);const int c=5*L+5,f=4*L+5;put(w,c,"D",20,0);w.tick(l1,born);CHECK(w.res[f]==8&&w.mst[c]==11,"W3 machine: D delivers 8 to the cell in front (north)");}
+    {World w;blank(w);const int c=5*L+5,f=5*L+6;put(w,c,"C",40,1);w.tick(l1,born);bool same=true;for(int j=0;j<16;++j)same=same&&w.tape[(std::size_t)f*16+j]==w.tape[(std::size_t)c*16+j];
+      CHECK(w.mat[f]==1&&same&&w.mst[c]==40-1-16&&w.mfx[(std::size_t)c*4+2]==1,"W3 machine: C copies its tape into the empty cell in front (east)");
+      const int before=w.mst[f];w.tick(l1,born);CHECK(w.mst[f]==before,"W3 machine: a copy has no store, so it does not run");}
+    {World w;blank(w);const int c=5*L+5,f=6*L+5;put(w,c,"W",40,2);w.tick(l1,born);CHECK(w.mat[f]==2,"W3 machine: W builds a wall in front (south)");}
+    {World w;blank(w);const int c=5*L+5;w.res[c]=100;put(w,c,"[]E",50,0,0);w.tick(l1,born);  // tape[h0] = '[' (non-zero): ] loops back, E never runs
+      World v;blank(v);v.res[c]=100;put(v,c,"[]E",50,0,5);v.tick(l1,born);                   // tape[5] = 0: [ jumps past ], E runs
+      CHECK(w.res[c]==100&&v.res[c]==92,"W3 machine: [ and ] loop like BFF (skip when zero, repeat when non-zero)");}
+    {World w;blank(w);const int c=5*L+5;put(w,c,"E",0,0);for(int i=0;i<=q.m_decay;++i)w.tick(l1,born);CHECK(w.mat[c]==0,"W3 machine: an empty store halts it, and it decays after m_decay ticks");}
+    {World w;blank(w);Agent& a=w.ag[0];a=Agent{};a.x=5;a.y=5;a.dir=0;a.energy=300;a.alive=true;a.id=1;w.occ[5*L+5]=0;const int f=4*L+5;
+      auto act=[&](int ac,int cd){std::fill(nol.begin(),nol.end(),(std::int8_t)-100);nol[ac]=100;nol[16+cd]=100;w.tick(l1,born);};
+      act(8,0);const bool made=w.mat[f]==1&&w.mlin[f]==0;act(7,10);act(7,13);const bool wrote=w.tape[(std::size_t)f*16]=='E'&&w.tape[(std::size_t)f*16+1]=='C'&&w.ag[0].wpos==2;
+      act(9,0);const bool fed=w.mst[f]>0;const int e0=w.ag[0].energy,st0=w.mst[f];act(8,0);const bool un=w.mat[f]==0&&w.ag[0].energy>=e0+st0-2;
+      act(8,0);act(1,0);const bool blocked=w.ag[0].y==5;
+      CHECK(made&&wrote&&fed&&un&&blocked,"W3 agent: make, write E and C, feed, unmake (store returned), machines block movement");}
+    {World a,b;a.init(q,5);b.init(q,5);std::vector<std::int8_t> rl((std::size_t)q.S*32);auto drive3=[&](World& w,int n){for(int t=0;t<n;++t){
+        for(std::size_t i=0;i<rl.size();++i)rl[i]=(std::int8_t)((i*41+t*13)%29-14);const std::int8_t* l[1]={rl.data()};born.clear();w.tick(l,born);}};
+      drive3(a,120);drive3(b,120);int nm=0;for(auto x:a.mat)nm+=x==1;CHECK(hash(a)==hash(b)&&a.tape==b.tape&&nm>0,"W3: deterministic with agents building machines");
+      std::FILE* f=std::tmpfile();a.save(f);std::rewind(f);World c;const bool ok=c.load(f);std::fclose(f);
+      CHECK(ok&&c.mat==a.mat&&c.tape==a.tape&&c.mst==a.mst&&c.mfx==a.mfx&&c.p.matter==1,"W3 save/load: same matter state");
+      drive3(a,50);drive3(c,50);CHECK(hash(a)==hash(c)&&a.tape==c.tape,"W3 save/load: same future");
+      const int n0=a.wipe(0);int left=0;for(int x=0;x<q.L*q.L;++x)left+=a.mat[x]==1&&a.mlin[x]==0;CHECK(n0>0&&left==0,"W3: wipe removes a lineage's machines");}}
   std::printf(fails?"%d FAILED\n":"all passed\n",fails);return fails?1:0;
 }

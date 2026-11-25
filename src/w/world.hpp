@@ -23,14 +23,24 @@ struct WParams{
   int signals=0;   // 1: each agent also emits a symbol 0..3 (0 = silent) from logits 8..11; heard in the window
   int rot=1;       // with seasons: resource above the current capacity decays by rot per tick
   int sig_cost=0;  // energy per tick while emitting a non-zero symbol
+  // W3 programmable matter (docs/WORLD.md §4; off by default, W0-W2a unchanged)
+  int matter=0;    // 1: cells can be machines (16-byte tapes that run) or walls; agents write, make, unmake, feed
+  int m_steps=8;   // instructions per machine per tick (paid with 1 store)
+  int m_decay=200; // halted ticks before a machine decays to empty
+  int mk_cost=10,wr_cost=1,feed_amt=20,rep_cost=16,wall_cost=32;
 };
 
-struct Agent{int x=0,y=0,dir=0,energy=0,age=0,lineage=0;bool alive=false;std::uint64_t id=0;int sig=0;};
+struct Agent{int x=0,y=0,dir=0,energy=0,age=0,lineage=0;bool alive=false;std::uint64_t id=0;int sig=0,wpos=0;};
+
+// W3 machine instruction bytes (BFF core plus world operations); every other byte does nothing
+extern const std::uint8_t kCode[16];
 
 struct World{
   static constexpr int kDin=64;      // observation length (int8) without signals; din() is the length in use
-  static constexpr int kV=16;        // logits per agent (first kActions used)
-  static constexpr int kActions=7;   // 0 noop, 1 forward, 2 left, 3 right, 4 eat, 5 reproduce, 6 attack (W1); p.nact in use
+  static constexpr int kV=16;        // logits per agent without matter; nv() is the number in use
+  // actions: 0 noop, 1 forward, 2 left, 3 right, 4 eat, 5 reproduce, 6 attack (W1); W3: 7 write, 8 make/unmake,
+  // 9 feed. p.nact in use. Logits: actions from 0, signals from sig_off(), W3 write codes 16..31.
+  static constexpr int kActions=7;
   WParams p;long t=0;std::uint64_t next_id=1;
   std::vector<std::uint8_t> res,fert;  // per cell
   std::vector<std::uint16_t> racc;     // per cell regrowth accumulator (fractional regrowth)
@@ -39,11 +49,21 @@ struct World{
   std::vector<std::uint8_t> fp;        // seasons: fertility of each patch separately (patches x cells)
   int per=0;std::vector<int> ph;       // seasons: current period and per-patch phase (ticks)
   std::uint32_t deaf=0;                // analysis: lineages (bit k) that hear no symbols (not saved)
-  // analysis: per-lineage counters when track is set (not saved): stat[k*16+a] actions a = 0..6, +8 kills made,
-  // +9 births, +10 starved, +11 died of age, +12 killed, +13 non-zero symbols, +14 agent-ticks
+  // analysis: per-lineage counters when track is set (not saved): stat[k*32+a] actions a = 0..15, +16 kills made,
+  // +17 births, +18 starved, +19 died of age, +20 killed, +21 non-zero symbols, +22 agent-ticks
   bool track=false;std::vector<long> stat;
-  int din() const{return p.signals?128:64;}
-  bool ext() const{return p.season>0||p.signals>0||p.view!=2;}  // W2a state present
+  // W3 matter, per cell (allocated when p.matter): material 0 empty, 1 machine, 2 wall; machine tape (16 bytes),
+  // instruction pointer, heads, direction, store, halted ticks, creator lineage, birth tick, effect counters
+  // (4 per cell: resource harvested, resource delivered, copies made, walls changed)
+  std::vector<std::uint8_t> mat,tape,mip,mh0,mh1,mdir;std::vector<std::int16_t> mst;std::vector<std::uint16_t> mhalt;
+  std::vector<std::int8_t> mlin;std::vector<long> mbt;std::vector<std::int32_t> mfx;
+  int din() const{return (p.signals||p.matter)?128:64;}
+  int nv() const{return p.matter?32:16;}
+  int sig_off() const{return p.matter?12:8;}
+  bool ext() const{return p.season>0||p.signals>0||p.view!=2||p.matter>0;}  // W2a/W3 state present
+  int wipe(int k);  // analysis: machines made by lineage k (and their copies) become empty; returns how many
+  // census of machines that lived at least min_age ticks: machines, walls, distinct tapes, distinct effect classes
+  void census(int min_age,int& machines,int& walls,int& tapes,int& classes) const;
   void set_climate(std::uint64_t salt);  // seasons: draw a new period and phases
   int cap(int c) const;                  // current resource capacity of cell c (fert[c] when static)
   void init(const WParams& p,int founders_per_lineage);
@@ -51,10 +71,18 @@ struct World{
   // din() int8 values (zeros for empty slots). 0-24: resource in the egocentric 5x5 window (0 beyond `view`);
   // 25-49: other agents (+64 same lineage, -64 other); 50 energy/8; 51 age/4; 52 bias 64;
   // with signals: 53-77 symbol*32 of the agent in each window cell (0 when deaf); 78 own symbol*32.
+  // with matter: 79-103 material of each window cell (machine +48, wall -48); 104-119 tape of the machine in front
+  // (instruction index*8+4, data -64); 120 its store/4; 121 own write position*8.
   void observe(int slot,std::int8_t* o) const;
   // One tick. logits[k] points to S x kV int8 logits of lineage k (row s = slot k*S+s). Slots of newborn agents are
   // appended to `born` (their recurrent state must be reset by the caller).
   void tick(const std::int8_t* const* logits,std::vector<int>& born);
+ private:
+  void make_machine(int c,int dir,int lin);
+  void kill_machine(int c);
+  int front_of(int c,int dir) const;
+  void run_machines();
+ public:
   long biomass(int k) const;
   int count(int k) const;
   long resources() const;
