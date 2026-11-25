@@ -1,0 +1,8 @@
+births     heard  46915.000 muted  47233.833 diff -318.833 se 214.467 t -1.49 wins 3/12
+pop        heard    421.917 muted    421.667 diff +0.250 se 4.120 t +0.06 wins 6/12
+reproduce  heard      0.684 muted      0.687 diff -0.003 se 0.002 t -1.51 wins 3/12
+attack     heard      0.739 muted      0.741 diff -0.001 se 0.002 t -0.64 wins 5/12
+move       heard      0.023 muted      0.025 diff -0.002 se 0.002 t -1.36 wins 5/12
+turn       heard      0.697 muted      0.700 diff -0.003 se 0.002 t -1.06 wins 4/12
+bond       heard      0.741 muted      0.743 diff -0.001 se 0.002 t -0.68 wins 5/12
+signal     heard      0.113 muted      0.121 diff -0.008 se 0.003 t -2.16 wins 3/12

@@ -131,3 +131,34 @@ Why this might be, from the literature on the evolution of communication:
 - A channel with no effect until receivers exist sits at a fitness plateau.
 
 Planned measurements continue to 1M.
+
+### plSP_s2 at 600k: signal at its peak
+
+Background:
+- plSP_s2's signal rose from 0.2% to 17% of agents between 570k and 597k steps, the largest
+  rise in any run so far.
+- An earlier mute test, run on the 580k checkpoint, did not test this rise: the checkpoint
+  predates it, and only 2% of agents were signalling during those replays.
+- The tests below use the 600k checkpoint. Agents with a signal output were 11–12% of the
+  population during these replays.
+
+Mute test (heard minus muted):
+- Births: -0.7% (t -1.5). Population: no change (t +0.1).
+- All behaviours: |t| < 1.6.
+- Signalling itself: -0.8 points (t -2.2). This is the only effect beyond noise. Agents send
+  slightly less when signals are audible.
+
+Freeze test (learning on minus frozen):
+- Births: -0.85% (t -1.55).
+- Reproduce rate: -0.4 points (t -2.0).
+
+Freeze births across tests (learning on minus frozen):
+
+| Checkpoint | Births |
+|---|---|
+| s1, 485k | -1.0% |
+| s2, 485k | -0.6% |
+| s2, 600k | -0.85% |
+
+Learning lowers births in all three, but none is individually significant. Sign-consistent
+across tests: a small cost. Signals are still not heard in any way that matters.
