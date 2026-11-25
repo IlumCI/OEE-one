@@ -27,8 +27,8 @@
    MAX_PROCS=1 nohup tools/supervise_runs.sh runs3 runs3/bin 60 to resume)
   (MAX_PROCS=11 nohup tools/supervise_runs.sh runs6 runs6/bin 60 >> runs6/supervisor.out 2>&1 &)
   (runs6: L4 scale runs l4L* paused 2026-11-25 at 1.60-1.96M steps; to resume, uncomment them in runs6/runs.txt)
-  (runs8: World v1 runs are not supervised; after a restart rerun runs8/<run>/cmd.txt from inside runs8/<run>:
-   it resumes from ck.bin bit-exactly; use setsid nohup so the run survives the launching shell)
+  (runs8: World v1 runs are not supervised. After a restart resume them all, 4 at a time (bit-exact from ck.bin;
+   finished runs exit at once): setsid nohup tools/w/queue.sh 4 runs8/w1_* >> runs8/queue.log 2>&1 &)
 - Keep working between events; do not idle.
 
 ## Commits
