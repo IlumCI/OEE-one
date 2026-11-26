@@ -721,7 +721,7 @@ Changes:
 - **Protection.** `-own 2` as in W3.x B: an agent's own machine is private, and its copies are wild.
 
 Arms (3 seeds × 1000 epochs; 600-tick epochs, so 3× the ticks per epoch of W3.x):
-- D (control): W3.x arm B settings with `-regrow 8 -H 600 -climate_every 2 -m_give 0`.
+- D (control): W3.x arm B settings with `-H 600 -climate_every 2 -m_give 0` (regrow stays 16, see below).
 - E: D plus `-irr 8 -irr_decay 16`.
 
 Calibration amendments (2026-11-26, before any W4a run):
@@ -736,6 +736,14 @@ Calibration amendments (2026-11-26, before any W4a run):
   - With empty copies, wild farms accumulate slowly and linearly (244–252 machines after 400,000 ticks). The
     commonest one is the 2-byte program `,E`.
   - W4a tests agent-built farms, not a wild machine ecology.
+- **No extra scarcity: regrow stays 16 (planned: 8).**
+  - Calibration with agents, seed 1, irrigation on. Halving regrowth is not viable:
+    - with H 600: 16–33 reseeds by epoch 90 (control and irrigation arms alike);
+    - with H 200: 17 reseeds in 200 epochs.
+  - Regrow 16 with H 600 is viable (0 reseeds in 130 epochs, 33–108 agents).
+  - Food is still limiting at carrying capacity. A farm at full irrigation regrows about 1 per tick, against at
+    most about 0.37 on average for the best natural cell. Scarcity holds in the relative sense Hamon et al. need.
+  - Runs: runs8/cal_w4a.
 
 Calibration before the runs:
 - Agent-free (tools/w/mcal.cpp): does a spontaneous farm replicator take over?
