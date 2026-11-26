@@ -764,6 +764,37 @@ Pass and kill:
   - The next step is a credit-horizon test, a longer H at equal compute, before any further world change.
 - The viability guard applies (more than 10 reseeds within 200 epochs: non-viable, not scored).
 
+### W4b protocol: does property stabilise the farming boom? (fixed 2026-11-26, before the code)
+
+Why. In W4a arm E, seed 1, agents and wild farm replicators formed a mutualism twice. Agents feed the farms,
+which irrigate the land, and population rose to the slot cap (256; baseline about 60). Each time it collapsed
+within about 40 epochs: the farms are wild, so anyone may eat them, and the boom population grazed them out (§9).
+- This is an oscillatory tragedy of the commons, as in socio-ecological fishery models with weak enforcement.
+- In multi-agent learning on a common-pool resource, the ability to exclude others made use sustainable, at the cost
+  of inequality (Perolat et al., arXiv:1707.06600).
+
+Change (one rule, `-claim 1`; homesteading: property by labour):
+- An agent that feeds a wild machine claims it for its lineage.
+- With `-own 1`, the claimed machine's copies keep the owner. So a farm someone cultivates, and its offspring, can
+  then be grazed and unmade only by the owner's lineage. Others can only destroy them, at 2 × mk_cost.
+
+Arms (3 seeds × 1000 epochs; the same seeds as W4a):
+- F: W4a arm E with `-claim 1 -own 1` in place of `-own 2`.
+- The comparison is W4a arm E on the same seed.
+
+Measures, from the training logs of the canonical world (world-level, as the boom is):
+- boom time: the fraction of epochs 200–1000 with more than 150 agents;
+- mean population over epochs 200–1000;
+- the number of booms;
+- inequality: the largest lineage's share of agents, averaged over boom epochs;
+- and the W4a measures at 1000.
+
+Pass and kill:
+- **Pass:** F has more boom time and a higher mean population than E on the same seed, in at least 2 of 3 seeds.
+- **Kill:** F has no more boom time than E in every seed.
+- The viability guard applies. A private-farm plague that excludes the other lineages counts as non-viable if it
+  trips the guard.
+
 ## 7. Implementation (planned files)
 
 - `src/w/world.{hpp,cpp}`: grid, resources, machines, agents, deterministic tick (counter RNG), copyable for forks.
