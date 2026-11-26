@@ -884,6 +884,11 @@ Mean population, epochs 0–1000:
     E seed 3 at about 490).
 - **Irrigation raises carrying capacity** under both regimes: mean population is above D's in every seed, though
   only slightly in seed 2.
+- **Head-to-head at 1000, F's champion against E's** (post-founder share of F, both worlds alike):
+  - seed 1: 1.00; seed 2: 0.35 (t −1.8); seed 3: 0.91 (t 8.3).
+  - E's final champions in seeds 1 and 3 were trained through late booms, and both collapsed against their own
+    ancestors (era 0.43 and 0.19). Without late booms, F's champions stay strong in fresh arenas.
+  - Building is still not selected in F: the wipe costs nothing in any seed.
 - **Why property does not help here.**
   - Claiming privatises machines, not the irrigated land, which is the boom's main food (§9, W4b interim).
   - Concentrated ownership makes one lineage the farmer. Its population is capped at 64, so a big boom needs other
