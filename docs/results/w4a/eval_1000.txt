@@ -29,3 +29,22 @@ wipe	0.5413	0.0438	0.94	0.5621	0.0619	1.00
 deaf	0.3217	0.0497	-3.59	0.2845	0.0626	-3.44
 == generality (e vs e-500)
 e	e_prev	solo_log_ratio	t	median	surviveA	surviveB	lshareA	lt	swap_recovery	swap_t
+1000	500	-0.2285	-1.29	0.0099	49/64	50/64	0.7340	6.85	0.4494	2.05
+== era (post-founder share, e vs e-250)
+250:1.00 500:1.00 750:0.81 1000:0.43 
+== census (epoch machines walls tapes classes)
+1000 14 54 7 4
+== machines by owner in the latest checkpoint (mcal -ck)
+t 600000 own 2 graze 1
+owner	machines	store
+-1	6	2999
+1	8	0
+top tapes (count owner tape):
+8	1	________________
+1	-1	__{]>D{{S[,D,+[_
+1	-1	__.E,__________>
+1	-1	EC______________
+1	-1	DD______________
+agents by lineage slot: 32 32 0 0 0
+h2h_E_vs_D	world w4e_s1	0.4986	0.0771	-0.02	11/16
+h2h_E_vs_D	world w4d_s1	0.4435	0.0767	-0.74	10/16
