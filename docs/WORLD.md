@@ -795,6 +795,38 @@ Pass and kill:
 - The viability guard applies. A private-farm plague that excludes the other lineages counts as non-viable if it
   trips the guard.
 
+### W4c protocol: the credit horizon (fixed 2026-11-26, before the runs)
+
+Why. W4a was killed: irrigation lets construction create value, yet building and feeding were never selected for
+individually. The booms came from accidental feeding of wild farms. W4a's kill rule names the next step: test
+whether the learner can find and keep a delayed investment, by lengthening the fitness horizon at equal compute,
+before any further world change.
+- A farm pays back over about 130–250 ticks and keeps paying for thousands. An agent lives at most 500 ticks.
+- With a 600-tick horizon, an investment whose return goes mostly to the agent's descendants is barely visible to
+  ES.
+- In learning agents, agriculture needed a discount factor of 0.999, a horizon of about 1,000 steps
+  (arXiv:2605.22256).
+
+Change (one parameter): `-H 1800 -climate_every 1`.
+- Fork fitness covers 1,800 ticks, more than three agent lifetimes.
+- The climate changes every 1,800 ticks (W4a: 1,200).
+- Epochs: 333 × 1,800 = 600,000 ticks, the same as W4a's 1,000 × 600. Equal world time and about equal compute.
+
+Arms (3 seeds; the same seeds as W4a):
+- G: W4a arm E with `-H 1800 -climate_every 1 -epochs 333`.
+- The comparison is W4a arm E on the same seed, at its final epoch (equal ticks).
+
+Measures at the final epoch (as W4a): building rates against random agents, the wipe ablation, G's champion
+against E's head-to-head in both worlds, boom time (booms.py, over the same tick window: G epochs 67–333 ≈ E epochs
+200–1000), and era progress.
+
+Pass and kill:
+- **Pass:** the wipe costs fitness (t < −3) in at least 2 of 3 seeds, or building rates exceed random agents' in
+  at least 2 of 3 seeds.
+- **Kill:** building rates at or below random agents' and the wipe costs nothing in every seed. Then the horizon
+  is not the limit. The next suspect is the learner: ES on lineage biomass cannot assign credit to a builder.
+- The viability guard applies.
+
 Interim observation (2026-11-26, W4b seed 1). F seed 1 boomed early, at epochs 80–115 (peak 198 agents at 100).
 - At epoch 100 one lineage owned 502 of the 541 machines, holding 10.6k store.
 - The other lineages still grew to their 64-slot caps, and the boom collapsed by epoch 135.
