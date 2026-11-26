@@ -174,3 +174,28 @@ top tapes (count owner tape):
 1	-1	_S[C____________
 1	-1	]_______________
 agents by lineage slot: 32 32 26 26 0
+# runs8/w3b_s3 e 2000 world: -S 64 -regrow 16 -nact 10 -matter 1 -spawn 20 -mut 1024 -season 300 -view 1 -signals 1 -wall_decay 4 -m_cost 4 -m_give 16 -graze 1 -pass 1 -own 2
+champion agent_ticks 3664440 noop 0.003 fwd 0.325 left 0.008 right 0.102 eat 0.474 repro 0.014 attack 0.071 write 0.001 make 0.001 feed 0.001 kills/kt 0.16 births/kt 3.37 starved/kt 1.68 aged/kt 1.24 killed/kt 0.07 symbol 0.882 joint_harvests/kt 0.00
+random agent_ticks 54156 noop 0.060 fwd 0.051 left 0.084 right 0.138 eat 0.093 repro 0.059 attack 0.085 write 0.245 make 0.059 feed 0.125 kills/kt 0.63 births/kt 10.08 starved/kt 13.05 aged/kt 0.00 killed/kt 6.48 symbol 0.845 joint_harvests/kt 0.00
+wipe	0.5012	0.0315	0.04	0.5003	0.0426	0.01
+deaf	0.1780	0.0218	-14.79	0.0963	0.0243	-16.63
+== generality (e vs e-500)
+e	e_prev	solo_log_ratio	t	median	surviveA	surviveB	lshareA	lt	swap_recovery	swap_t
+2000	1500	0.0258	0.08	-0.0716	56/64	55/64	0.7930	13.33	0.3822	1.46
+== era (post-founder share, e vs e-250)
+250:1.00 500:0.38 750:0.74 1000:0.57 1250:0.74 1500:0.50 1750:0.75 2000:0.88 
+== census (epoch machines walls tapes classes)
+2000 18 45 9 5
+== machines by owner in the latest checkpoint (mcal -ck)
+t 400000 own 2 graze 1
+owner	machines	store
+-1	8	84
+0	7	0
+2	3	0
+top tapes (count owner tape):
+7	0	________________
+3	2	________________
+1	-1	_S______________
+1	-1	]SWR,}]]C[______
+1	-1	[_______________
+agents by lineage slot: 39 0 5 0 0
