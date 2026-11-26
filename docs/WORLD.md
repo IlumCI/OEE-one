@@ -935,6 +935,17 @@ arenas.
 - Lamarckian state inheritance gives the largest solo gain: offspring that start with the parent's memory survive
   better in unfamiliar worlds. Seeds 2–3 decide (the pass needs 2 of 3).
 
+### Wave 2, seed 2 at epoch 2000 (interim, 2026-11-26; docs/results/w3x/wave2_2000.txt)
+
+| Arm | Head-to-head (arm's world / C's world) | Solo vs C | Arm-specific test | Seed 2 |
+|---|---|---|---|---|
+| C+kin | 0.79 (t 4.2) / 0.49 (t −0.1) | −0.04 (t −0.1) | deaf: 0.43 (t −1.1), no cost | fail |
+| C+cat | 0.14 (t −6.5) | −0.20 (t −0.7) | era mean 0.81 vs C 0.86, 0 collapses each | fail |
+
+- C+kin wins head-to-head in its own world but not in C's, so it fails under the amendment (both worlds).
+- **C+kin and C+cat are closed.** Each failed in seeds 1 and 2, so neither can pass 2 of 3. Their third seeds
+  are not run (runs8/w3ckin_s3 and w3ccat_s3 carry PAUSED), which frees the queue for C+stress and C+lam.
+
 ### W4a verdict (2026-11-26; docs/results/w4a/eval_1000.txt, booms.tsv)
 
 At epoch 1000, 16 mirrored seeds. Wipe: share (t) of the copy whose own machines are removed. E vs D: post-founder
