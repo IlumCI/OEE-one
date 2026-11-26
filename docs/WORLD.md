@@ -433,6 +433,39 @@ Kill (epoch 1500):
 W3b option: an emulated computer inside the sandbox (files, processes, no external network) as a richer digital
 substrate. Its protocol will be fixed after W3.
 
+### W3.1 protocol: a living substrate (fixed 2026-11-26, before the code)
+
+Observation in W3 (seeds 1–2, epochs 325–500):
+- Building is selected away.
+  - Random agents: write 12.7%, make 9.8%, feed 7.0% of actions.
+  - Champions: write 0.5–1.4%, make 0.1%, feed 0.2–0.7%.
+  - Machines fall from about 10 to under 1 per epoch; walls stay at 13.
+- What the world runs out of is reasons to care about machines.
+  - The only machines are those agents build, and a machine pays only after a rare multi-step program has been
+    found.
+  - The W3 kill at 1500 is near certain. Seeds 1–2 run to 1500 for the formal check; seeds 3–5 are not started.
+
+Change (the substrate's parameters, as in the BFF soups of arXiv:2406.19108; no new agent abilities):
+- `-spawn r`: new random programs appear on empty cells at r per 1000 ticks per 1024 cells. They have the same
+  simplicity prior as the test arenas, a store of 50 and no owner.
+- `-mut m`: copying is imperfect. Each copied byte becomes a random instruction with probability m/65536.
+- Machines therefore form their own evolving ecology (replicators that harvest compete for resources) whether or
+  not agents build. Agents meet machines as competitors and as prey (unmake returns the store). The abilities to
+  write, make and feed give agents ways to use them.
+- Settings: W3 plus `-spawn 20 -mut 1024` (about 0.6 new programs per epoch-tick block of 32×32; per-byte copy
+  error 1/64). Calibrated for viability first, as before.
+
+Test (5 seeds, 3000 epochs; control arm W2a signal runs):
+- As W3: wipe ablation, artifact classes, generality (solo, head-to-head, swap), era progress.
+- Added:
+  - **Machine ecology:** distinct tapes and effect classes in the canonical world over time.
+  - **Agent–machine interaction:** rates of unmake (predation), write and feed against random-weight agents.
+- **Kill (epoch 1500).** All of the following, in every seed:
+  - champions' write, make, feed and unmake rates are all at or below random agents' rates;
+  - the wipe ablation costs nothing;
+  - the champion's solo score in seeded arenas is no better than in arenas without machines, relative to its
+    ancestor.
+
 ## 7. Implementation (planned files)
 
 - `src/w/world.{hpp,cpp}`: grid, resources, machines, agents, deterministic tick (counter RNG), copyable for forks.

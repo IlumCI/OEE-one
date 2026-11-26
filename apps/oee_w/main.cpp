@@ -8,6 +8,7 @@
 //                [-null_es 1: updates use random pair signs instead of fitness signs (null control, W1c)]
 //                [-hist_pair 1: every fork pair holds an ancestor drawn for that pair from the archive (W1e)]
 //                [W3: -matter 1 -nact 10 [-m_steps 8 -m_decay 200 -mk_cost 10 -wr_cost 1 -feed_amt 20 -rep_cost 16 -wall_cost 32]]
+//                [W3.1: -spawn R (random programs per 1000 ticks per 1024 cells) -mut M (copy error per byte, /65536)]
 //          W0 = -lineages 1 -nact 6 -hist_frac 0 (bit-identical to the W0 binary).
 //          W1 = -lineages K -nact 7 (attack) -hist_frac 4 (ancestor in every 4th fork pair).
 //          -ck: checkpoint every ck_every epochs and at the end. If FILE exists at start, the run resumes from it
@@ -131,7 +132,8 @@ int main(int argc,char** argv){
     else if(!std::strcmp(s,"-matter"))wp.matter=std::atoi(v);else if(!std::strcmp(s,"-m_steps"))wp.m_steps=std::atoi(v);
     else if(!std::strcmp(s,"-m_decay"))wp.m_decay=std::atoi(v);else if(!std::strcmp(s,"-mk_cost"))wp.mk_cost=std::atoi(v);
     else if(!std::strcmp(s,"-wr_cost"))wp.wr_cost=std::atoi(v);else if(!std::strcmp(s,"-feed_amt"))wp.feed_amt=std::atoi(v);
-    else if(!std::strcmp(s,"-rep_cost"))wp.rep_cost=std::atoi(v);else if(!std::strcmp(s,"-wall_cost"))wp.wall_cost=std::atoi(v);else if(!std::strcmp(s,"-stats"))stats=std::atoi(v);else if(!std::strcmp(s,"-curve"))curve=std::max(0,std::atoi(v));else if(!std::strcmp(s,"-skip"))skip=std::max(0,std::atoi(v));else if(!std::strcmp(s,"-split_age"))split_age=std::atoi(v);else if(!std::strcmp(s,"-null_es"))null_es=std::atoi(v);else if(!std::strcmp(s,"-hist_pair"))hist_pair=std::atoi(v);
+    else if(!std::strcmp(s,"-rep_cost"))wp.rep_cost=std::atoi(v);else if(!std::strcmp(s,"-wall_cost"))wp.wall_cost=std::atoi(v);
+    else if(!std::strcmp(s,"-spawn"))wp.spawn=std::atoi(v);else if(!std::strcmp(s,"-mut"))wp.mut=std::atoi(v);else if(!std::strcmp(s,"-stats"))stats=std::atoi(v);else if(!std::strcmp(s,"-curve"))curve=std::max(0,std::atoi(v));else if(!std::strcmp(s,"-skip"))skip=std::max(0,std::atoi(v));else if(!std::strcmp(s,"-split_age"))split_age=std::atoi(v);else if(!std::strcmp(s,"-null_es"))null_es=std::atoi(v);else if(!std::strcmp(s,"-hist_pair"))hist_pair=std::atoi(v);
     else if(!std::strcmp(s,"-gen"))gen=std::atoi(v);else if(!std::strcmp(s,"-arena_progs"))arena_progs=std::atoi(v);
     else if(!std::strcmp(s,"-prog_cont"))prog_cont=std::atof(v);else if(!std::strcmp(s,"-solo"))solo=std::atoi(v);
     else if(!std::strcmp(s,"-swap_at"))swap_at=std::atoi(v);else if(!std::strcmp(s,"-swap_win"))swap_win=std::max(1,std::atoi(v));else if(!std::strcmp(s,"-ck_every"))ck_every=std::max(1,std::atoi(v));
@@ -228,6 +230,7 @@ int main(int argc,char** argv){
   if(null_es)fp2.push_back(2000+null_es);
   if(hist_pair)fp2.push_back(3000+hist_pair);
   if(wp.matter){for(std::int64_t x:{wp.matter,wp.m_steps,wp.m_decay,wp.mk_cost,wp.wr_cost,wp.feed_amt,wp.rep_cost,wp.wall_cost})fp2.push_back(4000+x);}
+  if(wp.spawn||wp.mut){fp2.push_back(5000+wp.spawn);fp2.push_back(6000000+wp.mut);}
   if(hist_pair&&!hist){std::fprintf(stderr,"-hist_pair needs -hist_frac > 0\n");return 2;}
   auto save_ck=[&](int e){const std::string tmp=ckf+".tmp";std::FILE* f=std::fopen(tmp.c_str(),"wb");if(!f)return false;
     auto w=[&](std::int64_t x){std::fwrite(&x,8,1,f);};w(kCkMagic);w((std::int64_t)fp2.size());for(auto x:fp2)w(x);
@@ -258,8 +261,8 @@ int main(int argc,char** argv){
     else std::fprintf(lg,"# W1 L%d S%d founders %d H%d pairs %d brain L%d D%d sig%d params %ld threads %d seed %llu regrow %d base %d patches %d lineages %d nact %d hist_frac %d hist_founders %d split_at %d\n",
       wp.L,wp.S,founders,H,P,layers,D,sig,lin[0].g->nparams(),threads,(unsigned long long)seed,wp.regrow,wp.base,wp.patches,Kmax,wp.nact,hist_frac,hist_founders,split_at);
     if(w2)std::fprintf(lg,"# W2a season %d view %d signals %d rot %d sig_cost %d climate_every %d din %d\n",wp.season,wp.view,wp.signals,wp.rot,wp.sig_cost,climate_every,bc.Din);
-    if(wp.matter)std::fprintf(lg,"# W3 matter %d m_steps %d m_decay %d mk_cost %d wr_cost %d feed_amt %d rep_cost %d wall_cost %d V %d; extra columns: machines walls tapes classes\n",
-      wp.matter,wp.m_steps,wp.m_decay,wp.mk_cost,wp.wr_cost,wp.feed_amt,wp.rep_cost,wp.wall_cost,bc.V);
+    if(wp.matter)std::fprintf(lg,"# W3 matter %d m_steps %d m_decay %d mk_cost %d wr_cost %d feed_amt %d rep_cost %d wall_cost %d spawn %d mut %d V %d; extra columns: machines walls tapes classes\n",
+      wp.matter,wp.m_steps,wp.m_decay,wp.mk_cost,wp.wr_cost,wp.feed_amt,wp.rep_cost,wp.wall_cost,wp.spawn,wp.mut,bc.V);
     if(split_age)std::fprintf(lg,"# W1b split_age %d (split lineages take the parent's age)\n",split_age);
     if(null_es)std::fprintf(lg,"# W1c null_es %d (random update signs: fitness ignored)\n",null_es);
     if(hist_pair)std::fprintf(lg,"# W1e hist_pair %d (an ancestor drawn for each fork pair)\n",hist_pair);

@@ -128,6 +128,8 @@ void World::tick(const std::int8_t* const* logits,std::vector<int>& born){
   for(int s=0;s<p.K*p.S;++s){Agent& a=ag[s];if(!a.alive)continue;a.energy-=p.base+(a.sig>0?p.sig_cost:0);++a.age;
     if(a.energy<=0||a.age>p.max_age){a.alive=false;occ[a.y*p.L+a.x]=-1;if(track)++stat[(std::size_t)a.lineage*32+(a.energy<=0?18:19)];}}
   if(p.matter)run_machines();
+  if(p.matter&&p.spawn>0){const long r=(long)p.spawn*N/1024;const std::uint64_t h=mix(mix(p.seed^0x5badULL)+(std::uint64_t)t);  // spontaneous generation
+    const int n=(int)(r/1000)+((long)(h%1000)<r%1000?1:0);if(n>0)seed_programs(n,(std::uint64_t)t*16+7,50,0.7);}
   if(p.season>0){int w[64];for(int i=0;i<p.patches&&i<64;++i)w[i]=prod((int)((t+ph[i])%per),per);  // seasonal capacity, rot above it
     for(int c=0;c<N;++c){if(p.matter&&mat[c]==2)continue;int cp=0;for(int i=0;i<p.patches&&i<64;++i)cp+=fp[(std::size_t)i*N+c]*w[i];cp=std::min(255,cp>>8);
       if(res[c]>cp){res[c]=(std::uint8_t)std::max(cp,(int)res[c]-p.rot);continue;}
@@ -158,7 +160,10 @@ void World::run_machines(){
             res[f]=(std::uint8_t)r;mst[c]=(std::int16_t)(mst[c]-mv);fx[1]+=mv;}break;}
         case 'S':tp[h0]=res[front_of(c,mdir[c])];break;
         case 'C':{const int f=front_of(c,mdir[c]);if(mat[f]==0&&occ[f]<0&&mst[c]>=p.rep_cost){mst[c]=(std::int16_t)(mst[c]-p.rep_cost);
-            make_machine(f,mdir[c],mlin[c]);std::copy(tp,tp+16,tape.begin()+(std::size_t)f*16);++fx[2];}break;}
+            make_machine(f,mdir[c],mlin[c]);std::copy(tp,tp+16,tape.begin()+(std::size_t)f*16);++fx[2];
+            if(p.mut>0)for(int j=0;j<16;++j){const std::uint64_t h=mix(mix(p.seed^0xbad5ULL)+((std::uint64_t)t<<24)+((std::uint64_t)c<<5)+j);  // imperfect copy
+              if((int)(h&0xffff)<p.mut)tape[(std::size_t)f*16+j]=kCode[(h>>16)&15];}}
+          break;}
         case 'W':{const int f=front_of(c,mdir[c]);if(mst[c]>=p.wall_cost&&occ[f]<0&&mat[f]!=1){mst[c]=(std::int16_t)(mst[c]-p.wall_cost);
             if(mat[f]==0){mat[f]=2;res[f]=0;}else mat[f]=0;++fx[3];}break;}
         case 'R':mdir[c]=(std::uint8_t)((mdir[c]+tp[h1])&3);break;
@@ -197,6 +202,7 @@ void wr(std::FILE* f,std::int64_t x){std::fwrite(&x,8,1,f);}
 bool rd(std::FILE* f,std::int64_t& x){return std::fread(&x,8,1,f)==1;}
 constexpr std::int64_t kExt=0x5458453257LL;  // "W2EXT": marks the W2a extension of a world record
 constexpr std::int64_t kExt3=0x5458453357LL;  // "W3EXT": marks the W3 matter block
+constexpr std::int64_t kExt31=0x3133584533LL;  // W3 matter block with the W3.1 substrate settings
 template<class T> void wv(std::FILE* f,const std::vector<T>& v){wr(f,(std::int64_t)v.size());if(!v.empty())std::fwrite(v.data(),sizeof(T),v.size(),f);}
 template<class T> bool rv(std::FILE* f,std::vector<T>& v){std::int64_t n=0;if(!rd(f,n)||n<0||n>(1<<26))return false;v.resize((std::size_t)n);
   return n==0||std::fread(v.data(),sizeof(T),(std::size_t)n,f)==(std::size_t)n;}
@@ -207,7 +213,8 @@ void World::save(std::FILE* f) const{
     p.stoch,p.nact,p.atk_cost,p.atk_take,(std::int64_t)p.seed,t,(std::int64_t)next_id};
   for(auto x:q){wr(f,x);}
   if(ext()){wr(f,kExt);const std::int64_t e[]={p.season,p.view,p.signals,p.rot,p.sig_cost,per};for(auto x:e){wr(f,x);}wv(f,ph);wv(f,fp);}
-  if(p.matter){wr(f,kExt3);const std::int64_t e[]={p.matter,p.m_steps,p.m_decay,p.mk_cost,p.wr_cost,p.feed_amt,p.rep_cost,p.wall_cost};for(auto x:e){wr(f,x);}
+  if(p.matter){wr(f,(p.spawn||p.mut)?kExt31:kExt3);const std::int64_t e[]={p.matter,p.m_steps,p.m_decay,p.mk_cost,p.wr_cost,p.feed_amt,p.rep_cost,p.wall_cost};for(auto x:e){wr(f,x);}
+    if(p.spawn||p.mut){wr(f,p.spawn);wr(f,p.mut);}
     wv(f,mat);wv(f,tape);wv(f,mip);wv(f,mh0);wv(f,mh1);wv(f,mdir);wv(f,mst);wv(f,mhalt);wv(f,mlin);wv(f,mbt);wv(f,mfx);}
   wv(f,res);wv(f,fert);wv(f,racc);wv(f,occ);wr(f,(std::int64_t)ag.size());
   for(auto& a:ag){const std::int64_t r[]={a.x,a.y,a.dir,a.energy,a.age,a.lineage,a.alive,(std::int64_t)a.id};for(auto x:r)wr(f,x);}
@@ -226,8 +233,10 @@ bool World::load(std::FILE* f){
     else if(std::fseek(f,pos,SEEK_SET)!=0)return false;}  // W1 record: no extension
   p.matter=0;mat.clear();tape.clear();mip.clear();mh0.clear();mh1.clear();mdir.clear();mst.clear();mhalt.clear();mlin.clear();mbt.clear();mfx.clear();
   {std::int64_t m=0;const long pos=std::ftell(f);if(!rd(f,m))return false;
-    if(m==kExt3){std::int64_t e[8];for(auto& x:e)if(!rd(f,x))return false;
+    p.spawn=0;p.mut=0;
+    if(m==kExt3||m==kExt31){std::int64_t e[8];for(auto& x:e)if(!rd(f,x))return false;
       p.matter=(int)e[0];p.m_steps=(int)e[1];p.m_decay=(int)e[2];p.mk_cost=(int)e[3];p.wr_cost=(int)e[4];p.feed_amt=(int)e[5];p.rep_cost=(int)e[6];p.wall_cost=(int)e[7];
+      if(m==kExt31){std::int64_t a=0,b=0;if(!rd(f,a)||!rd(f,b))return false;p.spawn=(int)a;p.mut=(int)b;}
       if(!rv(f,mat)||!rv(f,tape)||!rv(f,mip)||!rv(f,mh0)||!rv(f,mh1)||!rv(f,mdir)||!rv(f,mst)||!rv(f,mhalt)||!rv(f,mlin)||!rv(f,mbt)||!rv(f,mfx))return false;}
     else if(std::fseek(f,pos,SEEK_SET)!=0)return false;}  // no W3 block
   if(!rv(f,res)||!rv(f,fert)||!rv(f,racc)||!rv(f,occ)){return false;}std::int64_t n=0;if(!rd(f,n)||n<0||n>(1<<24)){return false;}ag.assign((std::size_t)n,Agent{});

@@ -28,6 +28,8 @@ struct WParams{
   int m_steps=8;   // instructions per machine per tick (paid with 1 store)
   int m_decay=200; // halted ticks before a machine decays to empty
   int mk_cost=10,wr_cost=1,feed_amt=20,rep_cost=16,wall_cost=32;
+  int spawn=0;     // W3.1: new random programs per 1000 ticks per 1024 cells (spontaneous generation)
+  int mut=0;       // W3.1: copy error per copied byte, in 1/65536 (a wrong byte becomes a random instruction)
 };
 
 struct Agent{int x=0,y=0,dir=0,energy=0,age=0,lineage=0;bool alive=false;std::uint64_t id=0;int sig=0,wpos=0;};
