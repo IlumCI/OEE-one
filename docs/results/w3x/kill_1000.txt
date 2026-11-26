@@ -38,3 +38,8 @@ champion agent_ticks 3660953 noop 0.004 fwd 0.300 left 0.006 right 0.069 eat 0.5
 random agent_ticks 75553 noop 0.060 fwd 0.054 left 0.082 right 0.135 eat 0.097 repro 0.063 attack 0.088 write 0.231 make 0.061 feed 0.128 kills/kt 0.91 births/kt 8.51 starved/kt 14.16 aged/kt 0.00 killed/kt 1.13 symbol 0.834 joint_harvests/kt 0.00
 wipe	0.4870	0.0139	-0.93	0.4762	0.0269	-0.89
 deaf	0.4434	0.0135	-4.18	0.4173	0.0234	-3.53
+# runs8/w3c_s3 e 1000 world: -S 64 -regrow 16 -nact 10 -matter 1 -spawn 20 -mut 1024 -season 300 -view 1 -signals 1 -wall_decay 4 -m_cost 4 -m_give 16 -graze 1 -pass 1 -own 2 -nodes 8 -node_pay 150 -node_per 200 -node_ripe 40
+champion agent_ticks 3672906 noop 0.003 fwd 0.301 left 0.002 right 0.173 eat 0.497 repro 0.014 attack 0.005 write 0.002 make 0.001 feed 0.002 kills/kt 0.01 births/kt 3.24 starved/kt 1.53 aged/kt 1.32 killed/kt 0.01 symbol 0.985 joint_harvests/kt 0.26
+random agent_ticks 76862 noop 0.061 fwd 0.056 left 0.088 right 0.130 eat 0.096 repro 0.062 attack 0.086 write 0.232 make 0.065 feed 0.125 kills/kt 0.79 births/kt 8.35 starved/kt 14.17 aged/kt 0.00 killed/kt 0.85 symbol 0.837 joint_harvests/kt 0.03
+wipe	0.4963	0.0134	-0.28	0.4968	0.0248	-0.13
+deaf	0.4412	0.0231	-2.55	0.4450	0.0363	-1.51

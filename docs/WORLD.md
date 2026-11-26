@@ -719,7 +719,31 @@ Pass and kill:
 
 ## 9. Results
 
-### W3.x pilot, epoch 2000 (interim: 8 of 9 runs; 2026-11-26; docs/results/w3x/eval_2000.txt)
+### W3.x pilot verdict (2026-11-26)
+
+- **Building: killed in all three arms** (substrate; ownership; ownership with split-role nodes). Champions use the
+  building actions at 1–7% of random agents' rates in every run, and the wipe costs nothing in every run, at 1000
+  and at 2000.
+- **C's signal claim: fails.** It needed deafness to cost in 2 of 3 seeds at 2000. It costs in none of seeds 1–2,
+  and seed 3 does not pass at 1000 (t −2.6).
+- **Unplanned finding: eavesdropping.** In the matter worlds, deafness costs in 2 of 3 seeds in A and in B (W2a:
+  0 of 5). The cost comes mainly from not hearing the other lineage.
+- **Progress continues but stays relative.** Later champions beat earlier ones in held-out generated arenas (7 of
+  8 runs at 2000). Solo scores (absolute generality) are flat everywhere.
+- **Diagnosis: what the world runs out of is a use for construction.**
+  - A machine can only store or move energy that the regrowth field already provides. It earns at most about 0.4
+    per tick on the best cell, against 32 per bite for a forager.
+  - Agents' bodies already store 1,000, and with grazing every wild machine is food for everyone. Nothing in this
+    world is done better by a machine than by an agent.
+  - In a society of learning agents, agriculture emerged only with scarce wild food, a long planning horizon
+    (discount 0.999) and protection from cheaters (Hamon, Sánchez-Fibla, Moulin-Frier and Solé 2026,
+    arXiv:2605.22256). Here wild food is plentiful, the ES horizon is 200 ticks, and wild machines are public.
+- **Next step (to be fixed before code):** construction must be able to create value, not only move it.
+  - The candidate is an instruction-set change that the W3 rule allows, and that is W4's content: a machine
+    instruction that raises the productivity of land (irrigation).
+  - It is to be tested together with Hamon et al.'s other two conditions.
+
+### W3.x pilot, epoch 2000 (8 of 9 runs; 2026-11-26; docs/results/w3x/eval_2000.txt)
 
 Share (t) of the ablated copy; generality and era as in §6 (post-founder shares).
 
@@ -776,6 +800,7 @@ against the intact champion; below 0.5 with t < −3 means the mechanism pays.
 | B, 2 | 0.2 / 0.0 / 0.2% | 20.3 / 4.5 / 9.5% | 0.56 (+0.9) | 0.41 (−1.3) |
 | C, 2 | 0.2 / 0.1 / 0.2% | 18.5 / 4.8 / 9.8% | 0.51 (+0.2) | 0.30 (−4.1) |
 | B, 3 | 0.3 / 0.1 / 0.3% | 23.1 / 6.1 / 12.8% | 0.49 (−0.9) | 0.44 (−4.2) |
+| C, 3 | 0.2 / 0.1 / 0.2% | 23.2 / 6.5 / 12.5% | 0.50 (−0.3) | 0.44 (−2.6) |
 
 - **Building.**
   - Selected away in every run so far: champions use the building actions at 1–4% of random agents' rates.
@@ -783,7 +808,7 @@ against the intact champion; below 0.5 with t < −3 means the mechanism pays.
   - **Arm A is killed** (building): the kill condition holds in all 3 seeds. Its runs finish to 2000 for the signal
     and generality measures.
   - **Arm B is killed** (building), all 3 seeds.
-  - C meets the kill condition in seeds 1–2; seed 3 is pending.
+  - **Arm C is killed** (building), all 3 seeds.
 - **Signals.**
   - In B seed 1 the deaf copy loses heavily: 0.29 (t −14); its post-founder share is 0.21. This is the first time
     deafness has cost fitness in a training arena (W2a: 0 of 5).
