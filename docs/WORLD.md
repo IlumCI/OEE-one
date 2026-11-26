@@ -368,6 +368,11 @@ Settings:
   populations persist. Calibration happens before the runs and is recorded.
 - 5 seeds, 3000 epochs.
 - Control arm: the same with `-matter 0` (no machines: agents cannot write and the world has no tapes).
+  - Amended 2026-11-26, before any W3 run: the W2a signal runs (w2_sig_s1–s5) are exactly this arm. They have the
+    same settings, including `-split_age 1 -hist_frac 4`, and the same seeds and epochs. So W3 runs only the matter
+    arm.
+  - The control brain has V = 16 instead of 32 (no write codes); the difference in network size is negligible.
+  - W1e failed, so no `-hist_pair`.
 
 Measures:
 1. **Wipe ablation.**
@@ -524,6 +529,32 @@ Post-founder share of the ablated copy:
 
   No collapse below 0.25 in either arm, consistent with W1b. Progress is strong up to about 1500 epochs, then
   flat.
+
+### W1e result: fail (2026-11-26; 5 seeds × 2000 epochs; docs/results/w1/w1e_results.txt)
+
+- **Primary.**
+
+  | | W1e | W1b | Needed to pass |
+  |---|---|---|---|
+  | Collapses (post-founder < 0.25) in 35 era comparisons | 4 | 3 | at most 1 |
+  | Mean post-founder era share | 0.652 | 0.699 | at least 0.70 |
+
+  W1e's collapses: s1 at 1750 (0.01) and 2000 (0.19); s5 at 750 (0.21) and 1000 (0.00).
+- **Secondary, W1e against W1b champions at epoch 2000** (post-founder share of W1e):
+
+  | Seed | Share |
+  |---|---|
+  | 1 | 0.975 |
+  | 2 | 0.206 |
+  | 3 | 0.069 |
+  | 4 | 0.967 |
+  | 5 | 0.978 |
+
+  Mixed.
+- **Decision.**
+  - No `-hist_pair`; W3 keeps `-hist_frac 4` with the W1b rule.
+  - The protocol's next step for the remaining collapses is capacity (a larger world). It is run only if W3 shows
+    collapses too; W3 is the main line.
 
 ### W2a verdict on signals (2026-11-26; seed 3 final: docs/results/w2a/final_w2_sig_s3_3000.txt)
 
