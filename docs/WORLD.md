@@ -784,7 +784,7 @@ Pass and kill:
 
 ## 9. Results
 
-### W4a observation: an agricultural boom in arm E, seed 1 (interim, epoch 200; 2026-11-26)
+### W4a observation: an agricultural boom and bust in arm E, seed 1 (interim; 2026-11-26)
 
 - **What happened.** Between epochs 175 and 200, w4e_s1 went from 34 to 213 agents (the slot cap is 256), and
   fork fitness rose from 4,731 to 55,908.
@@ -795,7 +795,16 @@ Pass and kill:
   Agents do this by accident: a 0.2% feed rate across 213 agents is about 250 feeds per epoch. The farms irrigate
   the land and the agents eat it. It is a mutualism: more farms, more food, more agents, more feeding.
 - **Control.** The control arm D, same seed, has 50 agents and no irrigated cells. E seed 2 has not boomed by
-  epoch 126.
+  epoch 253.
+- **Bust.** The boom lasted about 40 epochs (24,000 ticks).
+  - Machines and agents by epoch: 190: 88 and 96; 200: 576 and 213; 210: 443 and 238; 220: 211 and 178; 230: 38
+    and 70.
+  - By epoch 240 the world was back at baseline (about 65 agents, 15 machines, 12 irrigated cells).
+  - The farms are wild, so anyone may eat them. The swollen population grazed them out, and the irrigation decayed:
+    a boom and bust from overexploitation of a commons.
+- **Feeding depends on context.** In tournaments started from the farmed world of epoch 200 (`-arena_ck`, below),
+  the epoch-200 champion of E feeds machines on 8.8% of its actions, against 0.2% in fresh arenas. The mutualism is
+  driven by the agents' behaviour, not only by sampling noise.
 - **Measurement caveat.**
   - The pre-registered measures may miss this effect. Tournaments start from fresh 2,000-tick worlds that do not
     contain the accumulated farmland, and the wipe removes only the champion's own machines, not wild farms.
