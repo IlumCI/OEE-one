@@ -827,6 +827,16 @@ Pass and kill:
   is not the limit. The next suspect is the learner: ES on lineage biomass cannot assign credit to a builder.
 - The viability guard applies.
 
+W4c note (2026-11-26, during the runs).
+- **The guard flags seed 3.** It had 12 reseeds, all in epochs 1–15, one per epoch, then none (39–80 agents).
+- **Cause: a startup cost of the long horizon.** A random starting policy cannot survive a whole 1,800-tick epoch,
+  so the population dies out before evolution makes its first updates.
+- **Rule applied as written.** The guard was fixed before the runs, so seed 3 is excluded from the W4c verdict. It
+  keeps running, and its results are reported as exploratory only. The verdict uses seeds 1–2: pass needs both, and
+  the kill needs both.
+- **Lesson for later protocols.** A guard counted in epochs is not scale-free: 200 epochs are 360,000 ticks at
+  H 1800 but 40,000 at H 200. Future guards should be stated in ticks and exclude a fixed startup period.
+
 Interim observation (2026-11-26, W4b seed 1). F seed 1 boomed early, at epochs 80–115 (peak 198 agents at 100).
 - At epoch 100 one lineage owned 502 of the 541 machines, holding 10.6k store.
 - The other lineages still grew to their 64-slot caps, and the boom collapsed by epoch 135.
