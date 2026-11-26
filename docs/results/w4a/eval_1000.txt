@@ -1,0 +1,24 @@
+# runs8/w4d_s1 e 1000 world: -S 64 -regrow 16 -nact 10 -matter 1 -spawn 20 -mut 1024 -season 300 -view 1 -signals 1 -wall_decay 4 -m_cost 4 -m_give 0 -graze 1 -pass 1 -own 2 -climate_ticks 1200
+champion agent_ticks 3961163 noop 0.004 fwd 0.241 left 0.181 right 0.002 eat 0.453 repro 0.107 attack 0.007 write 0.003 make 0.001 feed 0.002 kills/kt 0.22 births/kt 3.80 starved/kt 2.23 aged/kt 1.19 killed/kt 0.00 symbol 0.508 joint_harvests/kt 0.00
+random agent_ticks 52875 noop 0.085 fwd 0.203 left 0.056 right 0.030 eat 0.120 repro 0.134 attack 0.088 write 0.117 make 0.098 feed 0.069 kills/kt 1.06 births/kt 19.29 starved/kt 11.56 aged/kt 0.00 killed/kt 17.42 symbol 0.597 joint_harvests/kt 0.00
+wipe	0.4882	0.0336	-0.35	0.4869	0.0432	-0.30
+deaf	0.3490	0.0458	-3.30	0.3202	0.0585	-3.08
+== generality (e vs e-500)
+e	e_prev	solo_log_ratio	t	median	surviveA	surviveB	lshareA	lt	swap_recovery	swap_t
+1000	500	0.2668	0.82	0.0216	49/64	49/64	0.9396	26.40	-0.2408	-0.58
+== era (post-founder share, e vs e-250)
+250:1.00 500:1.00 750:0.97 1000:0.90 
+== census (epoch machines walls tapes classes)
+1000 18 45 5 4
+== machines by owner in the latest checkpoint (mcal -ck)
+t 600000 own 2 graze 1
+owner	machines	store
+-1	4	0
+0	14	0
+top tapes (count owner tape):
+14	0	________________
+1	-1	_D{]>D{{S[,D,+[_
+1	-1	EC______________
+1	-1	DD______________
+1	-1	+,-E____________
+agents by lineage slot: 32 32 0 0 0
