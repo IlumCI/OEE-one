@@ -56,6 +56,7 @@ struct WParams{
   // irr (cap 255) for 1 store. A cell's capacity is min(255, natural/seasonal capacity + irrigation); irrigation
   // decays by 1 every irr_decay ticks.
   int irr=0,irr_decay=16;  // irr_decay: ticks per unit of irrigation decay
+  int claim=0;  // W4b: 1 = feeding a wild machine claims it for the feeder's lineage (homesteading)
 };
 
 struct Agent{int x=0,y=0,dir=0,energy=0,age=0,lineage=0;bool alive=false;std::uint64_t id=0;int sig=0,wpos=0;};

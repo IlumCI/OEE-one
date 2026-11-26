@@ -113,6 +113,11 @@ int main(){
       std::FILE* fl=std::tmpfile();w.save(fl);std::rewind(fl);World v;const bool ok=v.load(fl);std::fclose(fl);
       if(!(up&&grew&&dec))std::printf("  irl %d mst %d res %d dec %d\n",(int)w.irl[c],(int)w.mst[c],(int)w.res[c],(int)z.irl[3]);
       CHECK(up&&grew&&dec&&ok&&v.p.irr==2&&v.irl==w.irl,"W4a irrigation: I raises its cell's irrigation for 1 store, the cell regrows toward it, decays 1 per irr_decay ticks, saved");}
+    {auto cl=[&](int claim){WParams q12=q;q12.own=1;q12.claim=claim;q12.K=2;World w;w.init(q12,0);for(auto& r:w.res)r=0;const int f=4*L+5;
+        w.mat[f]=1;w.mst[f]=0;w.mlin[f]=-1;w.mbt[f]=-1;Agent& a=w.ag[q12.S];a=Agent{};a.x=5;a.y=5;a.dir=0;a.energy=100;a.lineage=1;a.alive=true;a.id=1;w.occ[5*L+5]=q12.S;
+        std::vector<std::int8_t> la((std::size_t)q12.S*32,(std::int8_t)-100),lb((std::size_t)q12.S*32,(std::int8_t)-100);lb[9]=100;const std::int8_t* l12[2]={la.data(),lb.data()};
+        std::vector<int> bn;w.tick(l12,bn);return (int)w.mlin[f];};
+      CHECK(cl(1)==1&&cl(0)==-1,"W4b claim: feeding a wild machine makes it the feeder's lineage's; without claim it stays wild");}
     {WParams q3=q;q3.nodes=1;q3.node_per=50;q3.node_ripe=10;q3.view=1;World w;w.init(q3,0);for(auto& r:w.res)r=0;
       int nc=-1;for(int c=0;c<L*L;++c)if(w.mat[c]==3){nc=c;break;}w.mat[nc]=0;const int c=5*L+5;w.mat[c]=3;w.nph[c]=0;w.ncyc[c]=-1;  // one node at (5,5), ripe at t 0-9
       auto put2=[&](int slot,int x,int y,int dir){Agent& g=w.ag[slot];g=Agent{};g.x=x;g.y=y;g.dir=dir;g.energy=100;g.alive=true;g.id=slot+1;w.occ[y*L+x]=slot;};

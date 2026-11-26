@@ -133,7 +133,7 @@ void World::tick(const std::int8_t* const* logits,std::vector<int>& born){
           else if(mat[fc]==1){if(!p.own||mlin[fc]<0||mlin[fc]==a.lineage){a.energy=std::min(p.ecap,a.energy+mst[fc]);kill_machine(fc);a.energy-=p.move;}
             else{kill_machine(fc);a.energy-=2*p.mk_cost;}}}  // W3.2: someone else's machine can only be destroyed
         break;
-      case 9:if(p.matter&&mat[fc]==1){const int amt=std::min(p.feed_amt,std::max(0,a.energy-1));a.energy-=amt;mst[fc]=(std::int16_t)std::min(1000,mst[fc]+amt);}break;  // feed
+      case 9:if(p.matter&&mat[fc]==1){const int amt=std::min(p.feed_amt,std::max(0,a.energy-1));a.energy-=amt;mst[fc]=(std::int16_t)std::min(1000,mst[fc]+amt);if(p.claim&&mlin[fc]<0)mlin[fc]=(std::int8_t)a.lineage;}break;  // feed (claim: a wild machine becomes the feeder's)
       default:break;}
   }
   if(!neat.empty()){std::sort(neat.begin(),neat.end());  // joint harvests: at least two eaters on a ripe node in the same tick
@@ -235,6 +235,7 @@ constexpr std::int64_t kExt5=0x3545564157LL;   // machine economy (m_cost, m_giv
 constexpr std::int64_t kExt6=0x3645564157LL;   // machine economy with grazing (m_cost, m_give, graze)
 constexpr std::int64_t kExt7=0x3745564157LL;   // machine economy with grazing and passable machines (+ pass)
 constexpr std::int64_t kExt8=0x3845564157LL;   // W4a irrigation (irr, per-cell levels)
+constexpr std::int64_t kExt9=0x3945564157LL;   // W4b claim
 template<class T> void wv(std::FILE* f,const std::vector<T>& v){wr(f,(std::int64_t)v.size());if(!v.empty())std::fwrite(v.data(),sizeof(T),v.size(),f);}
 template<class T> bool rv(std::FILE* f,std::vector<T>& v){std::int64_t n=0;if(!rd(f,n)||n<0||n>(1<<26))return false;v.resize((std::size_t)n);
   return n==0||std::fread(v.data(),sizeof(T),(std::size_t)n,f)==(std::size_t)n;}
@@ -252,6 +253,7 @@ void World::save(std::FILE* f) const{
   if(p.pass){wr(f,kExt7);wr(f,p.m_cost);wr(f,p.m_give);wr(f,p.graze);wr(f,p.pass);}
   else if(p.m_cost!=1||p.m_give||p.graze){wr(f,kExt6);wr(f,p.m_cost);wr(f,p.m_give);wr(f,p.graze);}
   if(p.matter&&p.irr>0){wr(f,kExt8);wr(f,p.irr);wr(f,p.irr_decay);wv(f,irl);}
+  if(p.matter&&p.claim){wr(f,kExt9);wr(f,p.claim);}
   wv(f,res);wv(f,fert);wv(f,racc);wv(f,occ);wr(f,(std::int64_t)ag.size());
   for(auto& a:ag){const std::int64_t r[]={a.x,a.y,a.dir,a.energy,a.age,a.lineage,a.alive,(std::int64_t)a.id};for(auto x:r)wr(f,x);}
   if(ext())for(auto& a:ag){wr(f,a.sig);}
@@ -288,6 +290,10 @@ bool World::load(std::FILE* f){
   {std::int64_t m=0;const long pos=std::ftell(f);if(!rd(f,m))return false;
     if(m==kExt8){std::int64_t a=0,b=0;if(!rd(f,a)||!rd(f,b)||!rv(f,irl))return false;p.irr=(int)a;p.irr_decay=(int)b;}
     else if(std::fseek(f,pos,SEEK_SET)!=0)return false;}  // no irrigation block
+  p.claim=0;
+  {std::int64_t m=0;const long pos=std::ftell(f);if(!rd(f,m))return false;
+    if(m==kExt9){std::int64_t a=0;if(!rd(f,a))return false;p.claim=(int)a;}
+    else if(std::fseek(f,pos,SEEK_SET)!=0)return false;}  // no claim block
   if(!rv(f,res)||!rv(f,fert)||!rv(f,racc)||!rv(f,occ)){return false;}std::int64_t n=0;if(!rd(f,n)||n<0||n>(1<<24)){return false;}ag.assign((std::size_t)n,Agent{});
   for(auto& a:ag){std::int64_t r[8];for(auto& x:r)if(!rd(f,x))return false;
     a.x=(int)r[0];a.y=(int)r[1];a.dir=(int)r[2];a.energy=(int)r[3];a.age=(int)r[4];a.lineage=(int)r[5];a.alive=r[6]!=0;a.id=(std::uint64_t)r[7];a.sig=0;}
