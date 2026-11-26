@@ -580,6 +580,45 @@ References checked 2026-11-26 (web search, arXiv):
   - Side observation, not counted: in w3b_s1 the deaf copy beat the intact one (ishare 0.59, t +3.66), so hearing
     symbols cost that champion fitness.
 
+### Calibration fix 3: a trophic link (2026-11-26, before the restarted runs)
+
+- **Defect: once machines could live, they excluded the agents.**
+  - The pilot restarted with m_cost 4 and m_give 16. In seed 1, a replicator spread to 310–420 machines (about 40%
+    of the cells, the fertile ones) by epoch 30, in all three arms. Agents collapsed: populations of 1–20 and 34–51
+    reseeds by epoch 230, against 2–3 in 3000 epochs in W2a.
+  - The machines' upkeep (0.25 per tick each, about 100 per tick in total) used up most of the world's regrowth.
+    That regrowth had fed about 60 agents in W2a. Machines also hold the fertile cells and block movement.
+  - Agents could reach machine energy only by unmaking, an action they rarely choose. Champions did learn it (rate
+    2% to 6–9% by epoch 200), but the canonical populations kept crashing. These runs moved to runs8/nonviable.
+- **Fix 1: grazing (`-graze 1`).** Eating also takes from the store of the machine in front, once the agent's own
+  cell is empty:
+  - any machine when there is no ownership;
+  - with ownership, wild machines and the agent's own.
+  - This generalises the W3.2 granary rule. Machines become food for the agents' commonest action.
+  - Arm A, seed 1, 100 epochs: 23–92 agents, 2 reseeds, fork fitness 7,800–9,000 (W2a level). Grazing keeps the
+    machines at 9–16, with stores near 0.
+- **Fix 2 for the ownership arms: copies are wild (`-own 2`).**
+  - With `-own 1` and grazing, arms B and C still collapsed. Inspection of the checkpoints (tools/w/mcal.cpp
+    `-ck`) showed why:
+    - B at epoch 130: 368 of 373 machines owned by two lineages, holding 164k store.
+    - C at epoch 110: 335 machines owned by one lineage with 1 agent left, holding 145k store.
+  - These are evolved, agent-made replicators, some of which build walls (`{REE>CE<W_____R_`). Owned copies can
+    be eaten only by their owner, so a private replicator became a plague no one else could eat.
+  - With `-own 2`, only the machine an agent makes is private (a granary). Its copies are wild.
+  - In arms B and C the wipe ablation then removes the machines the champion owns.
+  - Arms B and C with `-own 2` and grazing, seed 1, 70 epochs: 27–78 agents, 2–3 reseeds, fork fitness up to
+    12,700, 10–31 machines.
+- **Calibration passes on the worst seed in all three arms.** Calibration runs: runs8/cal_graze.
+- **Effect on the runs.**
+  - All 21 runs restart with `-m_cost 4 -m_give 16 -graze 1`. B, C and the wave-2 arms use `-own 2` instead of
+    `-own 1`.
+  - Binary: runs8/oee_w_v15 (commit 86be6b7).
+  - The protocols are otherwise unchanged.
+- **Literature (web search 2026-11-26).** Hartvigsen and Levin's evolving lattice model of plants and herbivores
+  (Princeton) found that herbivores do best at an intermediate interaction strength, and that evolution settles
+  there. Here the strength of a single bite is fixed. Agents still choose how often to graze, and machines can
+  evolve defences such as walls.
+
 ### Wave 2 protocol: old and disputed ideas, one per arm (fixed 2026-11-26, before the runs)
 
 Each arm is pilot arm C (substrate, ownership, split-role nodes) plus exactly one change. 3 seeds × 2000 epochs,
