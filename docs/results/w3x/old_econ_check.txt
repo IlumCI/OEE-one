@@ -1,0 +1,10 @@
+# runs8/old_econ/w3a_s1 e 575 world: -S 64 -regrow 16 -nact 10 -matter 1 -spawn 20 -mut 1024 -season 300 -view 1 -signals 1 -wall_decay 4
+champion agent_ticks 3125498 noop 0.010 fwd 0.271 left 0.003 right 0.213 eat 0.481 repro 0.013 attack 0.001 write 0.006 make 0.001 feed 0.002 kills/kt 0.00 births/kt 3.54 starved/kt 1.86 aged/kt 1.34 killed/kt 0.01 symbol 0.931 joint_harvests/kt 0.00
+random agent_ticks 129247 noop 0.100 fwd 0.169 left 0.064 right 0.035 eat 0.113 repro 0.124 attack 0.086 write 0.121 make 0.110 feed 0.078 kills/kt 1.50 births/kt 11.09 starved/kt 13.60 aged/kt 0.00 killed/kt 1.45 symbol 0.640 joint_harvests/kt 0.00
+wipe	0.5045	0.0127	0.36	0.5084	0.0211	0.40
+deaf	0.4879	0.0124	-0.98	0.4796	0.0209	-0.97
+# runs8/old_econ/w3b_s1 e 650 world: -S 64 -regrow 16 -nact 10 -matter 1 -spawn 20 -mut 1024 -season 300 -view 1 -signals 1 -wall_decay 4 -own 1
+champion agent_ticks 3652080 noop 0.001 fwd 0.270 left 0.176 right 0.013 eat 0.447 repro 0.019 attack 0.064 write 0.004 make 0.003 feed 0.001 kills/kt 0.20 births/kt 3.71 starved/kt 2.08 aged/kt 1.19 killed/kt 0.07 symbol 0.541 joint_harvests/kt 0.00
+random agent_ticks 90793 noop 0.092 fwd 0.181 left 0.061 right 0.032 eat 0.119 repro 0.130 attack 0.087 write 0.122 make 0.103 feed 0.073 kills/kt 1.41 births/kt 13.22 starved/kt 12.27 aged/kt 0.00 killed/kt 6.59 symbol 0.623 joint_harvests/kt 0.00
+wipe	0.4881	0.0204	-0.58	0.4892	0.0342	-0.32
+deaf	0.5947	0.0258	3.66	0.6246	0.0388	3.21

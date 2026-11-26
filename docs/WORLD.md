@@ -567,8 +567,18 @@ References checked 2026-11-26 (web search, arXiv):
 - **Effect on the runs.**
   - The pilot and wave-2 protocols are otherwise unchanged. All 21 runs restart (runs8, binary oee_w_v14).
   - Tournaments read the world flags from each run's cmd.txt (tools/w/wflags.sh), so they include the new costs.
-  - The two runs on the old economy (w3a_s1, w3b_s1) move to runs8/old_econ. They are scored at epoch 1000 with the
-    pilot's kill test, as a check of the diagnosis.
+  - The two runs on the old economy (w3a_s1, w3b_s1) moved to runs8/old_econ. They were scored with the pilot's
+    kill test at their last champions (epochs 575 and 650, 16 mirrored seeds), then stopped.
+    Results: docs/results/w3x/old_econ_check.txt.
+
+    | Run (epoch) | Champion write / make / feed | Random write / make / feed | Wipe ishare (t) |
+    |---|---|---|---|
+    | w3a_s1 (575) | 0.6 / 0.1 / 0.2% | 12.1 / 11.0 / 7.8% | 0.50 (t 0.36) |
+    | w3b_s1 (650) | 0.4 / 0.3 / 0.1% | 12.2 / 10.3 / 7.3% | 0.49 (t −0.58) |
+
+    The kill condition holds on the old economy, as the diagnosis predicts.
+  - Side observation, not counted: in w3b_s1 the deaf copy beat the intact one (ishare 0.59, t +3.66), so hearing
+    symbols cost that champion fitness.
 
 ### Wave 2 protocol: old and disputed ideas, one per arm (fixed 2026-11-26, before the runs)
 
