@@ -849,6 +849,61 @@ W4c seed 1 at its final epoch 333 (2026-11-26; docs/results/w4c/eval_333.txt).
   epochs 200–1000 (two booms, mean population 77).
 - Seed 1 meets the kill condition. The verdict waits for seed 2.
 
+### W4c verdict: the credit horizon is not the limit (2026-11-26; docs/results/w4c/eval_333.txt)
+
+| Seed | G building (write / make / feed) | Random agents | Wipe | G vs E's final champion, G's world / E's world | Boom time, G (67–333) / E (200–1000) |
+|---|---|---|---|---|---|
+| 1 | 2.3% / 0.1% / 1.1% | 12.2% / 9.8% / 6.6% | 0.52 (t 0.4) | 0.0006 / 0.0005 | 0.034 / 0.081 |
+| 2 | 0.1% / 0.1% / 0.1% | 20.4% / 4.6% / 9.5% | 0.49 (t −0.2) | 0.25 (t −3.9) / 0.25 (t −3.9) | 0.019 / 0.000 |
+
+- **Killed.** In both seeds building is below random and the wipe costs nothing. Seed 3 is excluded by the guard
+  and is reported when it finishes.
+- G's champions lose to E's in both worlds. At equal ticks G gets a third as many ES updates, so this mixes the
+  horizon with the number of updates. An unconfounded test would hold each perturbation over a long horizon but
+  update as often as E (noise-reuse online ES, Li et al. 2023, arXiv:2304.12180).
+- The protocol names the learner as the next suspect. A diagnosis was run first (below). It points to the world.
+
+### Diagnosis after W4a–W4c: feeding does not pay the feeder (2026-11-26; docs/results/diag/)
+
+Question (diagnose what the world runs out of before adding mechanisms): is feeding never selected because ES
+cannot see its payoff, or because it has none?
+- ES lineages are clonal and selected as teams, the case Waibel, Keller and Floreano (2009) found free of
+  credit-assignment problems. What remains is leakage to rivals.
+- By Hamilton's rule, feeding pays the feeder's lineage only if r_eff·b > c (Taylor-Davies et al. 2024,
+  arXiv:2411.10536). Literature: docs/results/w4c/next_lit.md.
+
+Measures (analysis only, runs8/oee_w_v21):
+- Credit counters: a cell's irrigation is credited to the lineage that last fed the machine that irrigated it. Food
+  eaten there is split into that lineage's own share and the share eaten by others.
+- `-ablate nofeed`: the champion against a copy of itself whose feed action does nothing. The copy's share is below
+  0.5 (t < −3) if feeding pays.
+
+| Arena | No-feed copy's share (post-founder) | Feeding |
+|---|---|---|
+| E s3 boom world (snapshot 500), E s3's epoch-500 champion | 0.54 (t 12.8, 16/16) | costs the feeder |
+| E s3 pre-boom world (snapshot 400), same champion | 0.47 (t −0.6) | no effect |
+| Fresh arenas, same champion | 0.51 (t 0.1) | no effect |
+| G s3 boom world (snapshot 170), G s3's epoch-175 champion | 0.50 (t −0.8) | no effect |
+
+- In the boom world the champion feeds on 7.1% of its actions (0.9% in fresh arenas) and attacks on 23.7%.
+- Of the food grown on cells its feeding irrigated, 80% went to its own lineage and 20% to the other (two-lineage
+  arenas; training has four lineages, so more leaks there).
+- Food returned to its own lineage per unit of energy fed was 1.22. This is an upper bound: nearly all land in the
+  boom world is irrigated, and the count includes food the land would have grown anyway.
+- Yet the copy that cannot feed wins every game. It keeps the energy and eats from farms the other copy feeds.
+
+Conclusion.
+- Feeding, as the champions do it, is a public good and a net cost to the lineage that does it. ES is right not
+  to select it. Whether a more targeted feeding policy could pay is untested.
+- What the world runs out of is a private return on investment: food grown on irrigated land is a commons.
+- Candidate next steps (each to be fixed with a kill criterion before any code):
+  - Land ownership, the remainder left by W4b: irrigated land feeds only, or first, the lineage that irrigated it
+    (exclusion; Perolat et al. 2017, arXiv:1707.06600).
+  - Crediting the yield of irrigated cells to the irrigating lineage (Wolpert and Tumer 2001). This re-attributes
+    world payoffs instead of changing the world; lower priority now that the learner is not the limit.
+  - W4a–W4c are three changes to one substrate, and the rules warn against adding mechanisms to the same
+    substrate. The next substrate in the plan is the alternative.
+
 Interim observation (2026-11-26, W4b seed 1). F seed 1 boomed early, at epochs 80–115 (peak 198 agents at 100).
 - At epoch 100 one lineage owned 502 of the 541 machines, holding 10.6k store.
 - The other lineages still grew to their 64-slot caps, and the boom collapsed by epoch 135.
