@@ -608,6 +608,11 @@ Pass and kill:
   - C+cat and C+stress: fewer collapses and a higher mean era share than C;
   - C+lam: higher solo generality than C, t > 3.
 - An arm with neither is closed. Ideas that pass are combined only after each has passed alone.
+- Amendment (2026-11-26, before any run reached 2000): C+kin and C+lam change the world itself. Their head-to-head
+  is played in both training worlds and counts only if it passes in both, so neither side has a home advantage.
+  C+cat and C+stress share C's world.
+- Scripts: tools/w/w3_check.sh (kill test), tools/w/w3x_eval.sh (pilot measures), tools/w/wave2_eval.sh (wave 2).
+  All of them read the world flags from cmd.txt.
 
 ## 7. Implementation (planned files)
 
