@@ -229,7 +229,8 @@ int main(int argc,char** argv){
     if(stats){static const char* nm[]={"noop","fwd","left","right","eat","repro","attack","write","make","feed"};
       for(int g=0;g<2;++g){long tot[32]={0};for(int gi=0;gi<G;++gi)for(int j=0;j<32;++j)tot[j]+=gst[gi][32*g+j];const double T=std::max(1L,tot[22]);
         std::printf("stats %s agent_ticks %ld",g?"B":"A",tot[22]);for(int j=0;j<wp.nact&&j<10;++j)std::printf(" %s %.3f",nm[j],tot[j]/T);
-        std::printf(" kills/kt %.2f births/kt %.2f starved/kt %.2f aged/kt %.2f killed/kt %.2f symbol %.3f joint_harvests/kt %.2f\n",1e3*tot[16]/T,1e3*tot[17]/T,1e3*tot[18]/T,1e3*tot[19]/T,1e3*tot[20]/T,tot[21]/T,1e3*tot[23]/T);}}
+        std::printf(" kills/kt %.2f births/kt %.2f starved/kt %.2f aged/kt %.2f killed/kt %.2f symbol %.3f joint_harvests/kt %.2f",1e3*tot[16]/T,1e3*tot[17]/T,1e3*tot[18]/T,1e3*tot[19]/T,1e3*tot[20]/T,tot[21]/T,1e3*tot[23]/T);
+        if(wp.irr>0)std::printf(" fed %ld food %ld irr_own %ld irr_other %ld irr_wild %ld",tot[27],tot[28],tot[24],tot[25],tot[26]);std::printf("\n");}}
     if(curve>0){std::printf("curve");for(int c=0;c<nc;++c){double m=0;for(int gi=0;gi<G;++gi)m+=cv[gi][c];std::printf(" %d:%.3f",(c+1)*curve,m/G);}std::printf("\n");}
     std::printf("mean_shareA %.4f\n",sf/G);
     std::printf("mean_ishareA %.4f\tse %.4f\tt %.2f\twins %d/%d\n",mi,se,se>1e-9?(mi-0.5)/se:0.0,wins,seeds);

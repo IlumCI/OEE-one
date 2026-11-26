@@ -80,8 +80,13 @@ struct World{
   std::uint32_t deaf=0;                // analysis: lineages (bit k) that hear no symbols (not saved)
   std::uint32_t deaf_kin=0,deaf_other=0;  // analysis: lineages that hear no symbols from their own / from other lineages
   // analysis: per-lineage counters when track is set (not saved): stat[k*32+a] actions a = 0..15, +16 kills made,
-  // +17 births, +18 starved, +19 died of age, +20 killed, +21 non-zero symbols, +22 agent-ticks
+  // +17 births, +18 starved, +19 died of age, +20 killed, +21 non-zero symbols, +22 agent-ticks, +23 joint harvests;
+  // with irr (credit for irrigation, k = the credited lineage): +24 food from k-credited irrigated cells eaten by k,
+  // +25 the same eaten by other lineages, +26 food from uncredited irrigated cells eaten by k, +27 energy k fed into
+  // machines, +28 all food k took from cells
   bool track=false;std::vector<long> stat;
+  std::vector<std::int8_t> mfd,ilin;  // analysis (track, not saved): last feeder lineage per machine; lineage credited
+                                      // for each cell's irrigation (the last feeder of the machine that irrigated it)
   // W3 matter, per cell (allocated when p.matter): material 0 empty, 1 machine, 2 wall; machine tape (16 bytes),
   // instruction pointer, heads, direction, store, halted ticks, creator lineage, birth tick, effect counters
   // (4 per cell: resource harvested, resource delivered, copies made, walls changed)

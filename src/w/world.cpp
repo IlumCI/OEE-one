@@ -106,6 +106,7 @@ void World::tick(const std::int8_t* const* logits,std::vector<int>& born){
     if(p.signals)ag[s].sig=act_sample(l+so,mix(mix(p.seed^0x5197ULL)+((std::uint64_t)t<<24)+ag[s].id),4);  // heard next tick
     if(p.matter)code[s]=p.stoch?act_sample(l+16,mix(mix(p.seed^0xc0deULL)+((std::uint64_t)t<<24)+ag[s].id),16):act_of(l+16,16);}
   if(track&&stat.size()<(std::size_t)p.K*32)stat.assign((std::size_t)p.K*32,0);
+  if(track&&p.matter&&p.irr>0&&mfd.size()!=(std::size_t)N){mfd.assign(N,-1);ilin.assign(N,-1);}
   if(track)for(int s:order){const int k=ag[s].lineage;++stat[(std::size_t)k*32+act[s]];++stat[(std::size_t)k*32+22];if(ag[s].sig>0)++stat[(std::size_t)k*32+21];}
   std::vector<std::pair<int,int>> neat;  // W3.3: (node cell, eater slot) this tick
   for(int s:order){Agent& a=ag[s];if(!a.alive)continue;const int c=a.y*p.L+a.x;
@@ -116,6 +117,8 @@ void World::tick(const std::int8_t* const* logits,std::vector<int>& born){
       case 3:a.dir=(a.dir+1)&3;a.energy-=p.turn;break;
       case 4:{if(p.nodes>0&&p.matter&&mat[fc]==3)neat.push_back({fc,s});
         int take=std::min<int>(res[c],p.bite);res[c]-=(std::uint8_t)take;
+        if(track&&p.matter){const std::size_t k=(std::size_t)a.lineage;stat[k*32+28]+=take;
+          if(!ilin.empty()&&irl[c]>0){const int L=ilin[c];if(L==a.lineage)stat[k*32+24]+=take;else if(L>=0)stat[(std::size_t)L*32+25]+=take;else stat[k*32+26]+=take;}}
         if(p.pass&&p.matter&&take<p.bite&&mat[c]==1&&(p.graze?(!p.own||mlin[c]<0||mlin[c]==a.lineage):(p.own&&mlin[c]==a.lineage))){const int t2=std::min<int>(p.bite-take,mst[c]);mst[c]=(std::int16_t)(mst[c]-t2);take+=t2;}  // underfoot
         if(p.matter&&take<p.bite&&mat[fc]==1&&(p.graze?(!p.own||mlin[fc]<0||mlin[fc]==a.lineage):(p.own&&mlin[fc]==a.lineage))){const int t2=std::min<int>(p.bite-take,mst[fc]);mst[fc]=(std::int16_t)(mst[fc]-t2);take+=t2;}  // granary or grazing
         a.energy=std::min(p.ecap,a.energy+take);break;}
@@ -133,7 +136,8 @@ void World::tick(const std::int8_t* const* logits,std::vector<int>& born){
           else if(mat[fc]==1){if(!p.own||mlin[fc]<0||mlin[fc]==a.lineage){a.energy=std::min(p.ecap,a.energy+mst[fc]);kill_machine(fc);a.energy-=p.move;}
             else{kill_machine(fc);a.energy-=2*p.mk_cost;}}}  // W3.2: someone else's machine can only be destroyed
         break;
-      case 9:if(p.matter&&mat[fc]==1){const int amt=std::min(p.feed_amt,std::max(0,a.energy-1));a.energy-=amt;mst[fc]=(std::int16_t)std::min(1000,mst[fc]+amt);if(p.claim&&mlin[fc]<0)mlin[fc]=(std::int8_t)a.lineage;}break;  // feed (claim: a wild machine becomes the feeder's)
+      case 9:if(p.matter&&mat[fc]==1){const int amt=std::min(p.feed_amt,std::max(0,a.energy-1));a.energy-=amt;mst[fc]=(std::int16_t)std::min(1000,mst[fc]+amt);if(p.claim&&mlin[fc]<0)mlin[fc]=(std::int8_t)a.lineage;
+        if(track&&amt>0){stat[(std::size_t)a.lineage*32+27]+=amt;if(!mfd.empty())mfd[fc]=(std::int8_t)a.lineage;}}break;  // feed (claim: a wild machine becomes the feeder's)
       default:break;}
   }
   if(!neat.empty()){std::sort(neat.begin(),neat.end());  // joint harvests: at least two eaters on a ripe node in the same tick
@@ -161,8 +165,8 @@ bool World::ripe(int c) const{if(p.nodes<=0||mat[c]!=3)return false;const long p
   return (t+nph[c])%per<p.node_ripe&&ncyc[c]!=(std::int32_t)cyc;}
 int World::front_of(int c,int dir) const{const int L=p.L,x=c%L,y=c/L;return ((y+FY[dir]+L)%L)*L+(x+FX[dir]+L)%L;}
 void World::make_machine(int c,int dir,int lin){mat[c]=1;std::fill(tape.begin()+(std::size_t)c*16,tape.begin()+(std::size_t)c*16+16,0);
-  mip[c]=mh0[c]=mh1[c]=0;mdir[c]=(std::uint8_t)dir;mst[c]=0;mhalt[c]=0;mlin[c]=(std::int8_t)lin;mbt[c]=t;std::fill(mfx.begin()+(std::size_t)c*4,mfx.begin()+(std::size_t)c*4+4,0);}
-void World::kill_machine(int c){mat[c]=0;mst[c]=0;mhalt[c]=0;mlin[c]=-1;std::fill(tape.begin()+(std::size_t)c*16,tape.begin()+(std::size_t)c*16+16,0);}
+  mip[c]=mh0[c]=mh1[c]=0;mdir[c]=(std::uint8_t)dir;mst[c]=0;mhalt[c]=0;mlin[c]=(std::int8_t)lin;mbt[c]=t;std::fill(mfx.begin()+(std::size_t)c*4,mfx.begin()+(std::size_t)c*4+4,0);if(!mfd.empty())mfd[c]=-1;}
+void World::kill_machine(int c){mat[c]=0;mst[c]=0;mhalt[c]=0;mlin[c]=-1;std::fill(tape.begin()+(std::size_t)c*16,tape.begin()+(std::size_t)c*16+16,0);if(!mfd.empty())mfd[c]=-1;}
 // Machines run in a rotated cell order (deterministic per tick); a machine made this tick starts next tick.
 void World::run_machines(){
   const int N=p.L*p.L;const int st=(int)(mix(mix(p.seed^0x3ac4ULL)+(std::uint64_t)t)%(std::uint64_t)N);
@@ -172,7 +176,7 @@ void World::run_machines(){
     for(int n=0;n<p.m_steps;++n){
       switch(tp[ip]){
         case '<':h0=(h0+15)&15;break;case '>':h0=(h0+1)&15;break;case '{':h1=(h1+15)&15;break;case '}':h1=(h1+1)&15;break;
-        case '+':++tp[h0];break;case '-':--tp[h0];break;case '.':tp[h1]=tp[h0];break;case ',':if(p.irr>0){if(irl[c]<255&&mst[c]>=1){irl[c]=(std::uint8_t)std::min(255,irl[c]+p.irr);--mst[c];}}else tp[h0]=tp[h1];break;
+        case '+':++tp[h0];break;case '-':--tp[h0];break;case '.':tp[h1]=tp[h0];break;case ',':if(p.irr>0){if(irl[c]<255&&mst[c]>=1){irl[c]=(std::uint8_t)std::min(255,irl[c]+p.irr);--mst[c];if(!ilin.empty())ilin[c]=mfd[c];}}else tp[h0]=tp[h1];break;
         case '[':if(tp[h0]==0){int d=1,j=ip;for(int k=0;k<16&&d>0;++k){j=(j+1)&15;if(tp[j]=='[')++d;else if(tp[j]==']')--d;}if(d==0)ip=j;}break;
         case ']':if(tp[h0]!=0){int d=1,j=ip;for(int k=0;k<16&&d>0;++k){j=(j+15)&15;if(tp[j]==']')++d;else if(tp[j]=='[')--d;}if(d==0)ip=j;}break;
         case 'E':{const int take=std::min<int>({(int)res[c],8,1000-mst[c]});res[c]=(std::uint8_t)(res[c]-take);mst[c]=(std::int16_t)(mst[c]+take);fx[0]+=take;break;}
