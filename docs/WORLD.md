@@ -719,7 +719,29 @@ Pass and kill:
 
 ## 9. Results
 
-### W3.x pilot, kill check at epoch 1000 (interim, 2026-11-26; docs/results/w3x/kill_1000.txt)
+### W3.x pilot, epoch 2000 (interim: seed 1 and A seed 2; 2026-11-26; docs/results/w3x/eval_2000.txt)
+
+Share (t) of the ablated copy; generality and era as in §6 (post-founder shares).
+
+| Arm, seed | Wipe | Deaf | Era 500 → 2000 | vs e−500 in generated arenas | Solo vs e−500 |
+|---|---|---|---|---|---|
+| A, 1 | 0.48 (−1.6) | 0.45 (−4.4) | 0.62, 0.64, 0.73, 0.28, 0.52, 0.60, 0.66 | 0.67 (t 9.0) | +0.01 (t 0.1) |
+| A, 2 | 0.42 (−2.1) | 0.61 (+1.8) | 1.00, 1.00, 0.78, 0.35, 0.85, 0.84, 0.78 | 0.87 (t 12.7) | −0.03 (t −0.1) |
+| B, 1 | 0.56 (+1.5) | 0.09 (−51) | 0.86, 0.63, 0.78, 0.82, 0.89, 0.80, 0.94 | 0.86 (t 19.6) | −0.12 (t −0.6) |
+| C, 1 | 0.49 (−0.2) | 0.56 (+0.9) | 0.97, 1.00, 0.70, 0.62, 0.70, 0.69, 0.56 | 0.64 (t 3.8) | +0.04 (t 0.3) |
+
+- **Building does not pay in any run.** Champions use the building actions at 1–7% of random rates.
+- **Signals.**
+  - The deaf ablation costs in A seed 1 (t −4.4) and B seed 1. In B the deaf copy keeps 2% of post-founder
+    biomass.
+  - Nothing in A seed 2 or C seed 1.
+  - C makes joint harvests (0.36 per 1000 agent-ticks, random 0.00) whether or not it hears. The coordination at
+    nodes is implicit.
+- **Progress.**
+  - Era shares stay above 0.25 in every run.
+  - Later champions beat earlier ones in unseen generated arenas (t 3.8–19.6). Solo scores do not rise, so the gain
+    is relative (better competitors), not absolute (better survivors alone).
+
 
 Calibrated substrate (fix 4). 16 mirrored seeds per measure. Wipe and deaf give the share (t) of the ablated copy
 against the intact champion; below 0.5 with t < −3 means the mechanism pays.
