@@ -815,6 +815,42 @@ Pass and kill:
 
 ## 9. Results
 
+### W4a verdict (2026-11-26; docs/results/w4a/eval_1000.txt, booms.tsv)
+
+At epoch 1000, 16 mirrored seeds. Wipe: share (t) of the copy whose own machines are removed. E vs D: post-founder
+share of E's champion.
+
+| Seed | E building (write / make / feed) | E wipe | E vs D, E's world | E vs D, D's world |
+|---|---|---|---|---|
+| 1 | 0.3 / 0.1 / 0.2%* | 0.54 (+0.9) | 0.50 (0.0) | 0.44 (−0.7) |
+| 2 | 0.2 / 0.1 / 0.3% | 0.58 (+1.9) | 0.84 (+3.9) | 0.75 (+2.8) |
+| 3 | 0.6 / 0.1 / 0.1% | 0.56 (+1.3) | 0.62 (+1.8) | 0.62 (+2.2) |
+
+\* random agents: 12–25% write, 4–10% make, 7–12% feed in every seed.
+
+- **Killed (pre-registered).** In every seed, champions build at or below random agents' rates and wiping their
+  own machines costs nothing.
+  - E beats D head-to-head only in seed 2, in E's world.
+  - Irrigation makes construction create value, yet individual building is still not selected.
+- **But the world changed: boom time** (epochs 200–1000; booms.tsv):
+
+  | Run | Boom time (> 150 agents) | Booms | Mean population | Peak |
+  |---|---|---|---|---|
+  | E seed 1 | 8.1% | 2 | 77 | 256 (cap) |
+  | E seed 2 | 0% | 0 | 67 | 128 |
+  | E seed 3 | 6.4% | 3 | 76 | 256 (cap) |
+  | D seeds 1–3 | 0% | 0 | 60–65 | 95–128 |
+
+  - The booms come from wild farm replicators that agents feed. It is a commons, not property, so individual
+    building measures cannot see it.
+  - During booms the largest lineage holds only 27–28% of agents: all lineages share it.
+- **Era progress.** No collapse in D. E collapses once, at seed 3 epoch 1000 (0.19 against epoch 750). That
+  champion was trained mostly inside a boom world.
+- **Next.**
+  - The protocol's next step after a kill is a credit-horizon test (a longer horizon at equal compute) before any
+    further world change.
+  - W4b, already running, asks the separate question raised by the booms: does property make farming last?
+
 ### W4a observation: an agricultural boom and bust in arm E, seed 1 (interim; 2026-11-26)
 
 - **What happened.** Between epochs 175 and 200, w4e_s1 went from 34 to 213 agents (the slot cap is 256), and
