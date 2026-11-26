@@ -466,6 +466,37 @@ Test (5 seeds, 3000 epochs; control arm W2a signal runs):
   - the champion's solo score in seeded arenas is no better than in arenas without machines, relative to its
     ancestor.
 
+### W3.x pilot protocol (fixed 2026-11-26, before the runs)
+
+The arms differ in one change each. 3 seeds × 2000 epochs as a pilot; seeds 4–5 for any arm that passes.
+- **A: substrate.** `-spawn 20 -mut 1024` (W3.1).
+- **B: substrate plus ownership.** A plus `-own 1` (W3.2: machines belong to the maker's lineage, only the owner can
+  recover a store, owners eat from their own machine's store).
+- **C: substrate, ownership and split-role nodes.** B plus `-nodes 8 -node_pay 150 -node_per 200 -node_ripe 40`
+  (W3.3: ripeness visible only from an adjacent cell; pays only two agents eating together).
+- All arms: W3 settings (W1b rule, seasons 300, view 1, signals, regrowth 16, matter).
+- Controls: W2a signal runs (no matter) and the paused W3 runs (matter, no substrate; stopped at 671 and 418).
+
+Measures at 1000 and 2000 epochs:
+- action rates of champions against random agents (`-stats`);
+- wipe ablation (B, C);
+- deaf ablation (all arms);
+- joint harvests per 1000 agent-ticks (C);
+- generality (solo, head-to-head, swap);
+- era progress;
+- the machine census (tapes, classes).
+
+Pass and kill:
+- **Building pays** in an arm if the wipe ablation costs fitness (t < −3) in at least 2 of 3 seeds at 2000.
+- **Signals pay** in C if the deaf ablation costs fitness (t < −3) in the training arenas in at least 2 of 3 seeds,
+  and joint harvests exceed random agents'.
+- **Kill for an arm** (at 1000): building rates at or below random agents' and the wipe costs nothing, in every
+  seed.
+- **Kill for C's signal claim** (at 2000): deafness costs nothing in every seed. Then the next step is horizontal
+  transfer (W3.4: a signal writes into the receiver's recurrent state), not more environment.
+- Order after the pilot: W4 (law space: instructions that change local rules) if building pays; fusion of agents
+  (major transitions) after W4.
+
 ## 7. Implementation (planned files)
 
 - `src/w/world.{hpp,cpp}`: grid, resources, machines, agents, deterministic tick (counter RNG), copyable for forks.
