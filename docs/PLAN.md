@@ -85,9 +85,9 @@ Re-plan 2026-11-25 (owner decision):
 |---|---|---|---|
 | W0 | One lineage, resources, fork/evaluate/update loop | Evolved mean beats initial mean | Done (trivial) |
 | W1 | Several lineages, splits, extinction, historical self-play | Sustained era progress; less cycling with ancestors | Progress fails; cycling halved (pass) |
-| W1b–e | Step-schedule fix (b), null-ES control (c), ancestor exposure (d, e) | Per protocol | b pass (adopted), c pass, d fail, e running |
-| W2a | Seasons, hidden resources, signals | Amnesia and deaf ablations cost fitness | Running; memory pays with seasons (both seeds), signals unused |
-| **W3** | **Programmable matter: cell tapes, machines that run, copy and build; agents write and read code** | **Wiping artifacts costs fitness; distinct functional artifact types keep growing; held-out generality rises** | **Next (design: WORLD.md §4, protocol §6)** |
+| W1b–e | Step-schedule fix (b), null-ES control (c), ancestor exposure (d, e) | Per protocol | b pass (adopted), c pass, d fail, e fail |
+| W2a | Seasons, hidden resources, signals | Amnesia and deaf ablations cost fitness | Memory pays with seasons; signals unused (seeds 1–4; seed 5 finishing) |
+| **W3** | **Programmable matter: cell tapes, machines that run, copy and build; agents write and read code** | **Wiping artifacts costs fitness; distinct functional artifact types keep growing; held-out generality rises** | **Running. W3 alone: building selected away. Two substrate defects found and fixed (machines could not gain energy; replicators then excluded agents). W3.x pilot and wave 2 restart (WORLD.md §6)** |
 | W3b | Emulated computer inside the sandbox (files, processes, no external network) | To be fixed after W3 | Option |
 | W4 | State-dependent physics (machines change local rules) | Observer compression progress stays positive | After W3 |
 

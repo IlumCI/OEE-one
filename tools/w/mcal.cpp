@@ -1,6 +1,7 @@
 // Machine-economy calibration (docs/WORLD.md, W3 calibration): worlds without agents.
 // Usage: mcal [-m_cost 1] [-m_give 0] [-spawn 20] [-mut 1024] [-season 300] [-regrow 16] [-wall_decay 4] [-L 32]
 //             [-ticks 20000] [-every 2000] [-seed 1] [-probe 0]
+// mcal -ck FILE: census of the canonical world in an oee_w checkpoint (machines and store by owner, top tapes).
 // -probe 1: one harvester (tape "E", store 50) on the most fertile cell, no spawn; prints its store every `every`.
 // Otherwise spontaneous generation only; every `every` ticks prints: t machines walls tapes classes (census, age>=100)
 // store (sum of machine stores) res (sum of cell resources) copiers (machines that made a copy) top (count of the most
@@ -19,6 +20,17 @@ using namespace oee::w;
 int main(int argc,char** argv){
   WParams p;p.K=1;p.S=16;p.nact=10;p.matter=1;p.spawn=20;p.mut=1024;p.season=300;p.view=1;p.signals=1;p.regrow=16;p.wall_decay=4;
   long T=20000,ev=2000;int probe=0;
+  if(argc==3&&!std::strcmp(argv[1],"-ck")){  // census of the canonical world in an oee_w checkpoint, by owner
+    std::FILE* f=std::fopen(argv[2],"rb");if(!f){std::fprintf(stderr,"cannot read %s\n",argv[2]);return 2;}
+    std::int64_t x=0,n=0;if(std::fread(&x,8,1,f)!=1||std::fread(&n,8,1,f)!=1||n<0||n>4096){std::fprintf(stderr,"not a checkpoint\n");return 2;}
+    std::fseek(f,(long)(8*n+5*8),SEEK_CUR);World W;if(!W.load(f)){std::fprintf(stderr,"cannot load world\n");return 2;}std::fclose(f);
+    const int N=W.p.L*W.p.L;std::map<int,int> cnt;std::map<int,long> st;std::map<std::pair<std::string,int>,int> h;
+    for(int c=0;c<N;++c){if(W.mat[c]!=1)continue;const int o=W.mlin[c];++cnt[o];st[o]+=W.mst[c];std::string s(16,'_');
+      for(int j=0;j<16;++j){const std::uint8_t y=W.tape[(std::size_t)c*16+j];if(std::find(kCode,kCode+16,y)!=kCode+16)s[j]=(char)y;}++h[{s,o}];}
+    std::printf("t %ld own %d graze %d\nowner\tmachines\tstore\n",W.t,W.p.own,W.p.graze);for(auto& [o,k]:cnt)std::printf("%d\t%d\t%ld\n",o,k,st[o]);
+    std::vector<std::pair<int,std::pair<std::string,int>>> v;for(auto& [k,c]:h)v.push_back({c,k});std::sort(v.rbegin(),v.rend());
+    std::printf("top tapes (count owner tape):\n");for(std::size_t i=0;i<v.size()&&i<5;++i)std::printf("%d\t%d\t%s\n",v[i].first,v[i].second.second,v[i].second.first.c_str());
+    int al[8]={0};for(auto& g:W.ag)if(g.alive&&g.lineage<8)++al[g.lineage];std::printf("agents by lineage slot:");for(int k=0;k<W.p.K&&k<8;++k)std::printf(" %d",al[k]);std::printf("\n");return 0;}
   for(int a=1;a+1<argc;a+=2){const char* s=argv[a];const int v=std::atoi(argv[a+1]);
     if(!std::strcmp(s,"-m_cost"))p.m_cost=std::max(1,v);else if(!std::strcmp(s,"-m_give"))p.m_give=v;else if(!std::strcmp(s,"-spawn"))p.spawn=v;
     else if(!std::strcmp(s,"-mut"))p.mut=v;else if(!std::strcmp(s,"-season"))p.season=v;else if(!std::strcmp(s,"-regrow"))p.regrow=v;

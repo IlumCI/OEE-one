@@ -178,7 +178,7 @@ void World::run_machines(){
             res[f]=(std::uint8_t)r;mst[c]=(std::int16_t)(mst[c]-mv);fx[1]+=mv;}break;}
         case 'S':tp[h0]=res[front_of(c,mdir[c])];break;
         case 'C':{const int f=front_of(c,mdir[c]);if(mat[f]==0&&occ[f]<0&&mst[c]>=p.rep_cost+p.m_give){mst[c]=(std::int16_t)(mst[c]-p.rep_cost-p.m_give);
-            make_machine(f,mdir[c],mlin[c]);mst[f]=(std::int16_t)p.m_give;std::copy(tp,tp+16,tape.begin()+(std::size_t)f*16);++fx[2];
+            make_machine(f,mdir[c],p.own==2?-1:mlin[c]);mst[f]=(std::int16_t)p.m_give;std::copy(tp,tp+16,tape.begin()+(std::size_t)f*16);++fx[2];
             if(p.mut>0)for(int j=0;j<16;++j){const std::uint64_t h=mix(mix(p.seed^0xbad5ULL)+((std::uint64_t)t<<24)+((std::uint64_t)c<<5)+j);  // imperfect copy
               if((int)(h&0xffff)<p.mut)tape[(std::size_t)f*16+j]=kCode[(h>>16)&15];}}
           break;}

@@ -33,6 +33,7 @@ struct WParams{
   int own=0;       // W3.2: machines belong to their maker's lineage (copies too). Only the owner can unmake one and
                    // recover its store; others can only destroy it (cost 2*mk_cost, store lost). The owner also eats
                    // from the store of its own machine in front once its cell is empty (a private granary).
+                   // own 2: the same, but copies are wild (no owner): only what an agent makes is private.
   // W3.3 split-role nodes (signals): solid food sources, ripe node_ripe ticks per node_per (own phase each), whose
   // state is visible only from within `view`. A ripe node pays node_pay to each agent eating from it, but only when
   // at least two agents eat from it in the same tick; then it is spent until its next cycle.

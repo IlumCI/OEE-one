@@ -97,6 +97,9 @@ int main(){
         std::vector<int> bn;w.tick(l4,bn);return w.ag[0].energy-(100-q4.base);};
       CHECK(gz(1,0,0)==q.bite&&gz(0,0,0)==0&&gz(1,1,-1)==q.bite&&gz(1,1,1)==0&&gz(1,1,0)==q.bite,
         "grazing: eat takes from the machine in front (any without ownership; wild or own with it); not with graze 0");}
+    {auto cp=[&](int own){WParams q8=q;q8.own=own;World w;w.init(q8,0);for(auto& r:w.res)r=0;const int c=5*L+5,f=5*L+6;put(w,c,"C",40,1);
+        std::vector<int> bn;w.tick(l1,bn);return w.mat[f]==1?(int)w.mlin[f]:-9;};
+      CHECK(cp(1)==0&&cp(2)==-1,"own 2: copies of an owned machine are wild; own 1: they keep the owner");}
     {WParams q3=q;q3.nodes=1;q3.node_per=50;q3.node_ripe=10;q3.view=1;World w;w.init(q3,0);for(auto& r:w.res)r=0;
       int nc=-1;for(int c=0;c<L*L;++c)if(w.mat[c]==3){nc=c;break;}w.mat[nc]=0;const int c=5*L+5;w.mat[c]=3;w.nph[c]=0;w.ncyc[c]=-1;  // one node at (5,5), ripe at t 0-9
       auto put2=[&](int slot,int x,int y,int dir){Agent& g=w.ag[slot];g=Agent{};g.x=x;g.y=y;g.dir=dir;g.energy=100;g.alive=true;g.id=slot+1;w.occ[y*L+x]=slot;};
