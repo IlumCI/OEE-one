@@ -106,6 +106,13 @@ int main(){
         const bool on=w.ag[0].y==4;std::fill(la.begin(),la.end(),(std::int8_t)-100);la[4]=100;const int e0=w.ag[0].energy;w.tick(l9,bn);ate=w.ag[0].energy-(e0-q9.base);return on;};
       int a1=0,a0=0;const bool on1=ps(1,a1),on0=ps(0,a0);
       CHECK(on1&&!on0&&a1==q.bite,"pass: agents walk onto machine cells and graze the machine underfoot; without pass machines block");}
+    {WParams q10=q;q10.irr=2;q10.regrow=16;World w;w.init(q10,0);for(auto& r:w.res)r=0;for(auto& f:w.fert)f=0;const int c=5*L+5;put(w,c,",",100,0);
+      std::vector<int> bn;w.tick(l1,bn);const bool up=w.irl[c]==2&&w.mst[c]==100-1-1;  // I (tape position 0) runs in the first tick: 1 store, plus 1 upkeep
+      for(int t2=0;t2<300;++t2){bn.clear();w.tick(l1,bn);}const bool grew=w.irl[c]>10&&w.res[c]>10;  // the irrigated barren cell regrows (the machine has no E)
+      World z;z.init(q10,0);z.irl[3]=10;for(int t2=0;t2<64;++t2){bn.clear();z.tick(l1,bn);}const bool dec=z.irl[3]==9;
+      std::FILE* fl=std::tmpfile();w.save(fl);std::rewind(fl);World v;const bool ok=v.load(fl);std::fclose(fl);
+      if(!(up&&grew&&dec))std::printf("  irl %d mst %d res %d dec %d\n",(int)w.irl[c],(int)w.mst[c],(int)w.res[c],(int)z.irl[3]);
+      CHECK(up&&grew&&dec&&ok&&v.p.irr==2&&v.irl==w.irl,"W4a irrigation: I raises its cell's irrigation for 1 store, the cell regrows toward it, decay 1 per 64 ticks, saved");}
     {WParams q3=q;q3.nodes=1;q3.node_per=50;q3.node_ripe=10;q3.view=1;World w;w.init(q3,0);for(auto& r:w.res)r=0;
       int nc=-1;for(int c=0;c<L*L;++c)if(w.mat[c]==3){nc=c;break;}w.mat[nc]=0;const int c=5*L+5;w.mat[c]=3;w.nph[c]=0;w.ncyc[c]=-1;  // one node at (5,5), ripe at t 0-9
       auto put2=[&](int slot,int x,int y,int dir){Agent& g=w.ag[slot];g=Agent{};g.x=x;g.y=y;g.dir=dir;g.energy=100;g.alive=true;g.id=slot+1;w.occ[y*L+x]=slot;};

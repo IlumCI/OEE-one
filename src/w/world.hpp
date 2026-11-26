@@ -52,6 +52,10 @@ struct WParams{
   // pass 1: agents can stand on machine cells (walls and nodes still block), and eating then also grazes the machine
   // underfoot (same rights as graze). Lets consumers reach the inside of a colony (keystone predation, Paine 1966).
   int pass=0;
+  // W4a irrigation (instruction set): irr>0 turns ',' into I: raise the irrigation level of the machine's own cell by
+  // irr (cap 255) for 1 store. A cell's capacity is min(255, natural/seasonal capacity + irrigation); irrigation
+  // decays by 1 every 64 ticks.
+  int irr=0;
 };
 
 struct Agent{int x=0,y=0,dir=0,energy=0,age=0,lineage=0;bool alive=false;std::uint64_t id=0;int sig=0,wpos=0;};
@@ -83,6 +87,7 @@ struct World{
   std::vector<std::uint8_t> mat,tape,mip,mh0,mh1,mdir;std::vector<std::int16_t> mst;std::vector<std::uint16_t> mhalt;
   std::vector<std::int8_t> mlin;std::vector<long> mbt;std::vector<std::int32_t> mfx;
   std::vector<std::int32_t> nph,ncyc;  // W3.3 nodes (material 3), per cell: phase, last cycle harvested
+  std::vector<std::uint8_t> irl;       // W4a: irrigation level per cell (with p.irr)
   std::vector<int> parents;            // after tick(): parent slot of each entry of `born` (same order; not saved)
   // extinction event (punctuated equilibrium; Lehman & Miikkulainen 2015): every agent outside a random square window
   // covering `keep` of the area dies (structures stay). Returns how many died.
