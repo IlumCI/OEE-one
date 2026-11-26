@@ -33,6 +33,10 @@ struct WParams{
   int own=0;       // W3.2: machines belong to their maker's lineage (copies too). Only the owner can unmake one and
                    // recover its store; others can only destroy it (cost 2*mk_cost, store lost). The owner also eats
                    // from the store of its own machine in front once its cell is empty (a private granary).
+  // W3.3 split-role nodes (signals): solid food sources, ripe node_ripe ticks per node_per (own phase each), whose
+  // state is visible only from within `view`. A ripe node pays node_pay to each agent eating from it, but only when
+  // at least two agents eat from it in the same tick; then it is spent until its next cycle.
+  int nodes=0,node_pay=150,node_per=200,node_ripe=40;  // nodes: count per 1024 cells
 };
 
 struct Agent{int x=0,y=0,dir=0,energy=0,age=0,lineage=0;bool alive=false;std::uint64_t id=0;int sig=0,wpos=0;};
@@ -62,6 +66,8 @@ struct World{
   // (4 per cell: resource harvested, resource delivered, copies made, walls changed)
   std::vector<std::uint8_t> mat,tape,mip,mh0,mh1,mdir;std::vector<std::int16_t> mst;std::vector<std::uint16_t> mhalt;
   std::vector<std::int8_t> mlin;std::vector<long> mbt;std::vector<std::int32_t> mfx;
+  std::vector<std::int32_t> nph,ncyc;  // W3.3 nodes (material 3), per cell: phase, last cycle harvested
+  bool ripe(int c) const;
   int din() const{return (p.signals||p.matter)?128:64;}
   int nv() const{return p.matter?32:16;}
   int sig_off() const{return p.matter?12:8;}
@@ -83,7 +89,8 @@ struct World{
   // din() int8 values (zeros for empty slots). 0-24: resource in the egocentric 5x5 window (0 beyond `view`);
   // 25-49: other agents (+64 same lineage, -64 other); 50 energy/8; 51 age/4; 52 bias 64;
   // with signals: 53-77 symbol*32 of the agent in each window cell (0 when deaf); 78 own symbol*32.
-  // with matter: 79-103 material of each window cell (machine +48, wall -48); 104-119 tape of the machine in front
+  // with matter: 79-103 material of each window cell (machine +48, wall -48, node +96; a node within view shows 127 in
+  // the resource entries 0-24 while ripe, else 0); 104-119 tape of the machine in front
   // (instruction index*8+4, data -64); 120 its store/4; 121 own write position*8.
   void observe(int slot,std::int8_t* o) const;
   // One tick. logits[k] points to S x kV int8 logits of lineage k (row s = slot k*S+s). Slots of newborn agents are

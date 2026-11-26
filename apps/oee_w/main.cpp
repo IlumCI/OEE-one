@@ -10,6 +10,7 @@
 //                [W3: -matter 1 -nact 10 [-m_steps 8 -m_decay 200 -mk_cost 10 -wr_cost 1 -feed_amt 20 -rep_cost 16 -wall_cost 32]]
 //                [W3.1: -spawn R (random programs per 1000 ticks per 1024 cells) -mut M (copy error per byte, /65536)]
 //                [W3.2: -own 1 (machines belong to the maker's lineage; private granaries)]
+//                [W3.3: -nodes N (split-role nodes per 1024 cells) -node_pay 150 -node_per 200 -node_ripe 40]
 //          W0 = -lineages 1 -nact 6 -hist_frac 0 (bit-identical to the W0 binary).
 //          W1 = -lineages K -nact 7 (attack) -hist_frac 4 (ancestor in every 4th fork pair).
 //          -ck: checkpoint every ck_every epochs and at the end. If FILE exists at start, the run resumes from it
@@ -134,7 +135,9 @@ int main(int argc,char** argv){
     else if(!std::strcmp(s,"-m_decay"))wp.m_decay=std::atoi(v);else if(!std::strcmp(s,"-mk_cost"))wp.mk_cost=std::atoi(v);
     else if(!std::strcmp(s,"-wr_cost"))wp.wr_cost=std::atoi(v);else if(!std::strcmp(s,"-feed_amt"))wp.feed_amt=std::atoi(v);
     else if(!std::strcmp(s,"-rep_cost"))wp.rep_cost=std::atoi(v);else if(!std::strcmp(s,"-wall_cost"))wp.wall_cost=std::atoi(v);
-    else if(!std::strcmp(s,"-spawn"))wp.spawn=std::atoi(v);else if(!std::strcmp(s,"-mut"))wp.mut=std::atoi(v);else if(!std::strcmp(s,"-own"))wp.own=std::atoi(v);else if(!std::strcmp(s,"-stats"))stats=std::atoi(v);else if(!std::strcmp(s,"-curve"))curve=std::max(0,std::atoi(v));else if(!std::strcmp(s,"-skip"))skip=std::max(0,std::atoi(v));else if(!std::strcmp(s,"-split_age"))split_age=std::atoi(v);else if(!std::strcmp(s,"-null_es"))null_es=std::atoi(v);else if(!std::strcmp(s,"-hist_pair"))hist_pair=std::atoi(v);
+    else if(!std::strcmp(s,"-spawn"))wp.spawn=std::atoi(v);else if(!std::strcmp(s,"-mut"))wp.mut=std::atoi(v);else if(!std::strcmp(s,"-own"))wp.own=std::atoi(v);
+    else if(!std::strcmp(s,"-nodes"))wp.nodes=std::atoi(v);else if(!std::strcmp(s,"-node_pay"))wp.node_pay=std::atoi(v);
+    else if(!std::strcmp(s,"-node_per"))wp.node_per=std::atoi(v);else if(!std::strcmp(s,"-node_ripe"))wp.node_ripe=std::atoi(v);else if(!std::strcmp(s,"-stats"))stats=std::atoi(v);else if(!std::strcmp(s,"-curve"))curve=std::max(0,std::atoi(v));else if(!std::strcmp(s,"-skip"))skip=std::max(0,std::atoi(v));else if(!std::strcmp(s,"-split_age"))split_age=std::atoi(v);else if(!std::strcmp(s,"-null_es"))null_es=std::atoi(v);else if(!std::strcmp(s,"-hist_pair"))hist_pair=std::atoi(v);
     else if(!std::strcmp(s,"-gen"))gen=std::atoi(v);else if(!std::strcmp(s,"-arena_progs"))arena_progs=std::atoi(v);
     else if(!std::strcmp(s,"-prog_cont"))prog_cont=std::atof(v);else if(!std::strcmp(s,"-solo"))solo=std::atoi(v);
     else if(!std::strcmp(s,"-swap_at"))swap_at=std::atoi(v);else if(!std::strcmp(s,"-swap_win"))swap_win=std::max(1,std::atoi(v));else if(!std::strcmp(s,"-ck_every"))ck_every=std::max(1,std::atoi(v));
@@ -208,7 +211,7 @@ int main(int argc,char** argv){
     if(stats){static const char* nm[]={"noop","fwd","left","right","eat","repro","attack","write","make","feed"};
       for(int g=0;g<2;++g){long tot[32]={0};for(int gi=0;gi<G;++gi)for(int j=0;j<32;++j)tot[j]+=gst[gi][32*g+j];const double T=std::max(1L,tot[22]);
         std::printf("stats %s agent_ticks %ld",g?"B":"A",tot[22]);for(int j=0;j<wp.nact&&j<10;++j)std::printf(" %s %.3f",nm[j],tot[j]/T);
-        std::printf(" kills/kt %.2f births/kt %.2f starved/kt %.2f aged/kt %.2f killed/kt %.2f symbol %.3f\n",1e3*tot[16]/T,1e3*tot[17]/T,1e3*tot[18]/T,1e3*tot[19]/T,1e3*tot[20]/T,tot[21]/T);}}
+        std::printf(" kills/kt %.2f births/kt %.2f starved/kt %.2f aged/kt %.2f killed/kt %.2f symbol %.3f joint_harvests/kt %.2f\n",1e3*tot[16]/T,1e3*tot[17]/T,1e3*tot[18]/T,1e3*tot[19]/T,1e3*tot[20]/T,tot[21]/T,1e3*tot[23]/T);}}
     if(curve>0){std::printf("curve");for(int c=0;c<nc;++c){double m=0;for(int gi=0;gi<G;++gi)m+=cv[gi][c];std::printf(" %d:%.3f",(c+1)*curve,m/G);}std::printf("\n");}
     std::printf("mean_shareA %.4f\n",sf/G);
     std::printf("mean_ishareA %.4f\tse %.4f\tt %.2f\twins %d/%d\n",mi,se,se>1e-9?(mi-0.5)/se:0.0,wins,seeds);
@@ -233,6 +236,7 @@ int main(int argc,char** argv){
   if(wp.matter){for(std::int64_t x:{wp.matter,wp.m_steps,wp.m_decay,wp.mk_cost,wp.wr_cost,wp.feed_amt,wp.rep_cost,wp.wall_cost})fp2.push_back(4000+x);}
   if(wp.spawn||wp.mut){fp2.push_back(5000+wp.spawn);fp2.push_back(6000000+wp.mut);}
   if(wp.own)fp2.push_back(7000+wp.own);
+  if(wp.nodes){for(std::int64_t x:{wp.nodes,wp.node_pay,wp.node_per,wp.node_ripe})fp2.push_back(8000000+x);}
   if(hist_pair&&!hist){std::fprintf(stderr,"-hist_pair needs -hist_frac > 0\n");return 2;}
   auto save_ck=[&](int e){const std::string tmp=ckf+".tmp";std::FILE* f=std::fopen(tmp.c_str(),"wb");if(!f)return false;
     auto w=[&](std::int64_t x){std::fwrite(&x,8,1,f);};w(kCkMagic);w((std::int64_t)fp2.size());for(auto x:fp2)w(x);
@@ -266,6 +270,7 @@ int main(int argc,char** argv){
     if(wp.matter)std::fprintf(lg,"# W3 matter %d m_steps %d m_decay %d mk_cost %d wr_cost %d feed_amt %d rep_cost %d wall_cost %d spawn %d mut %d V %d; extra columns: machines walls tapes classes\n",
       wp.matter,wp.m_steps,wp.m_decay,wp.mk_cost,wp.wr_cost,wp.feed_amt,wp.rep_cost,wp.wall_cost,wp.spawn,wp.mut,bc.V);
     if(wp.own)std::fprintf(lg,"# W3.2 own %d (machines owned by the maker's lineage; owners eat from their stores)\n",wp.own);
+    if(wp.nodes)std::fprintf(lg,"# W3.3 nodes %d node_pay %d node_per %d node_ripe %d (joint harvest; ripeness visible only within view)\n",wp.nodes,wp.node_pay,wp.node_per,wp.node_ripe);
     if(split_age)std::fprintf(lg,"# W1b split_age %d (split lineages take the parent's age)\n",split_age);
     if(null_es)std::fprintf(lg,"# W1c null_es %d (random update signs: fitness ignored)\n",null_es);
     if(hist_pair)std::fprintf(lg,"# W1e hist_pair %d (an ancestor drawn for each fork pair)\n",hist_pair);

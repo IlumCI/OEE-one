@@ -84,6 +84,15 @@ int main(){
       Agent& b=w.ag[q2.S];b=Agent{};b.x=5;b.y=3;b.dir=2;b.energy=100;b.lineage=1;b.alive=true;b.id=2;w.occ[3*L+5]=q2.S;  // lineage 1, facing the machine from the north
       std::fill(la.begin(),la.end(),(std::int8_t)-100);la[0]=100;lb[8]=100;const int eb=w.ag[q2.S].energy;w.tick(l2,born);
       CHECK(gran&&w.mat[f]==0&&w.ag[q2.S].energy==eb-2*q2.mk_cost-q2.base,"W3.2 ownership: owner eats from its granary; another lineage can only destroy it");}
+    {WParams q3=q;q3.nodes=1;q3.node_per=50;q3.node_ripe=10;q3.view=1;World w;w.init(q3,0);for(auto& r:w.res)r=0;
+      int nc=-1;for(int c=0;c<L*L;++c)if(w.mat[c]==3){nc=c;break;}w.mat[nc]=0;const int c=5*L+5;w.mat[c]=3;w.nph[c]=0;w.ncyc[c]=-1;  // one node at (5,5), ripe at t 0-9
+      auto put2=[&](int slot,int x,int y,int dir){Agent& g=w.ag[slot];g=Agent{};g.x=x;g.y=y;g.dir=dir;g.energy=100;g.alive=true;g.id=slot+1;w.occ[y*L+x]=slot;};
+      put2(0,5,6,0);put2(1,5,3,2);  // agent 0 south of the node facing it; agent 1 two cells north (facing south, not adjacent)
+      std::vector<std::int8_t> o(w.din());w.observe(0,o.data());const bool near=o[7]==127&&o[79+7]==96;w.observe(1,o.data());const bool far=o[2]==0&&o[79+2]==96;
+      std::vector<std::int8_t> le((std::size_t)q3.S*32,(std::int8_t)-100);for(int s=0;s<q3.S;++s)le[(std::size_t)s*32+4]=100;const std::int8_t* l3[1]={le.data()};
+      w.tick(l3,born);const bool alone=w.ag[0].energy==100-q3.base&&w.ripe(c);  // one eater: nothing, still ripe
+      w.ag[1].y=4;w.occ[3*L+5]=-1;w.occ[4*L+5]=1;w.tick(l3,born);const bool joint=w.ag[0].energy==99+q3.node_pay-q3.base&&w.ag[1].energy==99+q3.node_pay-q3.base&&!w.ripe(c);
+      CHECK(near&&far&&alone&&joint,"W3.3 nodes: ripeness seen only nearby; one eater gets nothing; two eaters share the payout, node spent");}
     {World a,b;a.init(q,5);b.init(q,5);std::vector<std::int8_t> rl((std::size_t)q.S*32);auto drive3=[&](World& w,int n){for(int t=0;t<n;++t){
         for(std::size_t i=0;i<rl.size();++i)rl[i]=(std::int8_t)((i*41+t*13)%29-14);const std::int8_t* l[1]={rl.data()};born.clear();w.tick(l,born);}};
       drive3(a,120);drive3(b,120);int nm=0;for(auto x:a.mat)nm+=x==1;CHECK(hash(a)==hash(b)&&a.tape==b.tape&&nm>0,"W3: deterministic with agents building machines");
