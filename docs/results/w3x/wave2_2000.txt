@@ -60,3 +60,7 @@ solo	-0.2032	0.3035	-0.67	15/64
 # runs8/w3ccat_s2 e 2000 world: -S 64 -regrow 16 -nact 10 -matter 1 -spawn 20 -mut 1024 -season 300 -view 1 -signals 1 -own 2 -nodes 8 -node_pay 150 -node_per 200 -node_ripe 40 -wall_decay 4 -m_cost 4 -m_give 16 -graze 1 -pass 1
 champion agent_ticks 3800493 noop 0.001 fwd 0.339 left 0.213 right 0.001 eat 0.332 repro 0.068 attack 0.041 write 0.003 make 0.002 feed 0.001 kills/kt 0.25 births/kt 4.68 starved/kt 3.32 aged/kt 0.96 killed/kt 0.03 symbol 0.686 joint_harvests/kt 0.02
 random agent_ticks 56608 noop 0.129 fwd 0.090 left 0.065 right 0.089 eat 0.132 repro 0.073 attack 0.085 write 0.191 make 0.045 feed 0.100 kills/kt 1.18 births/kt 15.23 starved/kt 8.55 aged/kt 0.00 killed/kt 15.72 symbol 0.783 joint_harvests/kt 0.04
+wipe	0.5364	0.0571	0.64	0.5490	0.0740	0.66
+deaf	0.3592	0.0730	-1.93	0.3167	0.0880	-2.08
+== era (post-founder share, e vs e-250)
+250:1.00 500:0.99 750:1.00 1000:1.00 1250:0.53 1500:0.93 1750:0.68 2000:0.54 
