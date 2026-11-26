@@ -859,8 +859,8 @@ W4c seed 1 at its final epoch 333 (2026-11-26; docs/results/w4c/eval_333.txt).
 
 - **Killed.** In both seeds building is below random and the wipe costs nothing.
 - Seed 3, excluded by the guard, agrees: no building and no wipe cost. It boomed far more than E seed 3 (28% of
-  epochs above 150 agents, two booms, mean population 107 against 76), yet its champion does not feed. The booms
-  came from accidental feeding again.
+  epochs above 150 agents, two booms, mean population 107 against 76), yet its champion does not feed. Feeding
+  did not pay in its boom world either (no-feed ablation at snapshot 170, below).
 - G's champions lose to E's in both worlds. At equal ticks G gets a third as many ES updates, so this mixes the
   horizon with the number of updates. An unconfounded test would hold each perturbation over a long horizon but
   update as often as E (noise-reuse online ES, Li et al. 2023, arXiv:2304.12180).
