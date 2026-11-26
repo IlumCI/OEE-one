@@ -855,6 +855,24 @@ Interim observation (2026-11-26, W4b seed 1). F seed 1 boomed early, at epochs 8
 
 ## 9. Results
 
+### Wave 2, seed 1 at epoch 2000 (interim, 2026-11-26; docs/results/w3x/wave2_2000.txt)
+
+Each arm against C's champion on the same seed. Head-to-head: post-founder share of the arm in its own world (and
+in C's world where they differ). Solo: mean log ratio of the arm's to C's post-founder biomass alone in 64 generated
+arenas.
+
+| Arm | Head-to-head | Solo vs C | Arm-specific test | Seed 1 |
+|---|---|---|---|---|
+| C+kin | 0.0001 / 0.0002 | +0.28 (t 1.7) | deaf: 0.61 (+4.2), deafness helps | fail |
+| C+cat | 0.07 (t −10.6) | +0.19 (t 2.0) | era mean 0.83 vs C 0.75, 0 collapses each | fail as written ("fewer collapses") |
+| C+stress | 0.25 (t −4.0) | −0.02 | one collapse (0.13), C none | fail |
+| C+lam | 0.001 / 0.0002 | **+0.92 (t 4.3, 64/64)** | solo above C, t > 3 | **pass** |
+
+- C's seed-1 champion out-competes every arm head-to-head, yet every arm except C+stress does as well or better
+  alone. C's champion is a strong competitor, not a better generalist.
+- Lamarckian state inheritance gives the largest solo gain: offspring that start with the parent's memory survive
+  better in unfamiliar worlds. Seeds 2–3 decide (the pass needs 2 of 3).
+
 ### W4a verdict (2026-11-26; docs/results/w4a/eval_1000.txt, booms.tsv)
 
 At epoch 1000, 16 mirrored seeds. Wipe: share (t) of the copy whose own machines are removed. E vs D: post-founder
