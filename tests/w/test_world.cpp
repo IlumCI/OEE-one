@@ -100,6 +100,12 @@ int main(){
     {auto cp=[&](int own){WParams q8=q;q8.own=own;World w;w.init(q8,0);for(auto& r:w.res)r=0;const int c=5*L+5,f=5*L+6;put(w,c,"C",40,1);
         std::vector<int> bn;w.tick(l1,bn);return w.mat[f]==1?(int)w.mlin[f]:-9;};
       CHECK(cp(1)==0&&cp(2)==-1,"own 2: copies of an owned machine are wild; own 1: they keep the owner");}
+    {auto ps=[&](int pass,int& ate){WParams q9=q;q9.pass=pass;q9.graze=1;q9.K=1;World w;w.init(q9,0);for(auto& r:w.res)r=0;const int f=4*L+5;
+        w.mat[f]=1;w.mst[f]=100;w.mlin[f]=-1;w.mbt[f]=-1;Agent& a=w.ag[0];a=Agent{};a.x=5;a.y=5;a.dir=0;a.energy=100;a.alive=true;a.id=1;w.occ[5*L+5]=0;
+        std::vector<std::int8_t> la((std::size_t)q9.S*32,(std::int8_t)-100);la[1]=100;const std::int8_t* l9[1]={la.data()};std::vector<int> bn;w.tick(l9,bn);
+        const bool on=w.ag[0].y==4;std::fill(la.begin(),la.end(),(std::int8_t)-100);la[4]=100;const int e0=w.ag[0].energy;w.tick(l9,bn);ate=w.ag[0].energy-(e0-q9.base);return on;};
+      int a1=0,a0=0;const bool on1=ps(1,a1),on0=ps(0,a0);
+      CHECK(on1&&!on0&&a1==q.bite,"pass: agents walk onto machine cells and graze the machine underfoot; without pass machines block");}
     {WParams q3=q;q3.nodes=1;q3.node_per=50;q3.node_ripe=10;q3.view=1;World w;w.init(q3,0);for(auto& r:w.res)r=0;
       int nc=-1;for(int c=0;c<L*L;++c)if(w.mat[c]==3){nc=c;break;}w.mat[nc]=0;const int c=5*L+5;w.mat[c]=3;w.nph[c]=0;w.ncyc[c]=-1;  // one node at (5,5), ripe at t 0-9
       auto put2=[&](int slot,int x,int y,int dir){Agent& g=w.ag[slot];g=Agent{};g.x=x;g.y=y;g.dir=dir;g.energy=100;g.alive=true;g.id=slot+1;w.occ[y*L+x]=slot;};

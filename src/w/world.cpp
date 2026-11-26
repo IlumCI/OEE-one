@@ -111,14 +111,15 @@ void World::tick(const std::int8_t* const* logits,std::vector<int>& born){
   for(int s:order){Agent& a=ag[s];if(!a.alive)continue;const int c=a.y*p.L+a.x;
     const int fc=((a.y+FY[a.dir]+p.L)%p.L)*p.L+(a.x+FX[a.dir]+p.L)%p.L;
     switch(act[s]){
-      case 1:if(occ[fc]<0&&(!p.matter||!mat[fc])){occ[c]=-1;a.x=fc%p.L;a.y=fc/p.L;occ[fc]=s;}a.energy-=p.move;break;
+      case 1:if(occ[fc]<0&&(!p.matter||!mat[fc]||(p.pass&&mat[fc]==1))){occ[c]=-1;a.x=fc%p.L;a.y=fc/p.L;occ[fc]=s;}a.energy-=p.move;break;
       case 2:a.dir=(a.dir+3)&3;a.energy-=p.turn;break;
       case 3:a.dir=(a.dir+1)&3;a.energy-=p.turn;break;
       case 4:{if(p.nodes>0&&p.matter&&mat[fc]==3)neat.push_back({fc,s});
         int take=std::min<int>(res[c],p.bite);res[c]-=(std::uint8_t)take;
+        if(p.pass&&p.matter&&take<p.bite&&mat[c]==1&&(p.graze?(!p.own||mlin[c]<0||mlin[c]==a.lineage):(p.own&&mlin[c]==a.lineage))){const int t2=std::min<int>(p.bite-take,mst[c]);mst[c]=(std::int16_t)(mst[c]-t2);take+=t2;}  // underfoot
         if(p.matter&&take<p.bite&&mat[fc]==1&&(p.graze?(!p.own||mlin[fc]<0||mlin[fc]==a.lineage):(p.own&&mlin[fc]==a.lineage))){const int t2=std::min<int>(p.bite-take,mst[fc]);mst[fc]=(std::int16_t)(mst[fc]-t2);take+=t2;}  // granary or grazing
         a.energy=std::min(p.ecap,a.energy+take);break;}
-      case 5:if(a.energy>=p.repro_min&&occ[fc]<0&&(!p.matter||!mat[fc])){const int k=a.lineage;int j=-1;
+      case 5:if(a.energy>=p.repro_min&&occ[fc]<0&&(!p.matter||!mat[fc]||(p.pass&&mat[fc]==1))){const int k=a.lineage;int j=-1;
           for(int q=0;q<p.S;++q)if(!ag[(std::size_t)k*p.S+q].alive){j=q;break;}
           if(j>=0){const int cs=k*p.S+j;Agent& b=ag[cs];b=Agent{};b.x=fc%p.L;b.y=fc/p.L;b.dir=a.dir;b.energy=p.repro_give;b.lineage=k;b.alive=true;b.id=next_id++;
             occ[fc]=cs;a.energy-=p.repro_give+p.repro_cost;born.push_back(cs);parents.push_back(s);if(track)++stat[(std::size_t)k*32+17];}}
@@ -231,6 +232,7 @@ constexpr std::int64_t kExt31=0x3133584533LL;  // W3 matter block with the W3.1 
 constexpr std::int64_t kExt4=0x3245564157LL;   // wave-2 flags (kin_sig, lamarck)
 constexpr std::int64_t kExt5=0x3545564157LL;   // machine economy (m_cost, m_give)
 constexpr std::int64_t kExt6=0x3645564157LL;   // machine economy with grazing (m_cost, m_give, graze)
+constexpr std::int64_t kExt7=0x3745564157LL;   // machine economy with grazing and passable machines (+ pass)
 template<class T> void wv(std::FILE* f,const std::vector<T>& v){wr(f,(std::int64_t)v.size());if(!v.empty())std::fwrite(v.data(),sizeof(T),v.size(),f);}
 template<class T> bool rv(std::FILE* f,std::vector<T>& v){std::int64_t n=0;if(!rd(f,n)||n<0||n>(1<<26))return false;v.resize((std::size_t)n);
   return n==0||std::fread(v.data(),sizeof(T),(std::size_t)n,f)==(std::size_t)n;}
@@ -245,7 +247,8 @@ void World::save(std::FILE* f) const{
     if(p.spawn||p.mut||p.own||p.nodes){wr(f,p.spawn);wr(f,p.mut);wr(f,p.own);wr(f,p.nodes);wr(f,p.node_pay);wr(f,p.node_per);wr(f,p.node_ripe);wv(f,nph);wv(f,ncyc);}
     wv(f,mat);wv(f,tape);wv(f,mip);wv(f,mh0);wv(f,mh1);wv(f,mdir);wv(f,mst);wv(f,mhalt);wv(f,mlin);wv(f,mbt);wv(f,mfx);}
   if(p.kin_sig||p.lamarck||p.wall_decay){wr(f,kExt4);wr(f,p.kin_sig);wr(f,p.lamarck);wr(f,p.wall_decay);}
-  if(p.m_cost!=1||p.m_give||p.graze){wr(f,kExt6);wr(f,p.m_cost);wr(f,p.m_give);wr(f,p.graze);}
+  if(p.pass){wr(f,kExt7);wr(f,p.m_cost);wr(f,p.m_give);wr(f,p.graze);wr(f,p.pass);}
+  else if(p.m_cost!=1||p.m_give||p.graze){wr(f,kExt6);wr(f,p.m_cost);wr(f,p.m_give);wr(f,p.graze);}
   wv(f,res);wv(f,fert);wv(f,racc);wv(f,occ);wr(f,(std::int64_t)ag.size());
   for(auto& a:ag){const std::int64_t r[]={a.x,a.y,a.dir,a.energy,a.age,a.lineage,a.alive,(std::int64_t)a.id};for(auto x:r)wr(f,x);}
   if(ext())for(auto& a:ag){wr(f,a.sig);}
@@ -274,9 +277,9 @@ bool World::load(std::FILE* f){
   {std::int64_t m=0;const long pos=std::ftell(f);if(!rd(f,m))return false;
     if(m==kExt4){std::int64_t a=0,b=0,c=0;if(!rd(f,a)||!rd(f,b)||!rd(f,c))return false;p.kin_sig=(int)a;p.lamarck=(int)b;p.wall_decay=(int)c;}
     else if(std::fseek(f,pos,SEEK_SET)!=0)return false;}  // no wave-2 block
-  p.m_cost=1;p.m_give=0;p.graze=0;
+  p.m_cost=1;p.m_give=0;p.graze=0;p.pass=0;
   {std::int64_t m=0;const long pos=std::ftell(f);if(!rd(f,m))return false;
-    if(m==kExt5||m==kExt6){std::int64_t a=0,b=0,g=0;if(!rd(f,a)||!rd(f,b)||(m==kExt6&&!rd(f,g)))return false;p.m_cost=(int)a;p.m_give=(int)b;p.graze=(int)g;}
+    if(m==kExt5||m==kExt6||m==kExt7){std::int64_t a=0,b=0,g=0,ps=0;if(!rd(f,a)||!rd(f,b)||(m!=kExt5&&!rd(f,g))||(m==kExt7&&!rd(f,ps)))return false;p.m_cost=(int)a;p.m_give=(int)b;p.graze=(int)g;p.pass=(int)ps;}
     else if(std::fseek(f,pos,SEEK_SET)!=0)return false;}  // no machine-economy block
   if(!rv(f,res)||!rv(f,fert)||!rv(f,racc)||!rv(f,occ)){return false;}std::int64_t n=0;if(!rd(f,n)||n<0||n>(1<<24)){return false;}ag.assign((std::size_t)n,Agent{});
   for(auto& a:ag){std::int64_t r[8];for(auto& x:r)if(!rd(f,x))return false;

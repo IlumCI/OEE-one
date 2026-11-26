@@ -49,6 +49,9 @@ struct WParams{
   // graze 1: eat also takes from the store of the machine in front, after the agent's own cell: any machine without
   // ownership; with own, wild machines (no owner) and the agent's own (0: only the own-granary rule)
   int graze=0;
+  // pass 1: agents can stand on machine cells (walls and nodes still block), and eating then also grazes the machine
+  // underfoot (same rights as graze). Lets consumers reach the inside of a colony (keystone predation, Paine 1966).
+  int pass=0;
 };
 
 struct Agent{int x=0,y=0,dir=0,energy=0,age=0,lineage=0;bool alive=false;std::uint64_t id=0;int sig=0,wpos=0;};
