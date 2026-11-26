@@ -24,3 +24,29 @@ top tapes (count owner tape):
 agents by lineage slot: 32 32 0 0 0
 h2h_F_vs_E	world w4f_s1	1.0000	0.0000	13139.33	16/16
 h2h_F_vs_E	world w4e_s1	1.0000	0.0000	13139.33	16/16
+# runs8/w4f_s2 e 1000 world: -S 64 -regrow 16 -nact 10 -matter 1 -spawn 20 -mut 1024 -season 300 -view 1 -signals 1 -wall_decay 4 -m_cost 4 -m_give 0 -graze 1 -pass 1 -irr 8 -irr_decay 16 -own 1 -claim 1 -climate_ticks 1200
+champion agent_ticks 3940639 noop 0.002 fwd 0.305 left 0.184 right 0.016 eat 0.418 repro 0.055 attack 0.018 write 0.000 make 0.001 feed 0.002 kills/kt 0.21 births/kt 3.69 starved/kt 2.07 aged/kt 1.23 killed/kt 0.00 symbol 0.201 joint_harvests/kt 0.00
+random agent_ticks 45806 noop 0.123 fwd 0.083 left 0.060 right 0.094 eat 0.133 repro 0.071 attack 0.081 write 0.218 make 0.044 feed 0.093 kills/kt 1.14 births/kt 16.22 starved/kt 8.21 aged/kt 0.00 killed/kt 19.19 symbol 0.779 joint_harvests/kt 0.00
+wipe	0.5367	0.0281	1.30	0.5567	0.0412	1.38
+deaf	0.5435	0.0448	0.97	0.5522	0.0594	0.88
+== generality (e vs e-500)
+e	e_prev	solo_log_ratio	t	median	surviveA	surviveB	lshareA	lt	swap_recovery	swap_t
+1000	500	1.3523	2.85	0.0631	57/64	50/64	0.6813	5.48	-0.0890	-0.25
+== era (post-founder share, e vs e-250)
+250:1.00 500:1.00 750:0.60 1000:0.40 
+== census (epoch machines walls tapes classes)
+1000 16 37 7 4
+== machines by owner in the latest checkpoint (mcal -ck)
+t 600000 own 1 graze 1
+owner	machines	store
+-1	5	88
+1	11	0
+top tapes (count owner tape):
+10	1	________________
+1	-1	R_______________
+1	-1	E_______________
+1	-1	D___________}___
+1	1	>>C_____________
+agents by lineage slot: 31 32 0 0 0
+h2h_F_vs_E	world w4f_s2	0.3456	0.0869	-1.78	3/16
+h2h_F_vs_E	world w4e_s2	0.3454	0.0870	-1.78	2/16
