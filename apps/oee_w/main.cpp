@@ -38,6 +38,9 @@
 //          (faster adaptation to a changed mechanism suggests a causal model; Bengio et al., arXiv:1901.10912).
 //          mean_lshareA: integrated share over ticks after the founder generation (> skip, default max_age = 500); the
 //          founders' starting energy dominates the integrated share before that (docs/WORLD.md §9).
+//          -arena_ck FILE (exploratory, W4a): every game starts from the canonical world in an oee_w checkpoint (its
+//          machines, irrigation, resources, fertility and tick), all agents removed and fresh founders of A and B placed;
+//          head-to-head only. Measures play in a constructed niche.
 //          -ablate amnesia: A's recurrent state is zeroed before every step (A without memory). -ablate shuffle: A's
 //          agents swap states every step (state values kept, own history lost: the stricter memory test). -ablate deaf: A hears
 //          no symbols (deafkin: none from its own lineage; deafother: none from the other lineage). -ablate wipe (W3): every 100 ticks, all machines made by A or copied from them are removed.
@@ -121,7 +124,7 @@ constexpr std::int64_t kCkMagic=0x3130574b43454f4fLL;  // "OEECKW01"
 int main(int argc,char** argv){
   int epochs=100,P=128,H=200,threads=4,layers=2,D=64,sig=4,archive_every=50,seeds=5,ticks=2000,Kmax=1,split_at=-1,hist_frac=0,hist_founders=8,ck_every=10,climate_every=5,climate_ticks=1000,stats=0,curve=0,skip=-1,split_age=0,null_es=0,hist_pair=0,gen=0,arena_progs=0,solo=0,swap_at=0,swap_win=500,cat_every=0;
   double prog_cont=0.7,cat_keep=0.1,stress=0;
-  double alpha_floor=0;std::uint64_t seed=1,seed0=1000;std::string logf,archive,ta,tb,ckf,ablate;w::WParams wp;int founders=16;
+  double alpha_floor=0;std::uint64_t seed=1,seed0=1000;std::string logf,archive,ta,tb,ckf,ablate,arena_ck;w::WParams wp;int founders=16;
   for(int a=1;a<argc;a+=2){const char* s=argv[a];const char* v=a+1<argc?argv[a+1]:"";
     if(!std::strcmp(s,"-epochs"))epochs=std::atoi(v);else if(!std::strcmp(s,"-pairs"))P=std::atoi(v);else if(!std::strcmp(s,"-H"))H=std::atoi(v);
     else if(!std::strcmp(s,"-L"))wp.L=std::atoi(v);else if(!std::strcmp(s,"-S"))wp.S=std::atoi(v);else if(!std::strcmp(s,"-founders"))founders=std::atoi(v);
@@ -133,7 +136,7 @@ int main(int argc,char** argv){
     else if(!std::strcmp(s,"-regrow"))wp.regrow=std::atoi(v);else if(!std::strcmp(s,"-base"))wp.base=std::atoi(v);else if(!std::strcmp(s,"-patches"))wp.patches=std::atoi(v);
     else if(!std::strcmp(s,"-lineages"))Kmax=std::atoi(v);else if(!std::strcmp(s,"-split_at"))split_at=std::atoi(v);else if(!std::strcmp(s,"-nact"))wp.nact=std::atoi(v);
     else if(!std::strcmp(s,"-hist_frac"))hist_frac=std::atoi(v);else if(!std::strcmp(s,"-hist_founders"))hist_founders=std::atoi(v);
-    else if(!std::strcmp(s,"-ablate"))ablate=v;else if(!std::strcmp(s,"-ck"))ckf=v;
+    else if(!std::strcmp(s,"-ablate"))ablate=v;else if(!std::strcmp(s,"-arena_ck"))arena_ck=v;else if(!std::strcmp(s,"-ck"))ckf=v;
     else if(!std::strcmp(s,"-season"))wp.season=std::atoi(v);else if(!std::strcmp(s,"-view"))wp.view=std::atoi(v);
     else if(!std::strcmp(s,"-signals"))wp.signals=std::atoi(v);else if(!std::strcmp(s,"-rot"))wp.rot=std::atoi(v);
     else if(!std::strcmp(s,"-sig_cost"))wp.sig_cost=std::atoi(v);else if(!std::strcmp(s,"-climate_every"))climate_every=std::max(1,std::atoi(v));
@@ -169,14 +172,20 @@ int main(int argc,char** argv){
     if(arena_progs>0&&!wp.matter){std::fprintf(stderr,"-arena_progs needs -matter 1\n");return 2;}
     if(swap_at>0&&(!solo||arena_progs<=0||swap_at<swap_win||swap_at+swap_win>ticks)){std::fprintf(stderr,"-swap_at needs -solo 1, -arena_progs, and swap_win <= swap_at <= ticks - swap_win\n");return 2;}
     std::vector<double> sv(G,0),rv(G,0);  // solo: post-founder integrated biomass alone; swap: log recovery
-    auto game=[&](int gi){const int sw=gi%2;w::WParams q=wp;q.K=solo?1:2;q.seed=seed0+gi/2;
+    w::World ckw;  // -arena_ck: every game starts from this world (its matter, irrigation, resources and fertility) with fresh founders
+    if(!arena_ck.empty()){std::FILE* f=std::fopen(arena_ck.c_str(),"rb");std::int64_t x=0,n=0;
+      if(!f||std::fread(&x,8,1,f)!=1||x!=kCkMagic||std::fread(&n,8,1,f)!=1||n<0||n>4096||std::fseek(f,(long)(8*n+5*8),SEEK_CUR)!=0||!ckw.load(f)){std::fprintf(stderr,"cannot read the world in %s\n",arena_ck.c_str());return 2;}
+      std::fclose(f);if(solo||swap_at>0||gen||arena_progs>0||ablate=="wipe"){std::fprintf(stderr,"-arena_ck: head-to-head only (no -solo, -swap_at, -gen, -arena_progs, wipe)\n");return 2;}}
+    auto game=[&](int gi){const int sw=gi%2;w::WParams q=arena_ck.empty()?wp:ckw.p;if(arena_ck.empty()){q.K=solo?1:2;q.seed=seed0+gi/2;}
       if(gen){const std::uint64_t h=mixu(mixu(q.seed^0x6e9ULL));q.L=24+8*(int)(h%6);q.patches=3+(int)((h>>8)%8);if(wp.season>0)q.season=150+(int)((h>>16)%451);
         const double f=std::exp2(((int)((h>>32)%201)-100)/100.0);  // machine costs x0.5-2
         q.mk_cost=std::max(1,(int)std::lround(wp.mk_cost*f));q.rep_cost=std::max(1,(int)std::lround(wp.rep_cost*f));q.wall_cost=std::max(1,(int)std::lround(wp.wall_cost*f));}
-      w::World W;W.init(q,founders);if(arena_progs>0)W.seed_programs((int)std::lround(arena_progs*(double)q.L*q.L/1024),q.seed,100,prog_cont);  // density as at side 32
+      w::World W;if(!arena_ck.empty()){W=ckw;W.p.seed=ckw.p.seed^mixu(0xa7e5ULL+(std::uint64_t)(seed0+gi/2));q.seed=W.p.seed;  // same world, new random streams
+        for(auto& g:W.ag)if(g.alive){g.alive=false;W.occ[g.y*W.p.L+g.x]=-1;}for(int k=0;k<2;++k)W.reseed_lineage(k,founders,(std::uint64_t)(gi/2)*2+k+1);}
+      else W.init(q,founders);if(arena_progs>0)W.seed_programs((int)std::lround(arena_progs*(double)q.L*q.L/1024),q.seed,100,prog_cont);  // density as at side 32
       evo::Rows rows;rows.init(A,q.K*q.S);evo::Stepper s0(sw?B:A,nullptr,rows,0,q.S);std::unique_ptr<evo::Stepper> s1;
       if(!solo)s1=std::make_unique<evo::Stepper>(sw?A:B,nullptr,rows,q.S,q.S);
-      std::vector<w::World> one{W};std::vector<evo::Stepper*> st{&s0};if(!solo)st.push_back(s1.get());std::vector<std::vector<long>> ig(q.K,std::vector<long>(1,0));
+      std::vector<w::World> one{W};std::vector<evo::Stepper*> st{&s0};if(!solo)st.push_back(s1.get());st.resize(q.K,nullptr);std::vector<std::vector<long>> ig(q.K,std::vector<long>(1,0));
       const int sa=solo?0:sw;  // A's lineage slot (solo: the only slot, A in even games)
       std::vector<char> amn(q.K,0);if(!solo||sw==0){amn[sa]=ablate=="amnesia"?1:ablate=="shuffle"?2:0;if(ablate=="deaf")one[0].deaf=1u<<sa;if(ablate=="deafkin")one[0].deaf_kin=1u<<sa;if(ablate=="deafother")one[0].deaf_other=1u<<sa;}one[0].track=stats>0;
       int step=curve>0?std::min(curve,climate_ticks):climate_ticks;long la=-1,lb=-1;if(ablate=="wipe")step=std::min(step,100);  // wipe A's machines every 100 ticks
