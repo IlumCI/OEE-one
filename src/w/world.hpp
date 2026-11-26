@@ -79,6 +79,7 @@ struct World{
   int per=0;std::vector<int> ph;       // seasons: current period and per-patch phase (ticks)
   std::uint32_t deaf=0;                // analysis: lineages (bit k) that hear no symbols (not saved)
   std::uint32_t deaf_kin=0,deaf_other=0;  // analysis: lineages that hear no symbols from their own / from other lineages
+  std::uint32_t nofeed=0;              // analysis: lineages whose feed action does nothing (not saved)
   // analysis: per-lineage counters when track is set (not saved): stat[k*32+a] actions a = 0..15, +16 kills made,
   // +17 births, +18 starved, +19 died of age, +20 killed, +21 non-zero symbols, +22 agent-ticks, +23 joint harvests;
   // with irr (credit for irrigation, k = the credited lineage): +24 food from k-credited irrigated cells eaten by k,

@@ -136,7 +136,7 @@ void World::tick(const std::int8_t* const* logits,std::vector<int>& born){
           else if(mat[fc]==1){if(!p.own||mlin[fc]<0||mlin[fc]==a.lineage){a.energy=std::min(p.ecap,a.energy+mst[fc]);kill_machine(fc);a.energy-=p.move;}
             else{kill_machine(fc);a.energy-=2*p.mk_cost;}}}  // W3.2: someone else's machine can only be destroyed
         break;
-      case 9:if(p.matter&&mat[fc]==1){const int amt=std::min(p.feed_amt,std::max(0,a.energy-1));a.energy-=amt;mst[fc]=(std::int16_t)std::min(1000,mst[fc]+amt);if(p.claim&&mlin[fc]<0)mlin[fc]=(std::int8_t)a.lineage;
+      case 9:if(p.matter&&mat[fc]==1&&!(nofeed>>a.lineage&1u)){const int amt=std::min(p.feed_amt,std::max(0,a.energy-1));a.energy-=amt;mst[fc]=(std::int16_t)std::min(1000,mst[fc]+amt);if(p.claim&&mlin[fc]<0)mlin[fc]=(std::int8_t)a.lineage;
         if(track&&amt>0){stat[(std::size_t)a.lineage*32+27]+=amt;if(!mfd.empty())mfd[fc]=(std::int8_t)a.lineage;}}break;  // feed (claim: a wild machine becomes the feeder's)
       default:break;}
   }

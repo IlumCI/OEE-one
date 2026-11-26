@@ -1,0 +1,12 @@
+# E s3 epoch-500 champion vs itself in E s3's boom world (ck_500), 16 seeds
+stats A agent_ticks 3975584 noop 0.018 fwd 0.095 left 0.026 right 0.103 eat 0.226 repro 0.179 attack 0.237 write 0.032 make 0.012 feed 0.071 kills/kt 1.39 births/kt 4.27 starved/kt 1.36 aged/kt 1.13 killed/kt 1.39 symbol 0.507 joint_harvests/kt 0.00 fed 5194850 food 10771156 irr_own 6334731 irr_other 1573619 irr_wild 2459027
+stats B agent_ticks 3975584 noop 0.018 fwd 0.095 left 0.026 right 0.103 eat 0.226 repro 0.179 attack 0.237 write 0.032 make 0.012 feed 0.071 kills/kt 1.39 births/kt 4.27 starved/kt 1.36 aged/kt 1.13 killed/kt 1.39 symbol 0.507 joint_harvests/kt 0.00 fed 5194850 food 10771156 irr_own 6334731 irr_other 1573619 irr_wild 2459027
+mean_shareA 0.5000
+mean_ishareA 0.5000	se 0.0000	t 0.00	wins 0/16
+mean_lshareA 0.5000	se 0.0000	t 0.00	wins 0/16	after tick 500
+# same champion vs itself in fresh arenas
+stats A agent_ticks 2245337 noop 0.004 fwd 0.278 left 0.002 right 0.191 eat 0.348 repro 0.089 attack 0.075 write 0.002 make 0.002 feed 0.009 kills/kt 1.91 births/kt 4.87 starved/kt 1.73 aged/kt 1.01 killed/kt 1.91 symbol 0.431 joint_harvests/kt 0.00 fed 24886 food 4371879 irr_own 14139 irr_other 645 irr_wild 80665
+stats B agent_ticks 2245337 noop 0.004 fwd 0.278 left 0.002 right 0.191 eat 0.348 repro 0.089 attack 0.075 write 0.002 make 0.002 feed 0.009 kills/kt 1.91 births/kt 4.87 starved/kt 1.73 aged/kt 1.01 killed/kt 1.91 symbol 0.431 joint_harvests/kt 0.00 fed 24886 food 4371879 irr_own 14139 irr_other 645 irr_wild 80665
+mean_shareA 0.5000
+mean_ishareA 0.5000	se 0.0000	t 0.00	wins 0/16
+mean_lshareA 0.5000	se 0.0000	t 0.00	wins 0/16	after tick 500
