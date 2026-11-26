@@ -525,6 +525,24 @@ Post-founder share of the ablated copy:
   No collapse below 0.25 in either arm, consistent with W1b. Progress is strong up to about 1500 epochs, then
   flat.
 
+### W2a verdict on signals (2026-11-26; seed 3 final: docs/results/w2a/final_w2_sig_s3_3000.txt)
+
+Seed 3, signal arm, epoch 3000 (post-founder share of the ablated copy):
+
+| Ablation | Seasons | Seasons off |
+|---|---|---|
+| amnesia | 0.123 (t −5.3) | 0.499 (t −0.4) |
+| shuffle | 0.096 (t −6.0) | 0.489 (t −8.4) |
+| deaf | 0.500 (t 0.0) | 0.500 (t +0.2) |
+
+- **Signals: fail, decided.** Deafness costs nothing in the training arenas in seeds 1, 2 and 3. So "3 of 5 seeds"
+  cannot be reached. In seed 3 deafness has no effect even with seasons off.
+- **Memory: pass in every seed so far.**
+  - Amnesia or shuffle costs fitness with seasons, and much less or nothing without.
+  - Seed 3 is a second clean control: 0.12 with seasons against 0.50 without.
+- **Consequence (W2 row and re-plan).** No further W2 variants. Signals are measured again inside W3, where
+  machines create information worth sharing. Seeds 4–5 finish for the record.
+
 ### W2a seed 2 final, epoch 3000 (2026-11-26; docs/results/w2a/final_s2_3000.txt)
 
 | Run | Ablation | Seasons | Seasons off |
