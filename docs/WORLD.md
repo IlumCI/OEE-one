@@ -755,13 +755,15 @@ against the intact champion; below 0.5 with t < −3 means the mechanism pays.
 | A, 3 | 0.2 / 0.1 / 0.2% | 24.6 / 6.1 / 12.2% | 0.51 (+0.7) | 0.46 (−2.6) |
 | B, 2 | 0.2 / 0.0 / 0.2% | 20.3 / 4.5 / 9.5% | 0.56 (+0.9) | 0.41 (−1.3) |
 | C, 2 | 0.2 / 0.1 / 0.2% | 18.5 / 4.8 / 9.8% | 0.51 (+0.2) | 0.30 (−4.1) |
+| B, 3 | 0.3 / 0.1 / 0.3% | 23.1 / 6.1 / 12.8% | 0.49 (−0.9) | 0.44 (−4.2) |
 
 - **Building.**
   - Selected away in every run so far: champions use the building actions at 1–4% of random agents' rates.
   - Wiping the champion's machines costs nothing. In B it helps (0.56, t +3.5).
   - **Arm A is killed** (building): the kill condition holds in all 3 seeds. Its runs finish to 2000 for the signal
     and generality measures.
-  - B and C meet the kill condition in seeds 1–2; seed 3 is pending.
+  - **Arm B is killed** (building), all 3 seeds.
+  - C meets the kill condition in seeds 1–2; seed 3 is pending.
 - **Signals.**
   - In B seed 1 the deaf copy loses heavily: 0.29 (t −14); its post-founder share is 0.21. This is the first time
     deafness has cost fitness in a training arena (W2a: 0 of 5).
@@ -769,6 +771,7 @@ against the intact champion; below 0.5 with t < −3 means the mechanism pays.
   - C's champion makes 0.36 joint harvests per 1000 agent-ticks in seed 1 and 0.06 in seed 2, against 0.00–0.03 for
     random agents.
   - C seed 2: deafness costs (0.30, t −4.1), the first C run where it does.
+  - B: deafness costs in seeds 1 and 3 (t −14, −4.2), not in seed 2 (t −1.3).
 - **Machines.** Agents graze the machine ecology down to 3–8 machines by epoch 600 (seed 1).
 
 ### W0 (runs8/w0_s1, 500 epochs, 2026-11-25)
