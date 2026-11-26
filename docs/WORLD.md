@@ -741,8 +741,22 @@ Share (t) of the ablated copy; generality and era as in §6 (post-founder shares
   - Nothing in A seed 2 or C seed 1.
   - C makes joint harvests (0.36 per 1000 agent-ticks, random 0.00) whether or not it hears. The coordination at
     nodes is implicit.
-- **Progress.**
-  - Era shares stay above 0.25 in every run.
+- **Whose signals matter** (docs/results/w3x/deaf_split_2000.txt; analysis ablations `deafkin`: the ablated copy
+  hears no symbols from its own lineage; `deafother`: none from the other lineage):
+
+  | Run | Deaf | Deaf to kin | Deaf to the other lineage |
+  |---|---|---|---|
+  | B, 1 | 0.09 (−51) | 0.37 (−3.2) | 0.11 (−40) |
+  | B, 3 | 0.18 (−15) | 0.38 (−3.3) | 0.23 (−8.7) |
+  | A, 1 | 0.45 (−4.4) | 0.45 (−2.4) | 0.53 (+1.5) |
+  | A, 3 | 0.39 (−3.1) | 0.52 (+0.7) | 0.38 (−4.0) |
+  | B, 2 (no deaf effect) | 0.58 (+1.3) | 0.48 (−0.3) | 0.53 (+0.4) |
+
+  - In 3 of the 4 runs where signals pay, the cost comes mainly from not hearing the other lineage. The champion
+    eavesdrops on competitors' symbols. It does not mainly talk with kin.
+  - Free symbols that track what an agent is doing leak information to rivals, which a listener can exploit
+    (cheap talk without common interest, Crawford and Sobel 1982).
+  - The wave-2 arm C+kin removes eavesdropping by design.
   - Later champions beat earlier ones in unseen generated arenas (t 3.8–19.6). Solo scores do not rise, so the gain
     is relative (better competitors), not absolute (better survivors alone).
 

@@ -78,12 +78,12 @@ void World::reseed_lineage(int k,int founders,std::uint64_t salt){
 void World::observe(int slot,std::int8_t* o) const{
   std::fill(o,o+din(),0);const Agent& a=ag[slot];if(!a.alive)return;
   const int L=p.L,fx=FX[a.dir],fy=FY[a.dir],rx=-fy,ry=fx,lin=a.lineage;int i=0;  // right = forward rotated clockwise
-  const bool hear=p.signals&&!((deaf>>lin)&1);
+  const bool hear=p.signals&&!((deaf>>lin)&1),hk=!((deaf_kin>>lin)&1),ho=!((deaf_other>>lin)&1);
   auto wr=[L](int z){return z<0?z+L:(z>=L?z-L:z);};  // offsets are at most 4 and L >= 5: one wrap suffices
   for(int v=2;v>=-2;--v){const int bx=a.x+v*fx,by=a.y+v*fy;
     for(int u=-2;u<=2;++u,++i){const int c=wr(by+u*ry)*L+wr(bx+u*rx);
       if(std::max(std::abs(u),std::abs(v))<=p.view)o[i]=(std::int8_t)(res[c]>>1);const int q=occ[c];
-      if(q>=0&&q!=slot){o[25+i]=(std::int8_t)(ag[q].lineage==lin?64:-64);if(hear&&(!p.kin_sig||ag[q].lineage==lin))o[53+i]=(std::int8_t)(32*ag[q].sig);}}}
+      if(q>=0&&q!=slot){o[25+i]=(std::int8_t)(ag[q].lineage==lin?64:-64);if(hear&&(!p.kin_sig||ag[q].lineage==lin)&&(ag[q].lineage==lin?hk:ho))o[53+i]=(std::int8_t)(32*ag[q].sig);}}}
   o[50]=(std::int8_t)std::min(127,a.energy/8);o[51]=(std::int8_t)std::min(127,a.age/4);o[52]=64;
   if(p.signals)o[78]=(std::int8_t)(32*a.sig);
   if(p.matter){i=0;

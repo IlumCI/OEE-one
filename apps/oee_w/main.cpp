@@ -40,7 +40,7 @@
 //          founders' starting energy dominates the integrated share before that (docs/WORLD.md §9).
 //          -ablate amnesia: A's recurrent state is zeroed before every step (A without memory). -ablate shuffle: A's
 //          agents swap states every step (state values kept, own history lost: the stricter memory test). -ablate deaf: A hears
-//          no symbols. -ablate wipe (W3): every 100 ticks, all machines made by A or copied from them are removed.
+//          no symbols (deafkin: none from its own lineage; deafother: none from the other lineage). -ablate wipe (W3): every 100 ticks, all machines made by A or copied from them are removed.
 //          With A = B this measures whether the genome uses the mechanism: ishareA < 0.5 means it pays.
 //          With seasons, each arena draws a new climate every climate_ticks ticks (training: climate_every*H).
 //          Each seed is played twice with the lineage slots swapped (mirrored). Per game: final biomass share of A and
@@ -159,9 +159,9 @@ int main(int argc,char** argv){
   const bool w2=wp.season>0||wp.signals>0||wp.view!=2||wp.matter>0;
 
   if(!ta.empty()){  // tournament, mirrored: game 2k has A in slot 0, game 2k+1 has A in slot 1 (same arena seed)
-    if(!ablate.empty()&&ablate!="amnesia"&&ablate!="shuffle"&&ablate!="deaf"&&ablate!="wipe"){std::fprintf(stderr,"unknown ablation %s\n",ablate.c_str());return 2;}
+    if(!ablate.empty()&&ablate!="amnesia"&&ablate!="shuffle"&&ablate!="deaf"&&ablate!="deafkin"&&ablate!="deafother"&&ablate!="wipe"){std::fprintf(stderr,"unknown ablation %s\n",ablate.c_str());return 2;}
     if(ablate=="wipe"&&!wp.matter){std::fprintf(stderr,"-ablate wipe needs -matter 1\n");return 2;}
-    if(ablate=="deaf"&&!wp.signals){std::fprintf(stderr,"-ablate deaf needs -signals 1\n");return 2;}
+    if(ablate.rfind("deaf",0)==0&&!wp.signals){std::fprintf(stderr,"-ablate deaf needs -signals 1\n");return 2;}
     evo::Egg A(bc,1),B(bc,2);A.load(ta);B.load(tb);const int G=2*seeds;
     std::vector<double> fs(G),is(G);std::vector<long> ba(G),bb(G);std::vector<int> na(G),nb(G);std::vector<std::vector<long>> gst(G);
     const int nc=curve>0?(ticks+curve-1)/curve:0;std::vector<std::vector<double>> cv(G,std::vector<double>(nc,0.5));
@@ -178,7 +178,7 @@ int main(int argc,char** argv){
       if(!solo)s1=std::make_unique<evo::Stepper>(sw?A:B,nullptr,rows,q.S,q.S);
       std::vector<w::World> one{W};std::vector<evo::Stepper*> st{&s0};if(!solo)st.push_back(s1.get());std::vector<std::vector<long>> ig(q.K,std::vector<long>(1,0));
       const int sa=solo?0:sw;  // A's lineage slot (solo: the only slot, A in even games)
-      std::vector<char> amn(q.K,0);if(!solo||sw==0){amn[sa]=ablate=="amnesia"?1:ablate=="shuffle"?2:0;if(ablate=="deaf")one[0].deaf=1u<<sa;}one[0].track=stats>0;
+      std::vector<char> amn(q.K,0);if(!solo||sw==0){amn[sa]=ablate=="amnesia"?1:ablate=="shuffle"?2:0;if(ablate=="deaf")one[0].deaf=1u<<sa;if(ablate=="deafkin")one[0].deaf_kin=1u<<sa;if(ablate=="deafother")one[0].deaf_other=1u<<sa;}one[0].track=stats>0;
       int step=curve>0?std::min(curve,climate_ticks):climate_ticks;long la=-1,lb=-1;if(ablate=="wipe")step=std::min(step,100);  // wipe A's machines every 100 ticks
       long sp0=-1,sp1=-1,sp2=-1;  // swap test: integrated biomass at swap_at - swap_win, swap_at, swap_at + swap_win
       for(int t0=0;t0<ticks;){int n=std::min(step-t0%step,ticks-t0);if(t0<sk)n=std::min(n,sk-t0);  // segment ends at curve points, climate changes and skip

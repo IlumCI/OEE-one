@@ -73,6 +73,7 @@ struct World{
   std::vector<std::uint8_t> fp;        // seasons: fertility of each patch separately (patches x cells)
   int per=0;std::vector<int> ph;       // seasons: current period and per-patch phase (ticks)
   std::uint32_t deaf=0;                // analysis: lineages (bit k) that hear no symbols (not saved)
+  std::uint32_t deaf_kin=0,deaf_other=0;  // analysis: lineages that hear no symbols from their own / from other lineages
   // analysis: per-lineage counters when track is set (not saved): stat[k*32+a] actions a = 0..15, +16 kills made,
   // +17 births, +18 starved, +19 died of age, +20 killed, +21 non-zero symbols, +22 agent-ticks
   bool track=false;std::vector<long> stat;
