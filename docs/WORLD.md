@@ -784,6 +784,24 @@ Pass and kill:
 
 ## 9. Results
 
+### W4a observation: an agricultural boom in arm E, seed 1 (interim, epoch 200; 2026-11-26)
+
+- **What happened.** Between epochs 175 and 200, w4e_s1 went from 34 to 213 agents (the slot cap is 256), and
+  fork fitness rose from 4,731 to 55,908.
+- **The world at epoch 200** (tools/w/irrcensus.cpp on the checkpoint):
+  - 576 machines: 308 carry both `I` and `E`, 513 can copy (`C`), 143 are running.
+  - 691 of 1,024 cells are irrigated, at a mean level of 195.
+- **Mechanism.** Copies start empty (`-m_give 0`), so these farm replicators spread only when agents feed them.
+  Agents do this by accident: a 0.2% feed rate across 213 agents is about 250 feeds per epoch. The farms irrigate
+  the land and the agents eat it. It is a mutualism: more farms, more food, more agents, more feeding.
+- **Control.** The control arm D, same seed, has 50 agents and no irrigated cells. E seed 2 has not boomed by
+  epoch 126.
+- **Measurement caveat.**
+  - The pre-registered measures may miss this effect. Tournaments start from fresh 2,000-tick worlds that do not
+    contain the accumulated farmland, and the wipe removes only the champion's own machines, not wild farms.
+  - The W4a verdict will follow the protocol. An exploratory measure for the constructed niche (arenas started
+    from the canonical world) will be reported separately.
+
 ### W3.x pilot verdict (2026-11-26)
 
 - **Building: killed in all three arms** (substrate; ownership; ownership with split-role nodes). Champions use the
