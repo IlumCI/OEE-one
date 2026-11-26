@@ -41,6 +41,7 @@ struct WParams{
   // (cheap talk with common interest, Crawford & Sobel 1982); lamarck 1 = a newborn starts with its parent's recurrent
   // state instead of a blank one (inheritance of acquired memory; applied by the caller using `parents`)
   int kin_sig=0,lamarck=0;
+  int wall_decay=0;  // per tick, a wall becomes empty with probability wall_decay/65536 (erosion; 0 = walls are permanent)
 };
 
 struct Agent{int x=0,y=0,dir=0,energy=0,age=0,lineage=0;bool alive=false;std::uint64_t id=0;int sig=0,wpos=0;};

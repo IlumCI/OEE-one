@@ -143,6 +143,7 @@ void World::tick(const std::int8_t* const* logits,std::vector<int>& born){
   for(int s=0;s<p.K*p.S;++s){Agent& a=ag[s];if(!a.alive)continue;a.energy-=p.base+(a.sig>0?p.sig_cost:0);++a.age;
     if(a.energy<=0||a.age>p.max_age){a.alive=false;occ[a.y*p.L+a.x]=-1;if(track)++stat[(std::size_t)a.lineage*32+(a.energy<=0?18:19)];}}
   if(p.matter)run_machines();
+  if(p.matter&&p.wall_decay>0)for(int c=0;c<N;++c)if(mat[c]==2&&(int)(mix(mix(p.seed^0xe40dULL)+((std::uint64_t)t<<24)+c)&0xffff)<p.wall_decay)mat[c]=0;  // erosion
   if(p.matter&&p.spawn>0){const long r=(long)p.spawn*N/1024;const std::uint64_t h=mix(mix(p.seed^0x5badULL)+(std::uint64_t)t);  // spontaneous generation
     const int n=(int)(r/1000)+((long)(h%1000)<r%1000?1:0);if(n>0)seed_programs(n,(std::uint64_t)t*16+7,50,0.7);}
   if(p.season>0){int w[64];for(int i=0;i<p.patches&&i<64;++i)w[i]=prod((int)((t+ph[i])%per),per);  // seasonal capacity, rot above it
@@ -241,7 +242,7 @@ void World::save(std::FILE* f) const{
   if(p.matter){wr(f,(p.spawn||p.mut||p.own||p.nodes)?kExt31:kExt3);const std::int64_t e[]={p.matter,p.m_steps,p.m_decay,p.mk_cost,p.wr_cost,p.feed_amt,p.rep_cost,p.wall_cost};for(auto x:e){wr(f,x);}
     if(p.spawn||p.mut||p.own||p.nodes){wr(f,p.spawn);wr(f,p.mut);wr(f,p.own);wr(f,p.nodes);wr(f,p.node_pay);wr(f,p.node_per);wr(f,p.node_ripe);wv(f,nph);wv(f,ncyc);}
     wv(f,mat);wv(f,tape);wv(f,mip);wv(f,mh0);wv(f,mh1);wv(f,mdir);wv(f,mst);wv(f,mhalt);wv(f,mlin);wv(f,mbt);wv(f,mfx);}
-  if(p.kin_sig||p.lamarck){wr(f,kExt4);wr(f,p.kin_sig);wr(f,p.lamarck);}
+  if(p.kin_sig||p.lamarck||p.wall_decay){wr(f,kExt4);wr(f,p.kin_sig);wr(f,p.lamarck);wr(f,p.wall_decay);}
   wv(f,res);wv(f,fert);wv(f,racc);wv(f,occ);wr(f,(std::int64_t)ag.size());
   for(auto& a:ag){const std::int64_t r[]={a.x,a.y,a.dir,a.energy,a.age,a.lineage,a.alive,(std::int64_t)a.id};for(auto x:r)wr(f,x);}
   if(ext())for(auto& a:ag){wr(f,a.sig);}
@@ -266,9 +267,9 @@ bool World::load(std::FILE* f){
         p.spawn=(int)a;p.mut=(int)b;p.own=(int)c;p.nodes=(int)d;p.node_pay=(int)e2;p.node_per=(int)g;p.node_ripe=(int)h;if(!rv(f,nph)||!rv(f,ncyc))return false;}
       if(!rv(f,mat)||!rv(f,tape)||!rv(f,mip)||!rv(f,mh0)||!rv(f,mh1)||!rv(f,mdir)||!rv(f,mst)||!rv(f,mhalt)||!rv(f,mlin)||!rv(f,mbt)||!rv(f,mfx))return false;}
     else if(std::fseek(f,pos,SEEK_SET)!=0)return false;}  // no W3 block
-  p.kin_sig=0;p.lamarck=0;
+  p.kin_sig=0;p.lamarck=0;p.wall_decay=0;
   {std::int64_t m=0;const long pos=std::ftell(f);if(!rd(f,m))return false;
-    if(m==kExt4){std::int64_t a=0,b=0;if(!rd(f,a)||!rd(f,b))return false;p.kin_sig=(int)a;p.lamarck=(int)b;}
+    if(m==kExt4){std::int64_t a=0,b=0,c=0;if(!rd(f,a)||!rd(f,b)||!rd(f,c))return false;p.kin_sig=(int)a;p.lamarck=(int)b;p.wall_decay=(int)c;}
     else if(std::fseek(f,pos,SEEK_SET)!=0)return false;}  // no wave-2 block
   if(!rv(f,res)||!rv(f,fert)||!rv(f,racc)||!rv(f,occ)){return false;}std::int64_t n=0;if(!rd(f,n)||n<0||n>(1<<24)){return false;}ag.assign((std::size_t)n,Agent{});
   for(auto& a:ag){std::int64_t r[8];for(auto& x:r)if(!rd(f,x))return false;

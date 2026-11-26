@@ -100,7 +100,10 @@ int main(){
       const int n=w.catastrophe(3,0.1);int out=0;for(auto& a:w.ag)out+=a.alive;CHECK(n+out==3,"wave 2 catastrophe: agents outside the window die");
       World v;WParams q5=q;q5.K=1;v.init(q5,0);Agent& m=v.ag[0];m=Agent{};m.x=5;m.y=5;m.dir=0;m.energy=500;m.alive=true;m.id=1;v.occ[5*L+5]=0;
       std::vector<std::int8_t> lr((std::size_t)q5.S*32,(std::int8_t)-100);lr[5]=100;const std::int8_t* l5[1]={lr.data()};born.clear();v.tick(l5,born);
-      CHECK(born.size()==1&&v.parents.size()==1&&v.parents[0]==0,"wave 2: parents records the parent slot of each newborn");}
+      CHECK(born.size()==1&&v.parents.size()==1&&v.parents[0]==0,"wave 2: parents records the parent slot of each newborn");
+      World z;WParams q6=q;q6.wall_decay=4096;z.init(q6,0);int w0=0;for(int c=0;c<L*L;c+=3){z.mat[c]=2;++w0;}std::vector<std::int8_t> lz((std::size_t)q6.S*32,0);
+      const std::int8_t* l6[1]={lz.data()};for(int t2=0;t2<16;++t2){born.clear();z.tick(l6,born);}int w1=0;for(auto x:z.mat)w1+=x==2;
+      CHECK(w1<w0&&w1>0,"walls erode at wall_decay/65536 per tick");}
     {World a,b;a.init(q,5);b.init(q,5);std::vector<std::int8_t> rl((std::size_t)q.S*32);auto drive3=[&](World& w,int n){for(int t=0;t<n;++t){
         for(std::size_t i=0;i<rl.size();++i)rl[i]=(std::int8_t)((i*41+t*13)%29-14);const std::int8_t* l[1]={rl.data()};born.clear();w.tick(l,born);}};
       drive3(a,120);drive3(b,120);int nm=0;for(auto x:a.mat)nm+=x==1;CHECK(hash(a)==hash(b)&&a.tape==b.tape&&nm>0,"W3: deterministic with agents building machines");
