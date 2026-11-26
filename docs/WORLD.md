@@ -836,6 +836,23 @@ Pass and kill:
 - **Feeding depends on context.** In tournaments started from the farmed world of epoch 200 (`-arena_ck`, below),
   the epoch-200 champion of E feeds machines on 8.8% of its actions, against 0.2% in fresh arenas. The mutualism is
   driven by the agents' behaviour, not only by sampling noise.
+- **It recurs, and in other seeds.**
+  - E seed 1 boomed a second time from epoch 665 (256 agents, up to 829 machines, 1,011 of 1,024 cells irrigated).
+    It was back at baseline by epoch 720.
+  - E seed 3 boomed from about epoch 490 (256 agents, 666 machines at 520).
+  - E seed 2 and all control runs: no boom by epoch 1000.
+- **The farmed world changes behaviour.** E seed 3's epoch-500 champion, played against itself:
+
+  | Arena | Feed | Attack | Write | Reproduce | Eat |
+  |---|---|---|---|---|---|
+  | its own boom world (snapshot at 500) | 6.8% | 24.1% | 3.2% | 17.7% | 22.7% |
+  | a fresh arena | 1.1% | 0.6% | 0.1% | 12.5% | 36.1% |
+
+  - The farmed world brings out cultivation and fighting.
+  - Fighting that rises with density is one proposed driver of prehistoric boom-bust cycles. A spatial model of
+    Mid-Holocene Europe found that climate alone cannot explain them, and pointed to density-dependent conflict.
+    Here fighting may add to overgrazing in the bust; this has not been tested yet.
+- Snapshots of boom worlds are now kept (tools/w/boomsnap.sh → RUNDIR/cks/).
 - **Measurement caveat.**
   - The pre-registered measures may miss this effect. Tournaments start from fresh 2,000-tick worlds that do not
     contain the accumulated farmland, and the wipe removes only the champion's own machines, not wild farms.
