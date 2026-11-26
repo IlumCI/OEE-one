@@ -789,12 +789,15 @@ Pass and kill:
 - **Building: killed in all three arms** (substrate; ownership; ownership with split-role nodes). Champions use the
   building actions at 1–7% of random agents' rates in every run, and the wipe costs nothing in every run, at 1000
   and at 2000.
-- **C's signal claim: fails.** It needed deafness to cost in 2 of 3 seeds at 2000. It costs in none of seeds 1–2,
-  and seed 3 does not pass at 1000 (t −2.6).
+- **C's signal claim: fails.** It needed deafness to cost in 2 of 3 seeds at 2000, and it costs only in seed 3
+  (t −3.8; seeds 1–2: +0.9, −1.6).
+  - Joint harvests exceed random agents' in every seed (0.06–0.36 per 1000 agent-ticks, against 0.00–0.05).
+  - Its kill condition (deafness costs nothing in every seed) is not met either, so horizontal transfer (W3.4) is
+    not triggered.
 - **Unplanned finding: eavesdropping.** In the matter worlds, deafness costs in 2 of 3 seeds in A and in B (W2a:
   0 of 5). The cost comes mainly from not hearing the other lineage.
 - **Progress continues but stays relative.** Later champions beat earlier ones in held-out generated arenas (7 of
-  8 runs at 2000). Solo scores (absolute generality) are flat everywhere.
+  9 runs at 2000, t > 3). Solo scores (absolute generality) are flat everywhere.
 - **Diagnosis: what the world runs out of is a use for construction.**
   - A machine can only store or move energy that the regrowth field already provides. It earns at most about 0.4
     per tick on the best cell, against 32 per bite for a forager.
@@ -808,7 +811,7 @@ Pass and kill:
     instruction that raises the productivity of land (irrigation).
   - It is to be tested together with Hamon et al.'s other two conditions.
 
-### W3.x pilot, epoch 2000 (8 of 9 runs; 2026-11-26; docs/results/w3x/eval_2000.txt)
+### W3.x pilot, epoch 2000 (all 9 runs; 2026-11-26; docs/results/w3x/eval_2000.txt)
 
 Share (t) of the ablated copy; generality and era as in §6 (post-founder shares).
 
@@ -822,6 +825,7 @@ Share (t) of the ablated copy; generality and era as in §6 (post-founder shares
 | B, 2 | 0.55 (+0.8) | 0.58 (+1.3) | 1.00, 0.53, 0.97, 0.28, 1.00, 0.32, 0.59 | 0.53 (t 0.8) | +0.11 (t 0.3) |
 | C, 2 | 0.50 (−0.1) | 0.39 (−1.6) | 0.99, 0.99, 0.95, 0.74, 0.90, 0.84, 0.59 | 0.74 (t 7.7) | −0.60 (t −1.9) |
 | B, 3 | 0.50 (0.0) | 0.18 (−14.8) | 0.38, 0.74, 0.57, 0.74, 0.50, 0.75, 0.88 | 0.79 (t 13.3) | +0.03 (t 0.1) |
+| C, 3 | 0.51 (+0.3) | 0.40 (−3.8) | 0.43, 0.72, 0.64, 0.61, 0.55, 0.45, 0.50 | 0.52 (t 0.8) | −0.28 (t −1.5) |
 
 - **Building does not pay in any run.** Champions use the building actions at 1–7% of random rates.
 - **Signals.**

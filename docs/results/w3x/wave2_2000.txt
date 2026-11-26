@@ -9,3 +9,25 @@ wipe	0.5147	0.0310	0.47	0.5194	0.0433	0.45
 deaf	0.6080	0.0257	4.20	0.6531	0.0386	3.97
 == era (post-founder share, e vs e-250)
 250:1.00 500:0.69 750:0.53 1000:0.31 1250:0.74 1500:0.74 1750:0.27 2000:0.96 
+# runs8/w3ccat_s1 vs runs8/w3c_s1 e 2000
+h2h	arm	0.0708	0.0406	-10.59	1/16
+h2h	C	0.0708	0.0406	-10.59	1/16
+solo	0.1869	0.0952	1.96	48/64
+# runs8/w3ccat_s1 e 2000 world: -S 64 -regrow 16 -nact 10 -matter 1 -spawn 20 -mut 1024 -season 300 -view 1 -signals 1 -own 2 -nodes 8 -node_pay 150 -node_per 200 -node_ripe 40 -wall_decay 4 -m_cost 4 -m_give 16 -graze 1 -pass 1
+champion agent_ticks 3867416 noop 0.003 fwd 0.315 left 0.193 right 0.002 eat 0.363 repro 0.054 attack 0.058 write 0.008 make 0.001 feed 0.003 kills/kt 0.21 births/kt 3.61 starved/kt 2.12 aged/kt 1.09 killed/kt 0.03 symbol 0.184 joint_harvests/kt 0.20
+random agent_ticks 75519 noop 0.083 fwd 0.199 left 0.057 right 0.034 eat 0.120 repro 0.127 attack 0.088 write 0.121 make 0.101 feed 0.070 kills/kt 0.93 births/kt 15.41 starved/kt 12.06 aged/kt 0.00 killed/kt 10.13 symbol 0.614 joint_harvests/kt 0.00
+wipe	0.5736	0.0317	2.32	0.6114	0.0480	2.32
+deaf	0.4757	0.0432	-0.56	0.4761	0.0605	-0.39
+== era (post-founder share, e vs e-250)
+250:1.00 500:0.83 750:0.63 1000:0.98 1250:0.99 1500:0.72 1750:0.92 2000:0.73 
+# runs8/w3cstress_s1 vs runs8/w3c_s1 e 2000
+h2h	arm	0.2507	0.0628	-3.97	2/16
+h2h	C	0.2507	0.0628	-3.97	2/16
+solo	-0.0174	0.1328	-0.13	51/64
+# runs8/w3cstress_s1 e 2000 world: -S 64 -regrow 16 -nact 10 -matter 1 -spawn 20 -mut 1024 -season 300 -view 1 -signals 1 -own 2 -nodes 8 -node_pay 150 -node_per 200 -node_ripe 40 -wall_decay 4 -m_cost 4 -m_give 16 -graze 1 -pass 1
+champion agent_ticks 3868022 noop 0.000 fwd 0.308 left 0.186 right 0.007 eat 0.447 repro 0.032 attack 0.016 write 0.001 make 0.001 feed 0.002 kills/kt 0.20 births/kt 3.76 starved/kt 2.16 aged/kt 1.21 killed/kt 0.00 symbol 0.822 joint_harvests/kt 0.31
+random agent_ticks 62347 noop 0.080 fwd 0.198 left 0.057 right 0.032 eat 0.123 repro 0.127 attack 0.091 write 0.124 make 0.099 feed 0.070 kills/kt 1.30 births/kt 16.63 starved/kt 11.31 aged/kt 0.00 killed/kt 13.54 symbol 0.605 joint_harvests/kt 0.00
+wipe	0.4102	0.0383	-2.35	0.3723	0.0524	-2.44
+deaf	0.2557	0.0644	-3.79	0.1981	0.0753	-4.01
+== era (post-founder share, e vs e-250)
+250:1.00 500:0.97 750:0.99 1000:0.13 1250:1.00 1500:0.87 1750:0.71 2000:0.76 
