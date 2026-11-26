@@ -644,6 +644,26 @@ References checked 2026-11-26 (web search, arXiv):
 - **Fix 4: `-pass 1`.** Agents can stand on machine cells; walls and nodes still block. Eating then also grazes the
   machine underfoot, with the same rights as `-graze`. With `-own 2` every copy is wild, so any agent can eat any
   colony from the inside.
+- **Calibration, 400 epochs, the worst cases** (runs8/cal_pass):
+
+  | Run | Agents | Reseeds | Machines (epoch 50 → 400) |
+  |---|---|---|---|
+  | A seed 1, m_give 0 | 32–75 | 1 | 67 → 13 |
+  | C seed 1, m_give 0 | 37–72 | 4 | 57 → 16 |
+  | A seed 2, m_give 0 | 60–105 | 1 | 85 → 32 |
+  | A seed 1, m_give 16 | 30–61 | 1 | 77 → 14 |
+
+  - Agents now keep the machines down, and machine stores stay near 0.
+  - With endowed copies, the seed that collapsed at epoch 175 is viable. So the living substrate stays:
+    `-m_give 16`.
+- **Viability guard (fixed now, before the runs).** A run is non-viable if its reseed count rises by more than 10
+  within any 200 epochs. Such a run is stopped and reported, not scored.
+  - tools/w/viab.sh checks the guard; the monitor runs it every 20 minutes.
+  - Normal runs have 1–4 reseeds in 400 epochs. The collapsed runs had 31–64 in 200.
+- **Effect on the runs.**
+  - All 21 runs restart with `-m_cost 4 -m_give 16 -graze 1 -pass 1`, and `-own 2` in B, C and wave 2.
+  - Binary: runs8/oee_w_v16 (commit 94a014e).
+  - The protocols are otherwise unchanged.
 
 ### Wave 2 protocol: old and disputed ideas, one per arm (fixed 2026-11-26, before the runs)
 
