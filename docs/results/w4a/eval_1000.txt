@@ -22,3 +22,10 @@ top tapes (count owner tape):
 1	-1	DD______________
 1	-1	+,-E____________
 agents by lineage slot: 32 32 0 0 0
+# runs8/w4e_s1 e 1000 world: -S 64 -regrow 16 -nact 10 -matter 1 -spawn 20 -mut 1024 -season 300 -view 1 -signals 1 -wall_decay 4 -m_cost 4 -m_give 0 -graze 1 -pass 1 -irr 8 -irr_decay 16 -own 2 -climate_ticks 1200
+champion agent_ticks 3945153 noop 0.003 fwd 0.314 left 0.163 right 0.045 eat 0.331 repro 0.114 attack 0.028 write 0.001 make 0.001 feed 0.000 kills/kt 0.23 births/kt 3.81 starved/kt 2.33 aged/kt 1.10 killed/kt 0.01 symbol 0.303 joint_harvests/kt 0.00
+random agent_ticks 66597 noop 0.083 fwd 0.203 left 0.055 right 0.031 eat 0.123 repro 0.134 attack 0.086 write 0.119 make 0.097 feed 0.068 kills/kt 1.26 births/kt 17.54 starved/kt 11.02 aged/kt 0.00 killed/kt 14.20 symbol 0.602 joint_harvests/kt 0.00
+wipe	0.5413	0.0438	0.94	0.5621	0.0619	1.00
+deaf	0.3217	0.0497	-3.59	0.2845	0.0626	-3.44
+== generality (e vs e-500)
+e	e_prev	solo_log_ratio	t	median	surviveA	surviveB	lshareA	lt	swap_recovery	swap_t
