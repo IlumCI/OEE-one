@@ -45,6 +45,9 @@ struct WParams{
   // Machine economy (calibration, docs/WORLD.md): a running machine pays 1 store every m_cost ticks (1: every tick);
   // C moves m_give store from the parent into the copy (0: copies start empty and halt)
   int m_cost=1,m_give=0;
+  // graze 1: eat also takes from the store of the machine in front, after the agent's own cell: any machine without
+  // ownership; with own, wild machines (no owner) and the agent's own (0: only the own-granary rule)
+  int graze=0;
 };
 
 struct Agent{int x=0,y=0,dir=0,energy=0,age=0,lineage=0;bool alive=false;std::uint64_t id=0;int sig=0,wpos=0;};

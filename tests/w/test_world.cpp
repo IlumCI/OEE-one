@@ -91,6 +91,12 @@ int main(){
       Agent& b=w.ag[q2.S];b=Agent{};b.x=5;b.y=3;b.dir=2;b.energy=100;b.lineage=1;b.alive=true;b.id=2;w.occ[3*L+5]=q2.S;  // lineage 1, facing the machine from the north
       std::fill(la.begin(),la.end(),(std::int8_t)-100);la[0]=100;lb[8]=100;const int eb=w.ag[q2.S].energy;w.tick(l2,born);
       CHECK(gran&&w.mat[f]==0&&w.ag[q2.S].energy==eb-2*q2.mk_cost-q2.base,"W3.2 ownership: owner eats from its granary; another lineage can only destroy it");}
+    {auto gz=[&](int graze,int own,int ml){WParams q4=q;q4.graze=graze;q4.own=own;q4.K=2;World w;w.init(q4,0);for(auto& r:w.res)r=0;const int f=4*L+5;
+        w.mat[f]=1;w.mst[f]=100;w.mlin[f]=(std::int8_t)ml;w.mbt[f]=-1;Agent& a=w.ag[0];a=Agent{};a.x=5;a.y=5;a.dir=0;a.energy=100;a.alive=true;a.id=1;w.occ[5*L+5]=0;
+        std::vector<std::int8_t> la((std::size_t)q4.S*32,(std::int8_t)-100),lb((std::size_t)q4.S*32,(std::int8_t)-100);la[4]=100;const std::int8_t* l4[2]={la.data(),lb.data()};
+        std::vector<int> bn;w.tick(l4,bn);return w.ag[0].energy-(100-q4.base);};
+      CHECK(gz(1,0,0)==q.bite&&gz(0,0,0)==0&&gz(1,1,-1)==q.bite&&gz(1,1,1)==0&&gz(1,1,0)==q.bite,
+        "grazing: eat takes from the machine in front (any without ownership; wild or own with it); not with graze 0");}
     {WParams q3=q;q3.nodes=1;q3.node_per=50;q3.node_ripe=10;q3.view=1;World w;w.init(q3,0);for(auto& r:w.res)r=0;
       int nc=-1;for(int c=0;c<L*L;++c)if(w.mat[c]==3){nc=c;break;}w.mat[nc]=0;const int c=5*L+5;w.mat[c]=3;w.nph[c]=0;w.ncyc[c]=-1;  // one node at (5,5), ripe at t 0-9
       auto put2=[&](int slot,int x,int y,int dir){Agent& g=w.ag[slot];g=Agent{};g.x=x;g.y=y;g.dir=dir;g.energy=100;g.alive=true;g.id=slot+1;w.occ[y*L+x]=slot;};
