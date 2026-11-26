@@ -48,3 +48,53 @@ top tapes (count owner tape):
 agents by lineage slot: 32 32 0 0 0
 h2h_E_vs_D	world w4e_s1	0.4986	0.0771	-0.02	11/16
 h2h_E_vs_D	world w4d_s1	0.4435	0.0767	-0.74	10/16
+# runs8/w4d_s2 e 1000 world: -S 64 -regrow 16 -nact 10 -matter 1 -spawn 20 -mut 1024 -season 300 -view 1 -signals 1 -wall_decay 4 -m_cost 4 -m_give 0 -graze 1 -pass 1 -own 2 -climate_ticks 1200
+champion agent_ticks 3923902 noop 0.001 fwd 0.334 left 0.254 right 0.009 eat 0.336 repro 0.058 attack 0.006 write 0.001 make 0.000 feed 0.001 kills/kt 0.22 births/kt 3.95 starved/kt 2.37 aged/kt 1.19 killed/kt 0.00 symbol 0.980 joint_harvests/kt 0.00
+random agent_ticks 45267 noop 0.116 fwd 0.086 left 0.063 right 0.088 eat 0.137 repro 0.075 attack 0.083 write 0.212 make 0.044 feed 0.097 kills/kt 1.22 births/kt 16.17 starved/kt 7.42 aged/kt 0.00 killed/kt 20.06 symbol 0.786 joint_harvests/kt 0.00
+wipe	0.4888	0.0284	-0.39	0.4881	0.0374	-0.32
+deaf	0.3663	0.0625	-2.14	0.3391	0.0743	-2.16
+== generality (e vs e-500)
+e	e_prev	solo_log_ratio	t	median	surviveA	surviveB	lshareA	lt	swap_recovery	swap_t
+1000	500	1.2675	3.48	0.2856	53/64	42/64	0.9239	22.57	0.3485	0.83
+== era (post-founder share, e vs e-250)
+250:1.00 500:1.00 750:0.91 1000:0.65 
+== census (epoch machines walls tapes classes)
+1000 10 43 7 4
+== machines by owner in the latest checkpoint (mcal -ck)
+t 600000 own 2 graze 1
+owner	machines	store
+-1	6	89
+0	4	0
+top tapes (count owner tape):
+4	0	________________
+1	-1	_____,__________
+1	-1	][<>____________
+1	-1	E_______________
+1	-1	D___________}___
+agents by lineage slot: 32 32 0 0 0
+# runs8/w4e_s2 e 1000 world: -S 64 -regrow 16 -nact 10 -matter 1 -spawn 20 -mut 1024 -season 300 -view 1 -signals 1 -wall_decay 4 -m_cost 4 -m_give 0 -graze 1 -pass 1 -irr 8 -irr_decay 16 -own 2 -climate_ticks 1200
+champion agent_ticks 3934591 noop 0.015 fwd 0.361 left 0.190 right 0.019 eat 0.326 repro 0.068 attack 0.014 write 0.002 make 0.001 feed 0.003 kills/kt 0.22 births/kt 3.99 starved/kt 2.35 aged/kt 1.24 killed/kt 0.01 symbol 0.033 joint_harvests/kt 0.00
+random agent_ticks 38312 noop 0.115 fwd 0.083 left 0.058 right 0.093 eat 0.135 repro 0.071 attack 0.082 write 0.223 make 0.043 feed 0.096 kills/kt 1.04 births/kt 17.44 starved/kt 8.09 aged/kt 0.00 killed/kt 22.71 symbol 0.785 joint_harvests/kt 0.00
+wipe	0.5788	0.0425	1.85	0.5939	0.0504	1.86
+deaf	0.4723	0.0757	-0.37	0.4684	0.0847	-0.37
+== generality (e vs e-500)
+e	e_prev	solo_log_ratio	t	median	surviveA	surviveB	lshareA	lt	swap_recovery	swap_t
+1000	500	0.6674	1.39	0.1527	54/64	46/64	0.8550	13.15	0.6015	1.67
+== era (post-founder share, e vs e-250)
+250:1.00 500:0.78 750:0.69 1000:0.84 
+== census (epoch machines walls tapes classes)
+1000 12 46 5 4
+== machines by owner in the latest checkpoint (mcal -ck)
+t 600000 own 2 graze 1
+owner	machines	store
+-1	4	89
+1	8	0
+top tapes (count owner tape):
+8	1	________________
+1	-1	][<>____________
+1	-1	E_______________
+1	-1	.ED_____________
+1	-1	,,D_____________
+agents by lineage slot: 31 32 0 0 0
+h2h_E_vs_D	world w4e_s2	0.8418	0.0878	3.89	13/16
+h2h_E_vs_D	world w4d_s2	0.7527	0.0905	2.79	11/16
