@@ -795,6 +795,14 @@ Pass and kill:
 - The viability guard applies. A private-farm plague that excludes the other lineages counts as non-viable if it
   trips the guard.
 
+Interim observation (2026-11-26, W4b seed 1). F seed 1 boomed early, at epochs 80–115 (peak 198 agents at 100).
+- At epoch 100 one lineage owned 502 of the 541 machines, holding 10.6k store.
+- The other lineages still grew to their 64-slot caps, and the boom collapsed by epoch 135.
+- Claiming privatises machines and their stores, not land. The regrowth of an irrigated cell is food for anyone
+  standing on it, so the boom's main food source stays a commons.
+- So W4b tests the property of machines, not of land. Privatising land would mean owning cells (territory), a
+  larger change that W4b does not make.
+
 ## 7. Implementation (planned files)
 
 - `src/w/world.{hpp,cpp}`: grid, resources, machines, agents, deterministic tick (counter RNG), copyable for forks.
