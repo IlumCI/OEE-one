@@ -87,7 +87,7 @@ Re-plan 2026-11-25 (owner decision):
 | W1 | Several lineages, splits, extinction, historical self-play | Sustained era progress; less cycling with ancestors | Progress fails; cycling halved (pass) |
 | W1b–e | Step-schedule fix (b), null-ES control (c), ancestor exposure (d, e) | Per protocol | b pass (adopted), c pass, d fail, e fail |
 | W2a | Seasons, hidden resources, signals | Amnesia and deaf ablations cost fitness | Done (5 seeds): memory pays with seasons (shuffle costs in 10 of 10 runs); signals unused (deaf costs in 0 of 5) |
-| **W3** | **Programmable matter: cell tapes, machines that run, copy and build; agents write and read code** | **Wiping artifacts costs fitness; distinct functional artifact types keep growing; held-out generality rises** | **W3.x pilot: building never pays (9 runs). W4a (irrigation), W4b (machine property), W4c (longer horizon): killed. Diagnosis: feeding farms is a net cost to the feeder, because farm food is a commons (WORLD.md). Wave 2 running** |
+| **W3** | **Programmable matter: cell tapes, machines that run, copy and build; agents write and read code** | **Wiping artifacts costs fitness; distinct functional artifact types keep growing; held-out generality rises** | **W3.x pilot: building never pays (9 runs). W4a (irrigation), W4b (machine property), W4c (longer horizon): killed. Diagnosis: feeding farms is a net cost to the feeder, because farm food is a commons (WORLD.md). Wave 2: only C+stress passes (stronger competitors, not generalists)** |
 | W3b | Emulated computer inside the sandbox (files, processes, no external network) | To be fixed after W3 | Option |
 | W4 | State-dependent physics (machines change local rules) | Observer compression progress stays positive | After W3 |
 

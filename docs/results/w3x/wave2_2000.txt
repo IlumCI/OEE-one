@@ -97,3 +97,14 @@ wipe	0.5116	0.0172	0.68	0.5081	0.0265	0.30
 deaf	0.3630	0.0253	-5.41	0.3328	0.0342	-4.90
 == era (post-founder share, e vs e-250)
 250:1.00 500:0.69 750:0.53 1000:0.68 1250:0.83 1500:0.60 1750:0.33 2000:0.86 
+# runs8/w3clam_s3 vs runs8/w3c_s3 e 2000
+h2h	arm	0.9960	0.0013	391.05	16/16
+h2h	C	0.9990	0.0004	1150.86	16/16
+solo	-0.0931	0.0922	-1.01	38/64
+# runs8/w3clam_s3 e 2000 world: -S 64 -regrow 16 -nact 10 -matter 1 -spawn 20 -mut 1024 -season 300 -view 1 -signals 1 -own 2 -nodes 8 -node_pay 150 -node_per 200 -node_ripe 40 -wall_decay 4 -m_cost 4 -m_give 16 -graze 1 -pass 1 -lamarck 1
+champion agent_ticks 3865363 noop 0.001 fwd 0.303 left 0.007 right 0.139 eat 0.452 repro 0.054 attack 0.034 write 0.004 make 0.000 feed 0.005 kills/kt 0.11 births/kt 3.28 starved/kt 1.64 aged/kt 1.25 killed/kt 0.01 symbol 0.202 joint_harvests/kt 0.52
+random agent_ticks 44641 noop 0.060 fwd 0.051 left 0.088 right 0.144 eat 0.092 repro 0.055 attack 0.086 write 0.244 make 0.061 feed 0.119 kills/kt 0.67 births/kt 10.17 starved/kt 12.28 aged/kt 0.00 killed/kt 9.36 symbol 0.845 joint_harvests/kt 0.04
+wipe	0.5299	0.0317	0.94	0.5409	0.0453	0.90
+deaf	0.5572	0.0581	0.98	0.5763	0.0732	1.04
+== era (post-founder share, e vs e-250)
+250:1.00 500:0.99 750:0.94 1000:0.96 1250:0.37 1500:0.97 1750:0.71 2000:0.30 

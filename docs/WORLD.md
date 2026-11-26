@@ -1012,13 +1012,27 @@ arenas.
 | Arm | Head-to-head | Solo vs C | Arm-specific test | Seed 3 |
 |---|---|---|---|---|
 | C+stress | **0.84 (t 14.7, 16/16)** | −0.21 (t −1.3) | era mean 0.65 vs C 0.56, 0 collapses each | **pass** (head-to-head) |
+| C+lam | **0.996 / 0.999 (16/16 each)** | −0.09 (t −1.0) | solo below C | **pass** (head-to-head, both worlds) |
 
 - **C+stress passes** (head-to-head in seeds 2 and 3). A lineage's update fraction rising with its drop below its
   running fitness average makes stronger competitors, not better generalists: solo is −0.02, +1.44 and −0.21
   across the three seeds.
 - In seed 3 the deaf ablation costs (0.36, t −5.4): the stress champion uses signals.
-- Per the protocol, a passing idea is combined with others only after each has passed alone. C+lam's seed 3 is
-  running.
+- **C+lam fails as written.** Each criterion needs 2 of 3 seeds, and each was met once: solo generality in seed 1
+  (+0.92, t 4.3), head-to-head in seed 3 (0.996 and 0.999). Seed 2 met neither. The seeds disagree sharply.
+
+### Wave 2 verdict (2026-11-26)
+
+| Arm | Head-to-head wins (seeds) | Arm-specific test (seeds) | Verdict |
+|---|---|---|---|
+| C+kin | 0 of 2 | 0 of 2 | closed after two seeds |
+| C+cat | 0 of 2 | 0 of 2 | closed after two seeds |
+| C+stress | 2 of 3 (seeds 2, 3) | 0 of 3 | **passes** |
+| C+lam | 1 of 3 (seed 3) | 1 of 3 (seed 1) | fails as written |
+
+- Only C+stress passes. Per the protocol, ideas are combined only after each passes alone, so there is nothing to
+  combine. C+stress is a candidate default for the learner in the next phase: it makes stronger competitors, but
+  no wave-2 arm made better generalists in a consistent way.
 - **C+kin and C+cat are closed.** Each failed in seeds 1 and 2, so neither can pass 2 of 3. Their third seeds
   are not run (runs8/w3ckin_s3 and w3ccat_s3 carry PAUSED), which frees the queue for C+stress and C+lam.
 
