@@ -889,6 +889,18 @@ share of E's champion.
     Mid-Holocene Europe found that climate alone cannot explain them, and pointed to density-dependent conflict.
     Here fighting may add to overgrazing in the bust; this has not been tested yet.
 - Snapshots of boom worlds are now kept (tools/w/boomsnap.sh → RUNDIR/cks/).
+- **Exploratory: E against D at epoch 500, seed 3** (post-founder share of E's champion; 16 mirrored seeds):
+
+  | Arena | Share |
+  |---|---|
+  | fresh, E's world | 0.999 (t 853) |
+  | E's pre-boom world (snapshot at 400) | 0.97 (t 15) |
+  | E's boom world (snapshot at 500) | 0.51 (t 4.4) |
+
+  - The E champion trained around the boom is a much stronger competitor than D's champion of the same age.
+  - By epoch 1000 this has shrunk to 0.62 (not significant), with E's era share collapsing after its booms.
+  - In the boom world both lineages fill their 64 slots, so shares are compressed toward 0.5. The slot cap limits
+    what tournaments can resolve in rich worlds.
 - **Measurement caveat.**
   - The pre-registered measures may miss this effect. Tournaments start from fresh 2,000-tick worlds that do not
     contain the accumulated farmland, and the wipe removes only the champion's own machines, not wild farms.
