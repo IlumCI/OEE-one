@@ -11,4 +11,7 @@ int main(int argc,char** argv){std::FILE* f=std::fopen(argv[1],"rb");std::int64_
   for(int c=0;c<N;++c){if(W.p.irr&&W.irl[c]>0){++irpos;irsum+=W.irl[c];}if(W.mat[c]!=1)continue;++m;bool I=false,E=false,C=false;for(int j=0;j<16;++j){auto b=W.tape[c*16+j];I|=b==',';E|=b=='E';C|=b=='C';}
     withI+=I;withE+=E;withIE+=I&&E;withC+=C;run+=W.mst[c]>0;}
   std::printf("machines %d running %d withI %d withE %d withIE %d withC %d | irrigated cells %d mean irr %.1f\n",m,run,withI,withE,withIE,withC,irpos,irpos?(double)irsum/irpos:0.0);
-  long fed=0;int alive=0;for(auto& a:W.ag)if(a.alive)++alive;std::printf("agents %d\n",alive);return 0;}
+  long fed=0;int alive=0;for(auto& a:W.ag)if(a.alive)++alive;std::printf("agents %d\n",alive);
+  if(W.p.land&&!W.lown.empty()){std::vector<int> own(W.p.K+1,0);for(int c=0;c<N;++c)if(W.irl[c]>0)++own[W.lown[c]>=0?W.lown[c]+1:0];
+    std::printf("land (irrigated cells by owner lineage; common first): common %d",own[0]);for(int k=0;k<W.p.K;++k)std::printf(" L%d %d",k,own[k+1]);std::printf("\n");}
+  return 0;}

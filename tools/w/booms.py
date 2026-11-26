@@ -10,7 +10,7 @@ while a and a[0].startswith('-'):
   if k=='-e0':e0=int(v)
   elif k=='-e1':e1=int(v)
   elif k=='-thr':thr=int(v)
-print('run\tepochs\tboom_time\tmean_pop\tbooms\tlargest_share_in_booms\tpeak')
+print('run\tepochs\tboom_time\tmean_pop\tbooms\tlargest_share_in_booms\tpeak\tlargest_share_all')
 for d in a:
   rows=[]
   for ln in open(d+'/log.txt'):
@@ -24,4 +24,5 @@ for d in a:
   if not rows:print(d+'\t0');continue
   b=[r[1]>thr for r in rows];nb=sum(1 for i,x in enumerate(b) if x and (i==0 or not b[i-1]))
   sh=[max(r[2])/max(1,sum(r[2])) for r in rows if r[1]>thr and r[2]]
-  print('%s\t%d\t%.3f\t%.1f\t%d\t%s\t%d'%(d,len(rows),sum(b)/len(rows),sum(r[1] for r in rows)/len(rows),nb,('%.2f'%(sum(sh)/len(sh))) if sh else '-',max(r[1] for r in rows)))
+  sa=[max(r[2])/max(1,sum(r[2])) for r in rows if r[2]]
+  print('%s\t%d\t%.3f\t%.1f\t%d\t%s\t%d\t%s'%(d,len(rows),sum(b)/len(rows),sum(r[1] for r in rows)/len(rows),nb,('%.2f'%(sum(sh)/len(sh))) if sh else '-',max(r[1] for r in rows),('%.2f'%(sum(sa)/len(sa))) if sa else '-'))
