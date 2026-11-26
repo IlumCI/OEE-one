@@ -757,6 +757,8 @@ Share (t) of the ablated copy; generality and era as in §6 (post-founder shares
   - Free symbols that track what an agent is doing leak information to rivals, which a listener can exploit
     (cheap talk without common interest, Crawford and Sobel 1982).
   - The wave-2 arm C+kin removes eavesdropping by design.
+- **Progress.**
+  - Era shares stay above 0.25 in every run.
   - Later champions beat earlier ones in unseen generated arenas (t 3.8–19.6). Solo scores do not rise, so the gain
     is relative (better competitors), not absolute (better survivors alone).
 
