@@ -127,6 +127,20 @@ int main(){
       std::fill(lb.begin(),lb.end(),(std::int8_t)-100);lb[0]=100;la[4]=100;w.tick(l13,bn);  // lineage 0 eats on the cell that lineage 1's feeding irrigated
       const bool leak=w.stat[32+25]==q13.bite&&w.stat[28]==q13.bite&&w.stat[24]==0;
       CHECK(cred&&leak,"irrigation credit (analysis): a cell irrigated by a machine that lineage 1 fed is credited to 1; food eaten there by lineage 0 counts as 1's leak");}
+    {WParams q14=q;q14.irr=2;q14.K=2;q14.pass=1;q14.graze=1;q14.land=1;World w;w.init(q14,0);for(auto& r:w.res)r=0;const int f=4*L+5;put(w,f,",",0,0);w.mlin[f]=-1;
+      Agent& a=w.ag[q14.S];a=Agent{};a.x=5;a.y=5;a.dir=0;a.energy=200;a.lineage=1;a.alive=true;a.id=1;w.occ[5*L+5]=q14.S;
+      std::vector<std::int8_t> la((std::size_t)q14.S*32,(std::int8_t)-100),lb((std::size_t)q14.S*32,(std::int8_t)-100);lb[9]=100;const std::int8_t* l14[2]={la.data(),lb.data()};
+      std::vector<int> bn;w.tick(l14,bn);w.tick(l14,bn);const bool owned=w.irl[f]>0&&w.lown[f]==1&&w.mfd[f]==1;  // lineage 1 fed the machine that irrigated the cell
+      w.mat[f]=0;w.mst[f]=0;w.res[f]=50;Agent& o=w.ag[0];o=Agent{};o.x=5;o.y=4;o.dir=0;o.energy=100;o.lineage=0;o.alive=true;o.id=2;w.occ[f]=0;
+      std::vector<std::int8_t> ob(w.din()),ob1(w.din());w.observe(0,ob.data());w.observe(q14.S,ob1.data());
+      const bool seen=ob[12]==0&&ob[122]==-64&&ob1[7]==25&&ob1[122]==0;  // 0 sees no food on 1's land; 1 sees it in front
+      std::fill(lb.begin(),lb.end(),(std::int8_t)-100);lb[0]=100;la[4]=100;w.tick(l14,bn);const bool shut=w.res[f]==50&&w.ag[0].energy==100-q14.base;
+      w.ag[0].alive=false;w.occ[f]=-1;w.ag[q14.S].y=4;w.occ[5*L+5]=-1;w.occ[f]=q14.S;
+      std::fill(la.begin(),la.end(),(std::int8_t)-100);std::fill(lb.begin(),lb.end(),(std::int8_t)-100);lb[4]=100;w.tick(l14,bn);const bool fed=w.res[f]==50-q14.bite;
+      std::FILE* fl=std::tmpfile();w.save(fl);std::rewind(fl);World v;const bool ok=v.load(fl);std::fclose(fl);const bool kept=ok&&v.p.land==1&&v.lown==w.lown&&v.mfd==w.mfd;
+      w.irl[f]=1;for(int t2=0;t2<q14.irr_decay;++t2){bn.clear();w.tick(l14,bn);}const bool lapsed=w.irl[f]==0&&w.lown[f]==-1;
+      if(!(owned&&seen&&shut&&fed&&kept&&lapsed))std::printf("  owned %d seen %d shut %d fed %d kept %d lapsed %d\n",owned,seen,shut,fed,kept,lapsed);
+      CHECK(owned&&seen&&shut&&fed&&kept&&lapsed,"W4d land: a cell irrigated by a machine lineage 1 fed is 1's land; lineage 0 sees and eats no food there, 1 does; saved; lapses at irrigation 0");}
     {WParams q3=q;q3.nodes=1;q3.node_per=50;q3.node_ripe=10;q3.view=1;World w;w.init(q3,0);for(auto& r:w.res)r=0;
       int nc=-1;for(int c=0;c<L*L;++c)if(w.mat[c]==3){nc=c;break;}w.mat[nc]=0;const int c=5*L+5;w.mat[c]=3;w.nph[c]=0;w.ncyc[c]=-1;  // one node at (5,5), ripe at t 0-9
       auto put2=[&](int slot,int x,int y,int dir){Agent& g=w.ag[slot];g=Agent{};g.x=x;g.y=y;g.dir=dir;g.energy=100;g.alive=true;g.id=slot+1;w.occ[y*L+x]=slot;};

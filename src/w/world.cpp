@@ -44,6 +44,7 @@ void World::init(const WParams& pp,int founders){
   nph.clear();ncyc.clear();
   if(p.matter){mat.assign(N,0);tape.assign((std::size_t)N*16,0);mip.assign(N,0);mh0.assign(N,0);mh1.assign(N,0);mdir.assign(N,0);mst.assign(N,0);
     mhalt.assign(N,0);mlin.assign(N,-1);mbt.assign(N,0);mfx.assign((std::size_t)N*4,0);if(p.irr>0)irl.assign(N,0);else irl.clear();
+    if(p.land&&p.irr>0){lown.assign(N,-1);mfd.assign(N,-1);}else{lown.clear();mfd.clear();}ilin.clear();
     if(p.nodes>0){nph.assign(N,0);ncyc.assign(N,-1);const int nn=std::max(1,(int)std::lround((double)p.nodes*N/1024));int placed=0;
       for(std::uint64_t i=0;placed<nn&&i<(std::uint64_t)64*N;++i){const std::uint64_t h=mix(mix(p.seed^0x40deULL)+i);const int c=(int)(h%N);if(mat[c])continue;
         mat[c]=3;res[c]=0;nph[c]=(int)((h>>32)%(std::uint64_t)std::max(1,p.node_per));++placed;}}}
@@ -82,7 +83,7 @@ void World::observe(int slot,std::int8_t* o) const{
   auto wr=[L](int z){return z<0?z+L:(z>=L?z-L:z);};  // offsets are at most 4 and L >= 5: one wrap suffices
   for(int v=2;v>=-2;--v){const int bx=a.x+v*fx,by=a.y+v*fy;
     for(int u=-2;u<=2;++u,++i){const int c=wr(by+u*ry)*L+wr(bx+u*rx);
-      if(std::max(std::abs(u),std::abs(v))<=p.view)o[i]=(std::int8_t)(res[c]>>1);const int q=occ[c];
+      if(std::max(std::abs(u),std::abs(v))<=p.view&&!(p.land&&!lown.empty()&&lown[c]>=0&&lown[c]!=lin&&irl[c]>0))o[i]=(std::int8_t)(res[c]>>1);const int q=occ[c];
       if(q>=0&&q!=slot){o[25+i]=(std::int8_t)(ag[q].lineage==lin?64:-64);if(hear&&(!p.kin_sig||ag[q].lineage==lin)&&(ag[q].lineage==lin?hk:ho))o[53+i]=(std::int8_t)(32*ag[q].sig);}}}
   o[50]=(std::int8_t)std::min(127,a.energy/8);o[51]=(std::int8_t)std::min(127,a.age/4);o[52]=64;
   if(p.signals)o[78]=(std::int8_t)(32*a.sig);
@@ -93,7 +94,8 @@ void World::observe(int slot,std::int8_t* o) const{
     const int fc=wr(a.y+fy)*L+wr(a.x+fx);
     if(mat[fc]==1){const CodeIdx& ci=code_idx();for(int j=0;j<16;++j){const int x=ci.v[tape[(std::size_t)fc*16+j]];o[104+j]=(std::int8_t)(x<16?8*x+4:-64);}
       o[120]=(std::int8_t)std::min(127,mst[fc]/4);}
-    o[121]=(std::int8_t)(8*a.wpos);}
+    o[121]=(std::int8_t)(8*a.wpos);
+    if(p.land&&!lown.empty()){const int c0=a.y*L+a.x;if(irl[c0]>0&&lown[c0]>=0)o[122]=(std::int8_t)(lown[c0]==lin?64:-64);}}
 }
 
 void World::tick(const std::int8_t* const* logits,std::vector<int>& born){
@@ -106,7 +108,7 @@ void World::tick(const std::int8_t* const* logits,std::vector<int>& born){
     if(p.signals)ag[s].sig=act_sample(l+so,mix(mix(p.seed^0x5197ULL)+((std::uint64_t)t<<24)+ag[s].id),4);  // heard next tick
     if(p.matter)code[s]=p.stoch?act_sample(l+16,mix(mix(p.seed^0xc0deULL)+((std::uint64_t)t<<24)+ag[s].id),16):act_of(l+16,16);}
   if(track&&stat.size()<(std::size_t)p.K*32)stat.assign((std::size_t)p.K*32,0);
-  if(track&&p.matter&&p.irr>0&&mfd.size()!=(std::size_t)N){mfd.assign(N,-1);ilin.assign(N,-1);}
+  if(track&&p.matter&&p.irr>0&&ilin.size()!=(std::size_t)N){ilin.assign(N,-1);if(mfd.size()!=(std::size_t)N)mfd.assign(N,-1);}
   if(track)for(int s:order){const int k=ag[s].lineage;++stat[(std::size_t)k*32+act[s]];++stat[(std::size_t)k*32+22];if(ag[s].sig>0)++stat[(std::size_t)k*32+21];}
   std::vector<std::pair<int,int>> neat;  // W3.3: (node cell, eater slot) this tick
   for(int s:order){Agent& a=ag[s];if(!a.alive)continue;const int c=a.y*p.L+a.x;
@@ -116,7 +118,8 @@ void World::tick(const std::int8_t* const* logits,std::vector<int>& born){
       case 2:a.dir=(a.dir+3)&3;a.energy-=p.turn;break;
       case 3:a.dir=(a.dir+1)&3;a.energy-=p.turn;break;
       case 4:{if(p.nodes>0&&p.matter&&mat[fc]==3)neat.push_back({fc,s});
-        int take=std::min<int>(res[c],p.bite);res[c]-=(std::uint8_t)take;
+        const bool fen=p.land&&!lown.empty()&&lown[c]>=0&&lown[c]!=a.lineage&&irl[c]>0;  // W4d: another lineage's land
+        int take=fen?0:std::min<int>(res[c],p.bite);res[c]-=(std::uint8_t)take;
         if(track&&p.matter){const std::size_t k=(std::size_t)a.lineage;stat[k*32+28]+=take;
           if(!ilin.empty()&&irl[c]>0){const int L=ilin[c];if(L==a.lineage)stat[k*32+24]+=take;else if(L>=0)stat[(std::size_t)L*32+25]+=take;else stat[k*32+26]+=take;}}
         if(p.pass&&p.matter&&take<p.bite&&mat[c]==1&&(p.graze?(!p.own||mlin[c]<0||mlin[c]==a.lineage):(p.own&&mlin[c]==a.lineage))){const int t2=std::min<int>(p.bite-take,mst[c]);mst[c]=(std::int16_t)(mst[c]-t2);take+=t2;}  // underfoot
@@ -137,7 +140,7 @@ void World::tick(const std::int8_t* const* logits,std::vector<int>& born){
             else{kill_machine(fc);a.energy-=2*p.mk_cost;}}}  // W3.2: someone else's machine can only be destroyed
         break;
       case 9:if(p.matter&&mat[fc]==1&&!(nofeed>>a.lineage&1u)){const int amt=std::min(p.feed_amt,std::max(0,a.energy-1));a.energy-=amt;mst[fc]=(std::int16_t)std::min(1000,mst[fc]+amt);if(p.claim&&mlin[fc]<0)mlin[fc]=(std::int8_t)a.lineage;
-        if(track&&amt>0){stat[(std::size_t)a.lineage*32+27]+=amt;if(!mfd.empty())mfd[fc]=(std::int8_t)a.lineage;}}break;  // feed (claim: a wild machine becomes the feeder's)
+        if(amt>0){if(!mfd.empty())mfd[fc]=(std::int8_t)a.lineage;if(track)stat[(std::size_t)a.lineage*32+27]+=amt;}}break;  // feed (claim: a wild machine becomes the feeder's)
       default:break;}
   }
   if(!neat.empty()){std::sort(neat.begin(),neat.end());  // joint harvests: at least two eaters on a ripe node in the same tick
@@ -148,7 +151,7 @@ void World::tick(const std::int8_t* const* logits,std::vector<int>& born){
   for(int s=0;s<p.K*p.S;++s){Agent& a=ag[s];if(!a.alive)continue;a.energy-=p.base+(a.sig>0?p.sig_cost:0);++a.age;
     if(a.energy<=0||a.age>p.max_age){a.alive=false;occ[a.y*p.L+a.x]=-1;if(track)++stat[(std::size_t)a.lineage*32+(a.energy<=0?18:19)];}}
   if(p.matter)run_machines();
-  if(p.matter&&p.irr>0&&t%std::max(1,p.irr_decay)==std::max(1,p.irr_decay)-1)for(auto& x:irl)if(x)--x;  // irrigation decays
+  if(p.matter&&p.irr>0&&t%std::max(1,p.irr_decay)==std::max(1,p.irr_decay)-1)for(int c=0;c<N;++c)if(irl[c]&&!--irl[c]&&!lown.empty())lown[c]=-1;  // irrigation decays; land lapses at 0
   if(p.matter&&p.wall_decay>0)for(int c=0;c<N;++c)if(mat[c]==2&&(int)(mix(mix(p.seed^0xe40dULL)+((std::uint64_t)t<<24)+c)&0xffff)<p.wall_decay)mat[c]=0;  // erosion
   if(p.matter&&p.spawn>0){const long r=(long)p.spawn*N/1024;const std::uint64_t h=mix(mix(p.seed^0x5badULL)+(std::uint64_t)t);  // spontaneous generation
     const int n=(int)(r/1000)+((long)(h%1000)<r%1000?1:0);if(n>0)seed_programs(n,(std::uint64_t)t*16+7,50,0.7);}
@@ -176,7 +179,7 @@ void World::run_machines(){
     for(int n=0;n<p.m_steps;++n){
       switch(tp[ip]){
         case '<':h0=(h0+15)&15;break;case '>':h0=(h0+1)&15;break;case '{':h1=(h1+15)&15;break;case '}':h1=(h1+1)&15;break;
-        case '+':++tp[h0];break;case '-':--tp[h0];break;case '.':tp[h1]=tp[h0];break;case ',':if(p.irr>0){if(irl[c]<255&&mst[c]>=1){irl[c]=(std::uint8_t)std::min(255,irl[c]+p.irr);--mst[c];if(!ilin.empty())ilin[c]=mfd[c];}}else tp[h0]=tp[h1];break;
+        case '+':++tp[h0];break;case '-':--tp[h0];break;case '.':tp[h1]=tp[h0];break;case ',':if(p.irr>0){if(irl[c]<255&&mst[c]>=1){irl[c]=(std::uint8_t)std::min(255,irl[c]+p.irr);--mst[c];if(!ilin.empty())ilin[c]=mfd[c];if(!lown.empty())lown[c]=mfd[c];}}else tp[h0]=tp[h1];break;
         case '[':if(tp[h0]==0){int d=1,j=ip;for(int k=0;k<16&&d>0;++k){j=(j+1)&15;if(tp[j]=='[')++d;else if(tp[j]==']')--d;}if(d==0)ip=j;}break;
         case ']':if(tp[h0]!=0){int d=1,j=ip;for(int k=0;k<16&&d>0;++k){j=(j+15)&15;if(tp[j]==']')++d;else if(tp[j]=='[')--d;}if(d==0)ip=j;}break;
         case 'E':{const int take=std::min<int>({(int)res[c],8,1000-mst[c]});res[c]=(std::uint8_t)(res[c]-take);mst[c]=(std::int16_t)(mst[c]+take);fx[0]+=take;break;}
@@ -240,6 +243,7 @@ constexpr std::int64_t kExt6=0x3645564157LL;   // machine economy with grazing (
 constexpr std::int64_t kExt7=0x3745564157LL;   // machine economy with grazing and passable machines (+ pass)
 constexpr std::int64_t kExt8=0x3845564157LL;   // W4a irrigation (irr, per-cell levels)
 constexpr std::int64_t kExt9=0x3945564157LL;   // W4b claim
+constexpr std::int64_t kExt10=0x4145564157LL;  // W4d land (land, per-cell owners, last feeders)
 template<class T> void wv(std::FILE* f,const std::vector<T>& v){wr(f,(std::int64_t)v.size());if(!v.empty())std::fwrite(v.data(),sizeof(T),v.size(),f);}
 template<class T> bool rv(std::FILE* f,std::vector<T>& v){std::int64_t n=0;if(!rd(f,n)||n<0||n>(1<<26))return false;v.resize((std::size_t)n);
   return n==0||std::fread(v.data(),sizeof(T),(std::size_t)n,f)==(std::size_t)n;}
@@ -258,6 +262,7 @@ void World::save(std::FILE* f) const{
   else if(p.m_cost!=1||p.m_give||p.graze){wr(f,kExt6);wr(f,p.m_cost);wr(f,p.m_give);wr(f,p.graze);}
   if(p.matter&&p.irr>0){wr(f,kExt8);wr(f,p.irr);wr(f,p.irr_decay);wv(f,irl);}
   if(p.matter&&p.claim){wr(f,kExt9);wr(f,p.claim);}
+  if(p.matter&&p.land){wr(f,kExt10);wr(f,p.land);wv(f,lown);wv(f,mfd);}
   wv(f,res);wv(f,fert);wv(f,racc);wv(f,occ);wr(f,(std::int64_t)ag.size());
   for(auto& a:ag){const std::int64_t r[]={a.x,a.y,a.dir,a.energy,a.age,a.lineage,a.alive,(std::int64_t)a.id};for(auto x:r)wr(f,x);}
   if(ext())for(auto& a:ag){wr(f,a.sig);}
@@ -298,6 +303,10 @@ bool World::load(std::FILE* f){
   {std::int64_t m=0;const long pos=std::ftell(f);if(!rd(f,m))return false;
     if(m==kExt9){std::int64_t a=0;if(!rd(f,a))return false;p.claim=(int)a;}
     else if(std::fseek(f,pos,SEEK_SET)!=0)return false;}  // no claim block
+  p.land=0;lown.clear();mfd.clear();ilin.clear();
+  {std::int64_t m=0;const long pos=std::ftell(f);if(!rd(f,m))return false;
+    if(m==kExt10){std::int64_t a=0;if(!rd(f,a)||!rv(f,lown)||!rv(f,mfd))return false;p.land=(int)a;}
+    else if(std::fseek(f,pos,SEEK_SET)!=0)return false;}  // no land block
   if(!rv(f,res)||!rv(f,fert)||!rv(f,racc)||!rv(f,occ)){return false;}std::int64_t n=0;if(!rd(f,n)||n<0||n>(1<<24)){return false;}ag.assign((std::size_t)n,Agent{});
   for(auto& a:ag){std::int64_t r[8];for(auto& x:r)if(!rd(f,x))return false;
     a.x=(int)r[0];a.y=(int)r[1];a.dir=(int)r[2];a.energy=(int)r[3];a.age=(int)r[4];a.lineage=(int)r[5];a.alive=r[6]!=0;a.id=(std::uint64_t)r[7];a.sig=0;}

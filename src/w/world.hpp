@@ -57,6 +57,8 @@ struct WParams{
   // decays by 1 every irr_decay ticks.
   int irr=0,irr_decay=16;  // irr_decay: ticks per unit of irrigation decay
   int claim=0;  // W4b: 1 = feeding a wild machine claims it for the feeder's lineage (homesteading)
+  int land=0;   // W4d: 1 = a cell a machine irrigates becomes land of the lineage that last fed that machine; while it
+                // is irrigated only that lineage eats its food (needs irr); ownership lapses when irrigation decays to 0
 };
 
 struct Agent{int x=0,y=0,dir=0,energy=0,age=0,lineage=0;bool alive=false;std::uint64_t id=0;int sig=0,wpos=0;};
@@ -86,8 +88,9 @@ struct World{
   // +25 the same eaten by other lineages, +26 food from uncredited irrigated cells eaten by k, +27 energy k fed into
   // machines, +28 all food k took from cells
   bool track=false;std::vector<long> stat;
-  std::vector<std::int8_t> mfd,ilin;  // analysis (track, not saved): last feeder lineage per machine; lineage credited
-                                      // for each cell's irrigation (the last feeder of the machine that irrigated it)
+  std::vector<std::int8_t> mfd,ilin;  // last feeder lineage per machine (world state with land, else analysis); lineage
+                                      // credited for each cell's irrigation (analysis, track)
+  std::vector<std::int8_t> lown;      // W4d: owner lineage of each cell's land, -1 common (with land; saved)
   // W3 matter, per cell (allocated when p.matter): material 0 empty, 1 machine, 2 wall; machine tape (16 bytes),
   // instruction pointer, heads, direction, store, halted ticks, creator lineage, birth tick, effect counters
   // (4 per cell: resource harvested, resource delivered, copies made, walls changed)
@@ -124,6 +127,8 @@ struct World{
   // with matter: 79-103 material of each window cell (machine +48, wall -48, node +96; a node within view shows 127 in
   // the resource entries 0-24 while ripe, else 0); 104-119 tape of the machine in front
   // (instruction index*8+4, data -64); 120 its store/4; 121 own write position*8.
+  // with land: resource entries show 0 on another lineage's irrigated land; 122 the land underfoot (+64 own, -64 another
+  // lineage's, 0 common).
   void observe(int slot,std::int8_t* o) const;
   // One tick. logits[k] points to S x kV int8 logits of lineage k (row s = slot k*S+s). Slots of newborn agents are
   // appended to `born` (their recurrent state must be reset by the caller).
