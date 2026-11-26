@@ -719,7 +719,7 @@ Pass and kill:
 
 ## 9. Results
 
-### W3.x pilot, epoch 2000 (interim: 7 of 9 runs; 2026-11-26; docs/results/w3x/eval_2000.txt)
+### W3.x pilot, epoch 2000 (interim: 8 of 9 runs; 2026-11-26; docs/results/w3x/eval_2000.txt)
 
 Share (t) of the ablated copy; generality and era as in §6 (post-founder shares).
 
@@ -732,6 +732,7 @@ Share (t) of the ablated copy; generality and era as in §6 (post-founder shares
 | A, 3 | 0.47 (−1.2) | 0.39 (−3.1) | 0.68, 0.70, 0.59, 0.83, 0.74, 0.92, 0.58 | 0.84 (t 20.6) | +0.13 (t 0.7) |
 | B, 2 | 0.55 (+0.8) | 0.58 (+1.3) | 1.00, 0.53, 0.97, 0.28, 1.00, 0.32, 0.59 | 0.53 (t 0.8) | +0.11 (t 0.3) |
 | C, 2 | 0.50 (−0.1) | 0.39 (−1.6) | 0.99, 0.99, 0.95, 0.74, 0.90, 0.84, 0.59 | 0.74 (t 7.7) | −0.60 (t −1.9) |
+| B, 3 | 0.50 (0.0) | 0.18 (−14.8) | 0.38, 0.74, 0.57, 0.74, 0.50, 0.75, 0.88 | 0.79 (t 13.3) | +0.03 (t 0.1) |
 
 - **Building does not pay in any run.** Champions use the building actions at 1–7% of random rates.
 - **Signals.**
