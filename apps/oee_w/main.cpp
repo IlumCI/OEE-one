@@ -143,7 +143,7 @@ int main(int argc,char** argv){
     else if(!std::strcmp(s,"-wr_cost"))wp.wr_cost=std::atoi(v);else if(!std::strcmp(s,"-feed_amt"))wp.feed_amt=std::atoi(v);
     else if(!std::strcmp(s,"-rep_cost"))wp.rep_cost=std::atoi(v);else if(!std::strcmp(s,"-wall_cost"))wp.wall_cost=std::atoi(v);
     else if(!std::strcmp(s,"-spawn"))wp.spawn=std::atoi(v);else if(!std::strcmp(s,"-mut"))wp.mut=std::atoi(v);else if(!std::strcmp(s,"-own"))wp.own=std::atoi(v);
-    else if(!std::strcmp(s,"-wall_decay"))wp.wall_decay=std::atoi(v);else if(!std::strcmp(s,"-kin_sig"))wp.kin_sig=std::atoi(v);else if(!std::strcmp(s,"-lamarck"))wp.lamarck=std::atoi(v);
+    else if(!std::strcmp(s,"-wall_decay"))wp.wall_decay=std::atoi(v);else if(!std::strcmp(s,"-m_cost"))wp.m_cost=std::max(1,std::atoi(v));else if(!std::strcmp(s,"-m_give"))wp.m_give=std::max(0,std::atoi(v));else if(!std::strcmp(s,"-kin_sig"))wp.kin_sig=std::atoi(v);else if(!std::strcmp(s,"-lamarck"))wp.lamarck=std::atoi(v);
     else if(!std::strcmp(s,"-cat_every"))cat_every=std::atoi(v);else if(!std::strcmp(s,"-cat_keep"))cat_keep=std::atof(v);else if(!std::strcmp(s,"-stress"))stress=std::atof(v);
     else if(!std::strcmp(s,"-nodes"))wp.nodes=std::atoi(v);else if(!std::strcmp(s,"-node_pay"))wp.node_pay=std::atoi(v);
     else if(!std::strcmp(s,"-node_per"))wp.node_per=std::atoi(v);else if(!std::strcmp(s,"-node_ripe"))wp.node_ripe=std::atoi(v);else if(!std::strcmp(s,"-stats"))stats=std::atoi(v);else if(!std::strcmp(s,"-curve"))curve=std::max(0,std::atoi(v));else if(!std::strcmp(s,"-skip"))skip=std::max(0,std::atoi(v));else if(!std::strcmp(s,"-split_age"))split_age=std::atoi(v);else if(!std::strcmp(s,"-null_es"))null_es=std::atoi(v);else if(!std::strcmp(s,"-hist_pair"))hist_pair=std::atoi(v);
@@ -248,6 +248,7 @@ int main(int argc,char** argv){
   if(wp.nodes){for(std::int64_t x:{wp.nodes,wp.node_pay,wp.node_per,wp.node_ripe})fp2.push_back(8000000+x);}
   if(wp.kin_sig||wp.lamarck){fp2.push_back(9000+wp.kin_sig);fp2.push_back(9100+wp.lamarck);}
   if(wp.wall_decay)fp2.push_back(9400000+wp.wall_decay);
+  if(wp.m_cost!=1||wp.m_give){fp2.push_back(9500000+wp.m_cost);fp2.push_back(9600000+wp.m_give);}
   if(cat_every){fp2.push_back(9200000+cat_every);fp2.push_back((std::int64_t)std::llround(cat_keep*1e6));}
   if(stress>0)fp2.push_back(9300000000LL+std::llround(stress*1e6));
   if(hist_pair&&!hist){std::fprintf(stderr,"-hist_pair needs -hist_frac > 0\n");return 2;}
@@ -283,6 +284,7 @@ int main(int argc,char** argv){
     if(w2)std::fprintf(lg,"# W2a season %d view %d signals %d rot %d sig_cost %d climate_every %d din %d\n",wp.season,wp.view,wp.signals,wp.rot,wp.sig_cost,climate_every,bc.Din);
     if(wp.matter)std::fprintf(lg,"# W3 matter %d m_steps %d m_decay %d mk_cost %d wr_cost %d feed_amt %d rep_cost %d wall_cost %d spawn %d mut %d V %d; extra columns: machines walls tapes classes\n",
       wp.matter,wp.m_steps,wp.m_decay,wp.mk_cost,wp.wr_cost,wp.feed_amt,wp.rep_cost,wp.wall_cost,wp.spawn,wp.mut,bc.V);
+    if(wp.matter&&(wp.m_cost!=1||wp.m_give))std::fprintf(lg,"# machine economy m_cost %d m_give %d (1 store per m_cost ticks of running; copies get m_give)\n",wp.m_cost,wp.m_give);
     if(wp.own)std::fprintf(lg,"# W3.2 own %d (machines owned by the maker's lineage; owners eat from their stores)\n",wp.own);
     if(wp.nodes)std::fprintf(lg,"# W3.3 nodes %d node_pay %d node_per %d node_ripe %d (joint harvest; ripeness visible only within view)\n",wp.nodes,wp.node_pay,wp.node_per,wp.node_ripe);
     if(wp.wall_decay)std::fprintf(lg,"# wall_decay %d (/65536 per tick)\n",wp.wall_decay);

@@ -66,6 +66,13 @@ int main(){
     {World w;blank(w);const int c=5*L+5,f=5*L+6;put(w,c,"C",40,1);w.tick(l1,born);bool same=true;for(int j=0;j<16;++j)same=same&&w.tape[(std::size_t)f*16+j]==w.tape[(std::size_t)c*16+j];
       CHECK(w.mat[f]==1&&same&&w.mst[c]==40-1-16&&w.mfx[(std::size_t)c*4+2]==1,"W3 machine: C copies its tape into the empty cell in front (east)");
       const int before=w.mst[f];w.tick(l1,born);CHECK(w.mst[f]==before,"W3 machine: a copy has no store, so it does not run");}
+    {WParams q7=q;q7.m_cost=4;q7.m_give=16;World w;w.init(q7,0);for(auto& r:w.res)r=0;const int c=5*L+5,f=5*L+6;put(w,c,"",10,1);
+      for(int t2=0;t2<8;++t2){born.clear();w.tick(l1,born);}CHECK(w.mst[c]==8,"machine economy: m_cost 4 charges 1 store per 4 ticks of running");
+      put(w,c,"C",40,1);const int chg=(w.t+1)%4==0;born.clear();w.tick(l1,born);
+      CHECK(w.mat[f]==1&&w.mst[f]==16&&w.mst[c]==40-chg-16-16,"machine economy: C moves m_give from the parent into the copy");
+      const int before=w.mst[f];born.clear();w.tick(l1,born);CHECK(w.mst[f]<=before&&w.mst[f]>0&&w.mhalt[f]==0,"machine economy: an endowed copy runs");
+      std::FILE* fl=std::tmpfile();w.save(fl);std::rewind(fl);World v;const bool ok=v.load(fl);std::fclose(fl);
+      CHECK(ok&&v.p.m_cost==4&&v.p.m_give==16&&v.mst==w.mst&&v.mat==w.mat,"machine economy: save/load keeps m_cost and m_give");}
     {World w;blank(w);const int c=5*L+5,f=6*L+5;put(w,c,"W",40,2);w.tick(l1,born);CHECK(w.mat[f]==2,"W3 machine: W builds a wall in front (south)");}
     {World w;blank(w);const int c=5*L+5;w.res[c]=100;put(w,c,"[]E",50,0,0);w.tick(l1,born);  // tape[h0] = '[' (non-zero): ] loops back, E never runs
       World v;blank(v);v.res[c]=100;put(v,c,"[]E",50,0,5);v.tick(l1,born);                   // tape[5] = 0: [ jumps past ], E runs

@@ -531,6 +531,45 @@ References checked 2026-11-26 (web search, arXiv):
 - Building was already selected away in those runs (make 0.2–0.3% of actions against 10% for random agents), but the
   walls confound that, so it is not counted.
 
+### Calibration fix 2: machine economy (2026-11-26, before the restarted runs)
+
+- **Defect: no machine can gain energy, and copies are born dead (W3 to W3.x).**
+  - A running machine pays 1 store per tick. A cell regrows at most capacity × regrow/4096 per tick, which is
+    255 × 16/4096 ≈ 0.996 at the W2a/W3 settings. A harvester never earns its running cost. It can only drain the
+    standing stock of its own cell.
+  - `C` paid rep_cost and gave the copy an empty store. Every copy halted at once and decayed after 200 ticks, so
+    machine lineages could not persist. The W3.1 "machine ecology" could not exist.
+  - Probe (tools/w/mcal.cpp: one harvester `E` with store 50 on the most fertile cell, no agents): it is dead before
+    tick 500.
+  - This explains why building was selected away in W3 and in the first pilot runs: it could never pay back.
+- **Literature.** In BFF tapes with an energy budget, tapes are viable only if the energy injection exceeds
+  length × cost per operation (ε > Lc), and a new copy inherits energy (Jha et al., arXiv:2609.10817, 2026). This
+  world broke both conditions.
+- **Fix (machine costs only, which the W3 rule allows).**
+  - `-m_cost 4`: a running machine pays 1 store per 4 ticks. A harvester is now viable on cells whose season-mean
+    capacity exceeds 64.
+  - The probe gains about 0.13 store per tick (50 to 893 by tick 6000). At m_cost 2 it still dies, near tick 1500.
+  - `-m_give 16`: `C` also moves 16 store from the parent into the copy, so a copy runs for at least 64 ticks.
+- **Calibration without agents.** Settings: 32 × 32, seasons 300, regrow 16, spawn 20, mut 1024, wall_decay 4,
+  40,000 ticks.
+
+  | Setting | Seed(s) | Machines | Distinct tapes | Notes |
+  |---|---|---|---|---|
+  | m_give 0 (m_cost 4 or 8) | 1 | 9–53 | — | spawn level only; no ecology |
+  | m_cost 4, m_give 16 | 1 | 307 (30% of cells) | 115 | a spontaneous replicator (`-.CE]R+`) spread |
+  | m_cost 4, m_give 16 | 2–3 | 34–56 | 20–34 | copiers present |
+  | m_cost 8, m_give 16 or 32 | — | 490–540 (half the world) by tick 20,000 | — | too dense for agents |
+
+  - At m_cost 4, m_give 16 the ecology is alive in every seed. Whether a replicator takes off is contingent.
+  - m_cost 8 is rejected as too dense for agents.
+- **Chosen: m_cost 4, m_give 16.** It is the smallest change that makes the best cells viable and gives copies
+  energy.
+- **Effect on the runs.**
+  - The pilot and wave-2 protocols are otherwise unchanged. All 21 runs restart (runs8, binary oee_w_v14).
+  - Tournaments read the world flags from each run's cmd.txt (tools/w/wflags.sh), so they include the new costs.
+  - The two runs on the old economy (w3a_s1, w3b_s1) move to runs8/old_econ. They are scored at epoch 1000 with the
+    pilot's kill test, as a check of the diagnosis.
+
 ### Wave 2 protocol: old and disputed ideas, one per arm (fixed 2026-11-26, before the runs)
 
 Each arm is pilot arm C (substrate, ownership, split-role nodes) plus exactly one change. 3 seeds × 2000 epochs,
