@@ -11,6 +11,9 @@
 //                [W3.1: -spawn R (random programs per 1000 ticks per 1024 cells) -mut M (copy error per byte, /65536)]
 //                [W3.2: -own 1 (machines belong to the maker's lineage; private granaries)]
 //                [W3.3: -nodes N (split-role nodes per 1024 cells) -node_pay 150 -node_per 200 -node_ripe 40]
+//                [wave 2: -kin_sig 1 (symbols heard by own lineage only) -lamarck 1 (newborns inherit the parent's
+//                 recurrent state) -cat_every N -cat_keep 0.1 (extinction events) -stress K (update fraction rises
+//                 by K x the relative drop of fitness below its running average)]
 //          W0 = -lineages 1 -nact 6 -hist_frac 0 (bit-identical to the W0 binary).
 //          W1 = -lineages K -nact 7 (attack) -hist_frac 4 (ancestor in every 4th fork pair).
 //          -ck: checkpoint every ck_every epochs and at the end. If FILE exists at start, the run resumes from it
@@ -98,7 +101,9 @@ void run_worlds(std::vector<w::World>& ws,evo::Rows& rows,const std::vector<evo:
       const std::int8_t* o=st[k]->step(obs.data(),idx.data(),(int)idx.size());
       for(std::size_t j=0;j<idx.size();++j)std::memcpy(lgt.data()+((std::size_t)k*nw*S+idx[j])*V,o+j*V,V);}
     for(int i=0;i<nw;++i){for(int k=0;k<K;++k)lp[k]=st[k]?lgt.data()+((std::size_t)k*nw+i)*S*V:zero.data();born.clear();ws[i].tick(lp.data(),born);
-      for(int b:born){const int k=b/S,s=b%S;std::fill(rows.state.begin()+((std::size_t)(k*nw+i)*S+s)*L,rows.state.begin()+((std::size_t)(k*nw+i)*S+s+1)*L,0);}
+      for(std::size_t bi=0;bi<born.size();++bi){const int b=born[bi],k=b/S,s=b%S;auto dst=rows.state.begin()+((std::size_t)(k*nw+i)*S+s)*L;
+        if(ws[i].p.lamarck&&bi<ws[i].parents.size()){const int q=ws[i].parents[bi];std::copy(rows.state.begin()+((std::size_t)(k*nw+i)*S+q%S)*L,rows.state.begin()+((std::size_t)(k*nw+i)*S+q%S+1)*L,dst);}
+        else std::fill(dst,dst+L,0);}
       if(integ)for(int k=0;k<K;++k)if(st[k])(*integ)[k][i]+=ws[i].biomass(k);}
   }
 }
@@ -108,12 +113,13 @@ void copy_weights(evo::Egg& d,const evo::Egg& s){
   for(std::size_t k=0;k<d.vecs.size();++k){d.vecs[k]->w=s.vecs[k]->w;}
   d.repack();
 }
-struct Lin{std::unique_ptr<evo::Egg> g;evo::Noise nz;bool active=false;std::uint64_t id=0;int age=0;};
+struct Lin{std::unique_ptr<evo::Egg> g;evo::Noise nz;bool active=false;std::uint64_t id=0;int age=0;double ema=-1;};  // ema: fitness average (-stress)
 constexpr std::int64_t kCkMagic=0x3130574b43454f4fLL;  // "OEECKW01"
 }  // namespace
 
 int main(int argc,char** argv){
-  int epochs=100,P=128,H=200,threads=4,layers=2,D=64,sig=4,archive_every=50,seeds=5,ticks=2000,Kmax=1,split_at=-1,hist_frac=0,hist_founders=8,ck_every=10,climate_every=5,climate_ticks=1000,stats=0,curve=0,skip=-1,split_age=0,null_es=0,hist_pair=0,gen=0,arena_progs=0,solo=0,swap_at=0,swap_win=500;double prog_cont=0.7;
+  int epochs=100,P=128,H=200,threads=4,layers=2,D=64,sig=4,archive_every=50,seeds=5,ticks=2000,Kmax=1,split_at=-1,hist_frac=0,hist_founders=8,ck_every=10,climate_every=5,climate_ticks=1000,stats=0,curve=0,skip=-1,split_age=0,null_es=0,hist_pair=0,gen=0,arena_progs=0,solo=0,swap_at=0,swap_win=500,cat_every=0;
+  double prog_cont=0.7,cat_keep=0.1,stress=0;
   double alpha_floor=0;std::uint64_t seed=1,seed0=1000;std::string logf,archive,ta,tb,ckf,ablate;w::WParams wp;int founders=16;
   for(int a=1;a<argc;a+=2){const char* s=argv[a];const char* v=a+1<argc?argv[a+1]:"";
     if(!std::strcmp(s,"-epochs"))epochs=std::atoi(v);else if(!std::strcmp(s,"-pairs"))P=std::atoi(v);else if(!std::strcmp(s,"-H"))H=std::atoi(v);
@@ -136,6 +142,8 @@ int main(int argc,char** argv){
     else if(!std::strcmp(s,"-wr_cost"))wp.wr_cost=std::atoi(v);else if(!std::strcmp(s,"-feed_amt"))wp.feed_amt=std::atoi(v);
     else if(!std::strcmp(s,"-rep_cost"))wp.rep_cost=std::atoi(v);else if(!std::strcmp(s,"-wall_cost"))wp.wall_cost=std::atoi(v);
     else if(!std::strcmp(s,"-spawn"))wp.spawn=std::atoi(v);else if(!std::strcmp(s,"-mut"))wp.mut=std::atoi(v);else if(!std::strcmp(s,"-own"))wp.own=std::atoi(v);
+    else if(!std::strcmp(s,"-kin_sig"))wp.kin_sig=std::atoi(v);else if(!std::strcmp(s,"-lamarck"))wp.lamarck=std::atoi(v);
+    else if(!std::strcmp(s,"-cat_every"))cat_every=std::atoi(v);else if(!std::strcmp(s,"-cat_keep"))cat_keep=std::atof(v);else if(!std::strcmp(s,"-stress"))stress=std::atof(v);
     else if(!std::strcmp(s,"-nodes"))wp.nodes=std::atoi(v);else if(!std::strcmp(s,"-node_pay"))wp.node_pay=std::atoi(v);
     else if(!std::strcmp(s,"-node_per"))wp.node_per=std::atoi(v);else if(!std::strcmp(s,"-node_ripe"))wp.node_ripe=std::atoi(v);else if(!std::strcmp(s,"-stats"))stats=std::atoi(v);else if(!std::strcmp(s,"-curve"))curve=std::max(0,std::atoi(v));else if(!std::strcmp(s,"-skip"))skip=std::max(0,std::atoi(v));else if(!std::strcmp(s,"-split_age"))split_age=std::atoi(v);else if(!std::strcmp(s,"-null_es"))null_es=std::atoi(v);else if(!std::strcmp(s,"-hist_pair"))hist_pair=std::atoi(v);
     else if(!std::strcmp(s,"-gen"))gen=std::atoi(v);else if(!std::strcmp(s,"-arena_progs"))arena_progs=std::atoi(v);
@@ -237,11 +245,14 @@ int main(int argc,char** argv){
   if(wp.spawn||wp.mut){fp2.push_back(5000+wp.spawn);fp2.push_back(6000000+wp.mut);}
   if(wp.own)fp2.push_back(7000+wp.own);
   if(wp.nodes){for(std::int64_t x:{wp.nodes,wp.node_pay,wp.node_per,wp.node_ripe})fp2.push_back(8000000+x);}
+  if(wp.kin_sig||wp.lamarck){fp2.push_back(9000+wp.kin_sig);fp2.push_back(9100+wp.lamarck);}
+  if(cat_every){fp2.push_back(9200000+cat_every);fp2.push_back((std::int64_t)std::llround(cat_keep*1e6));}
+  if(stress>0)fp2.push_back(9300000000LL+std::llround(stress*1e6));
   if(hist_pair&&!hist){std::fprintf(stderr,"-hist_pair needs -hist_frac > 0\n");return 2;}
   auto save_ck=[&](int e){const std::string tmp=ckf+".tmp";std::FILE* f=std::fopen(tmp.c_str(),"wb");if(!f)return false;
     auto w=[&](std::int64_t x){std::fwrite(&x,8,1,f);};w(kCkMagic);w((std::int64_t)fp2.size());for(auto x:fp2)w(x);
     w(e);w(reseeds);w(splits);w(extinct);w((std::int64_t)next_lid);canon.save(f);w((std::int64_t)rc.state.size());std::fwrite(rc.state.data(),1,rc.state.size(),f);
-    for(auto& l:lin){w(l.active);w((std::int64_t)l.id);w(l.age);if(l.active)l.g->save(f,e);}
+    for(auto& l:lin){w(l.active);w((std::int64_t)l.id);w(l.age);if(stress>0){std::int64_t b;std::memcpy(&b,&l.ema,8);w(b);}if(l.active)l.g->save(f,e);}
     w((std::int64_t)anc.size());for(auto& a:anc)a->save(f,0);
     const bool ok=std::fflush(f)==0&&!std::ferror(f);std::fclose(f);return ok&&std::rename(tmp.c_str(),ckf.c_str())==0;};
   auto load_ck=[&](std::FILE* f)->int{  // epochs done, or -1
@@ -252,6 +263,7 @@ int main(int argc,char** argv){
     if(!canon.load(f))return -1;
     if(!r(n)||n!=(std::int64_t)rc.state.size()||std::fread(rc.state.data(),1,rc.state.size(),f)!=rc.state.size())return -1;
     for(auto& l:lin){std::int64_t ac,id,ag;if(!r(ac)||!r(id)||!r(ag))return -1;l.active=ac!=0;l.id=(std::uint64_t)id;l.age=(int)ag;l.g.reset();
+      if(stress>0){std::int64_t b;if(!r(b))return -1;std::memcpy(&l.ema,&b,8);}
       if(l.active){l.g=std::make_unique<evo::Egg>(bc,1);l.g->load(f);}}
     if(!r(n)||n<0||n>1024){return -1;}anc.clear();for(std::int64_t i=0;i<n;++i){anc.push_back(std::make_unique<evo::Egg>(bc,1));anc.back()->load(f);}
     return (int)e;};
@@ -271,6 +283,7 @@ int main(int argc,char** argv){
       wp.matter,wp.m_steps,wp.m_decay,wp.mk_cost,wp.wr_cost,wp.feed_amt,wp.rep_cost,wp.wall_cost,wp.spawn,wp.mut,bc.V);
     if(wp.own)std::fprintf(lg,"# W3.2 own %d (machines owned by the maker's lineage; owners eat from their stores)\n",wp.own);
     if(wp.nodes)std::fprintf(lg,"# W3.3 nodes %d node_pay %d node_per %d node_ripe %d (joint harvest; ripeness visible only within view)\n",wp.nodes,wp.node_pay,wp.node_per,wp.node_ripe);
+    if(wp.kin_sig||wp.lamarck||cat_every||stress>0)std::fprintf(lg,"# wave2 kin_sig %d lamarck %d cat_every %d cat_keep %.3f stress %.3f\n",wp.kin_sig,wp.lamarck,cat_every,cat_keep,stress);
     if(split_age)std::fprintf(lg,"# W1b split_age %d (split lineages take the parent's age)\n",split_age);
     if(null_es)std::fprintf(lg,"# W1c null_es %d (random update signs: fitness ignored)\n",null_es);
     if(hist_pair)std::fprintf(lg,"# W1e hist_pair %d (an ancestor drawn for each fork pair)\n",hist_pair);
@@ -279,6 +292,9 @@ int main(int argc,char** argv){
   for(int e=e0;e<epochs;++e){
     const auto t0=std::chrono::steady_clock::now();
     if(wp.season>0&&e>0&&e%climate_every==0)canon.set_climate((std::uint64_t)(e/climate_every));  // new climate (forks copy it)
+    if(cat_every>0&&e>0&&e%cat_every==0){canon.catastrophe((std::uint64_t)e,cat_keep);  // extinction event: survivors re-radiate
+      int any=0;for(int k=0;k<Kmax;++k)any+=lin[k].active&&canon.count(k)>0;
+      if(!any)for(int k=0;k<Kmax;++k)if(lin[k].active){canon.reseed_lineage(k,founders,(std::uint64_t)e*7+1);std::fill(rc.state.begin(),rc.state.end(),0);++reseeds;break;}}
     int k0=-1;for(int k=0;k<Kmax;++k)if(lin[k].active){k0=k;break;}  // one lineage is always active (reseeded if all die)
     for(int k=0;k<Kmax;++k)if(lin[k].active)lin[k].nz.gen(*lin[k].g,P,lin[k].id==0?seed:mixu(seed*31+lin[k].id),e);
     const int F2=2*P;std::vector<std::vector<long>> fit(Kmax,std::vector<long>(F2,0));
@@ -305,7 +321,10 @@ int main(int argc,char** argv){
     for(int k=0;k<Kmax;++k){if(!lin[k].active)continue;std::vector<int> F(P);
       for(int p=0;p<P;++p){F[p]=fit[k][2*p]>fit[k][2*p+1]?1:fit[k][2*p]<fit[k][2*p+1]?-1:0;}
       if(null_es)for(int p=0;p<P;++p)F[p]=(mixu(mixu(seed^0x4e11ULL)+((std::uint64_t)e<<24)+((std::uint64_t)lin[k].id<<12)+p)&1)?1:-1;  // W1c: fitness ignored
-      const double al=std::max(alpha_floor,1.0/(0.015*lin[k].age+1));if(k==k0)alpha=al;ch+=evo::egg_update(*lin[k].g,lin[k].nz,F,al);++lin[k].age;}
+      double al=std::max(alpha_floor,1.0/(0.015*lin[k].age+1));
+      if(stress>0){double cur=0;for(long fv:fit[k])cur+=fv;cur/=F2;if(lin[k].ema<0)lin[k].ema=cur;  // more change when fitness falls below its own average
+        const double st=std::max(0.0,(lin[k].ema-cur)/std::max(1.0,lin[k].ema));al=std::min(1.0,al*(1+stress*st));lin[k].ema=0.9*lin[k].ema+0.1*cur;}
+      if(k==k0)alpha=al;ch+=evo::egg_update(*lin[k].g,lin[k].nz,F,al);++lin[k].age;}
     m/=F2;const double sd=std::sqrt(std::max(0.0,m2/F2-m*m));
     {std::vector<w::World> one{canon};std::vector<std::unique_ptr<evo::Stepper>> own;std::vector<evo::Stepper*> st(K,nullptr);
       for(int k=0;k<Kmax;++k)if(lin[k].active){own.push_back(std::make_unique<evo::Stepper>(*lin[k].g,nullptr,rc,k*wp.S,wp.S));st[k]=own.back().get();}
@@ -320,7 +339,7 @@ int main(int argc,char** argv){
       lin[j].g=std::make_unique<evo::Egg>(bc,seed+next_lid);copy_weights(*lin[j].g,*lin[k].g);
       std::uint64_t c=0;for(auto* M:lin[j].g->mats)for(auto& x:M->w){const std::uint64_t h=mixu(mixu(seed^0x5b1ULL)+(next_lid<<40)+c++);if(h%10==0)x=(std::int8_t)std::clamp((int)x+((h>>8)&1?1:-1),-127,127);}
       lin[j].g->repack();
-      lin[j].active=true;lin[j].id=next_lid++;lin[j].age=split_age?lin[k].age:0;++splits;int moved=0,t=0;
+      lin[j].active=true;lin[j].id=next_lid++;lin[j].age=split_age?lin[k].age:0;lin[j].ema=lin[k].ema;++splits;int moved=0,t=0;
       for(int s=0;s<wp.S;++s){if(!canon.ag[(std::size_t)k*wp.S+s].alive)continue;if((moved++)%2==0)continue;
         while(t<wp.S&&canon.ag[(std::size_t)j*wp.S+t].alive){++t;}
         if(t>=wp.S)break;

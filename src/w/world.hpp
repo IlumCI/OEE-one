@@ -37,6 +37,10 @@ struct WParams{
   // state is visible only from within `view`. A ripe node pays node_pay to each agent eating from it, but only when
   // at least two agents eat from it in the same tick; then it is spent until its next cycle.
   int nodes=0,node_pay=150,node_per=200,node_ripe=40;  // nodes: count per 1024 cells
+  // Wave 2 (old or disputed ideas, docs/WORLD.md): kin_sig 1 = symbols are heard only by the sender's own lineage
+  // (cheap talk with common interest, Crawford & Sobel 1982); lamarck 1 = a newborn starts with its parent's recurrent
+  // state instead of a blank one (inheritance of acquired memory; applied by the caller using `parents`)
+  int kin_sig=0,lamarck=0;
 };
 
 struct Agent{int x=0,y=0,dir=0,energy=0,age=0,lineage=0;bool alive=false;std::uint64_t id=0;int sig=0,wpos=0;};
@@ -67,6 +71,10 @@ struct World{
   std::vector<std::uint8_t> mat,tape,mip,mh0,mh1,mdir;std::vector<std::int16_t> mst;std::vector<std::uint16_t> mhalt;
   std::vector<std::int8_t> mlin;std::vector<long> mbt;std::vector<std::int32_t> mfx;
   std::vector<std::int32_t> nph,ncyc;  // W3.3 nodes (material 3), per cell: phase, last cycle harvested
+  std::vector<int> parents;            // after tick(): parent slot of each entry of `born` (same order; not saved)
+  // extinction event (punctuated equilibrium; Lehman & Miikkulainen 2015): every agent outside a random square window
+  // covering `keep` of the area dies (structures stay). Returns how many died.
+  int catastrophe(std::uint64_t salt,double keep);
   bool ripe(int c) const;
   int din() const{return (p.signals||p.matter)?128:64;}
   int nv() const{return p.matter?32:16;}

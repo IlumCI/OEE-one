@@ -83,7 +83,7 @@ void World::observe(int slot,std::int8_t* o) const{
   for(int v=2;v>=-2;--v){const int bx=a.x+v*fx,by=a.y+v*fy;
     for(int u=-2;u<=2;++u,++i){const int c=wr(by+u*ry)*L+wr(bx+u*rx);
       if(std::max(std::abs(u),std::abs(v))<=p.view)o[i]=(std::int8_t)(res[c]>>1);const int q=occ[c];
-      if(q>=0&&q!=slot){o[25+i]=(std::int8_t)(ag[q].lineage==lin?64:-64);if(hear)o[53+i]=(std::int8_t)(32*ag[q].sig);}}}
+      if(q>=0&&q!=slot){o[25+i]=(std::int8_t)(ag[q].lineage==lin?64:-64);if(hear&&(!p.kin_sig||ag[q].lineage==lin))o[53+i]=(std::int8_t)(32*ag[q].sig);}}}
   o[50]=(std::int8_t)std::min(127,a.energy/8);o[51]=(std::int8_t)std::min(127,a.age/4);o[52]=64;
   if(p.signals)o[78]=(std::int8_t)(32*a.sig);
   if(p.matter){i=0;
@@ -97,7 +97,7 @@ void World::observe(int slot,std::int8_t* o) const{
 }
 
 void World::tick(const std::int8_t* const* logits,std::vector<int>& born){
-  const int N=p.L*p.L;std::vector<int> order;
+  const int N=p.L*p.L;std::vector<int> order;parents.clear();
   for(int s=0;s<p.K*p.S;++s)if(ag[s].alive)order.push_back(s);
   for(int i=(int)order.size()-1;i>0;--i){const int j=(int)(mix(mix(p.seed^0x7e1cULL)+((std::uint64_t)t<<20)+i)%(std::uint64_t)(i+1));std::swap(order[i],order[j]);}
   std::vector<int> act(p.K*p.S,0),code;if(p.matter)code.assign(p.K*p.S,0);const int nv_=nv(),so=sig_off();
@@ -121,7 +121,7 @@ void World::tick(const std::int8_t* const* logits,std::vector<int>& born){
       case 5:if(a.energy>=p.repro_min&&occ[fc]<0&&(!p.matter||!mat[fc])){const int k=a.lineage;int j=-1;
           for(int q=0;q<p.S;++q)if(!ag[(std::size_t)k*p.S+q].alive){j=q;break;}
           if(j>=0){const int cs=k*p.S+j;Agent& b=ag[cs];b=Agent{};b.x=fc%p.L;b.y=fc/p.L;b.dir=a.dir;b.energy=p.repro_give;b.lineage=k;b.alive=true;b.id=next_id++;
-            occ[fc]=cs;a.energy-=p.repro_give+p.repro_cost;born.push_back(cs);if(track)++stat[(std::size_t)k*32+17];}}
+            occ[fc]=cs;a.energy-=p.repro_give+p.repro_cost;born.push_back(cs);parents.push_back(s);if(track)++stat[(std::size_t)k*32+17];}}
         break;
       case 6:{const int q=occ[fc];a.energy-=p.atk_cost;
         if(q>=0&&ag[q].alive){Agent& v=ag[q];const int take=std::min(v.energy,p.atk_take);v.energy-=take;a.energy=std::min(p.ecap,a.energy+take);
@@ -202,6 +202,13 @@ int World::swap_programs(std::uint64_t salt,int store,double cont){
   if(!p.matter)return 0;int n=0;for(int c=0;c<p.L*p.L;++c)if(mat[c]==1&&mlin[c]<0){kill_machine(c);++n;}
   return seed_programs(n,salt,store,cont);
 }
+int World::catastrophe(std::uint64_t salt,double keep){
+  const int L=p.L;const int side=std::max(1,std::min(L,(int)std::lround(L*std::sqrt(std::clamp(keep,0.0,1.0)))));
+  const std::uint64_t h=mix(mix(p.seed^0xca7aULL)+salt);const int x0=(int)(h%L),y0=(int)((h>>20)%L);int n=0;
+  for(std::size_t s=0;s<ag.size();++s){Agent& a=ag[s];if(!a.alive)continue;const int dx=((a.x-x0)%L+L)%L,dy=((a.y-y0)%L+L)%L;
+    if(dx<side&&dy<side)continue;a.alive=false;occ[a.y*L+a.x]=-1;++n;}
+  return n;
+}
 int World::wipe(int k){int n=0;if(!p.matter)return 0;for(int c=0;c<p.L*p.L;++c)if(mat[c]==1&&mlin[c]==k){kill_machine(c);++n;}return n;}
 void World::census(int min_age,int& machines,int& walls,int& tapes,int& classes) const{
   machines=walls=tapes=classes=0;if(!p.matter)return;std::vector<std::uint64_t> th;bool cls[16]={false};
@@ -220,6 +227,7 @@ bool rd(std::FILE* f,std::int64_t& x){return std::fread(&x,8,1,f)==1;}
 constexpr std::int64_t kExt=0x5458453257LL;  // "W2EXT": marks the W2a extension of a world record
 constexpr std::int64_t kExt3=0x5458453357LL;  // "W3EXT": marks the W3 matter block
 constexpr std::int64_t kExt31=0x3133584533LL;  // W3 matter block with the W3.1 substrate settings
+constexpr std::int64_t kExt4=0x3245564157LL;   // wave-2 flags (kin_sig, lamarck)
 template<class T> void wv(std::FILE* f,const std::vector<T>& v){wr(f,(std::int64_t)v.size());if(!v.empty())std::fwrite(v.data(),sizeof(T),v.size(),f);}
 template<class T> bool rv(std::FILE* f,std::vector<T>& v){std::int64_t n=0;if(!rd(f,n)||n<0||n>(1<<26))return false;v.resize((std::size_t)n);
   return n==0||std::fread(v.data(),sizeof(T),(std::size_t)n,f)==(std::size_t)n;}
@@ -233,6 +241,7 @@ void World::save(std::FILE* f) const{
   if(p.matter){wr(f,(p.spawn||p.mut||p.own||p.nodes)?kExt31:kExt3);const std::int64_t e[]={p.matter,p.m_steps,p.m_decay,p.mk_cost,p.wr_cost,p.feed_amt,p.rep_cost,p.wall_cost};for(auto x:e){wr(f,x);}
     if(p.spawn||p.mut||p.own||p.nodes){wr(f,p.spawn);wr(f,p.mut);wr(f,p.own);wr(f,p.nodes);wr(f,p.node_pay);wr(f,p.node_per);wr(f,p.node_ripe);wv(f,nph);wv(f,ncyc);}
     wv(f,mat);wv(f,tape);wv(f,mip);wv(f,mh0);wv(f,mh1);wv(f,mdir);wv(f,mst);wv(f,mhalt);wv(f,mlin);wv(f,mbt);wv(f,mfx);}
+  if(p.kin_sig||p.lamarck){wr(f,kExt4);wr(f,p.kin_sig);wr(f,p.lamarck);}
   wv(f,res);wv(f,fert);wv(f,racc);wv(f,occ);wr(f,(std::int64_t)ag.size());
   for(auto& a:ag){const std::int64_t r[]={a.x,a.y,a.dir,a.energy,a.age,a.lineage,a.alive,(std::int64_t)a.id};for(auto x:r)wr(f,x);}
   if(ext())for(auto& a:ag){wr(f,a.sig);}
@@ -257,6 +266,10 @@ bool World::load(std::FILE* f){
         p.spawn=(int)a;p.mut=(int)b;p.own=(int)c;p.nodes=(int)d;p.node_pay=(int)e2;p.node_per=(int)g;p.node_ripe=(int)h;if(!rv(f,nph)||!rv(f,ncyc))return false;}
       if(!rv(f,mat)||!rv(f,tape)||!rv(f,mip)||!rv(f,mh0)||!rv(f,mh1)||!rv(f,mdir)||!rv(f,mst)||!rv(f,mhalt)||!rv(f,mlin)||!rv(f,mbt)||!rv(f,mfx))return false;}
     else if(std::fseek(f,pos,SEEK_SET)!=0)return false;}  // no W3 block
+  p.kin_sig=0;p.lamarck=0;
+  {std::int64_t m=0;const long pos=std::ftell(f);if(!rd(f,m))return false;
+    if(m==kExt4){std::int64_t a=0,b=0;if(!rd(f,a)||!rd(f,b))return false;p.kin_sig=(int)a;p.lamarck=(int)b;}
+    else if(std::fseek(f,pos,SEEK_SET)!=0)return false;}  // no wave-2 block
   if(!rv(f,res)||!rv(f,fert)||!rv(f,racc)||!rv(f,occ)){return false;}std::int64_t n=0;if(!rd(f,n)||n<0||n>(1<<24)){return false;}ag.assign((std::size_t)n,Agent{});
   for(auto& a:ag){std::int64_t r[8];for(auto& x:r)if(!rd(f,x))return false;
     a.x=(int)r[0];a.y=(int)r[1];a.dir=(int)r[2];a.energy=(int)r[3];a.age=(int)r[4];a.lineage=(int)r[5];a.alive=r[6]!=0;a.id=(std::uint64_t)r[7];a.sig=0;}

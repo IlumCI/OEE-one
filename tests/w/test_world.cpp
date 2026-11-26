@@ -93,6 +93,14 @@ int main(){
       w.tick(l3,born);const bool alone=w.ag[0].energy==100-q3.base&&w.ripe(c);  // one eater: nothing, still ripe
       w.ag[1].y=4;w.occ[3*L+5]=-1;w.occ[4*L+5]=1;w.tick(l3,born);const bool joint=w.ag[0].energy==99+q3.node_pay-q3.base&&w.ag[1].energy==99+q3.node_pay-q3.base&&!w.ripe(c);
       CHECK(near&&far&&alone&&joint,"W3.3 nodes: ripeness seen only nearby; one eater gets nothing; two eaters share the payout, node spent");}
+    {WParams q4=q;q4.K=2;q4.signals=1;q4.kin_sig=1;World w;w.init(q4,0);auto put4=[&](int slot,int x,int y,int sig){Agent& g=w.ag[slot];g=Agent{};g.x=x;g.y=y;g.dir=0;g.energy=100;
+        g.lineage=slot/q4.S;g.alive=true;g.id=slot+1;g.sig=sig;w.occ[y*L+x]=slot;};
+      put4(0,5,5,0);put4(1,5,4,2);put4(q4.S,6,5,3);std::vector<std::int8_t> o(w.din());w.observe(0,o.data());  // kin in front (5,4), other lineage to the right (6,5)
+      CHECK(o[53+7]==64&&o[53+13]==0&&o[25+13]==-64,"wave 2 kin_sig: own lineage's symbol heard, other lineage's not (still seen)");
+      const int n=w.catastrophe(3,0.1);int out=0;for(auto& a:w.ag)out+=a.alive;CHECK(n+out==3,"wave 2 catastrophe: agents outside the window die");
+      World v;WParams q5=q;q5.K=1;v.init(q5,0);Agent& m=v.ag[0];m=Agent{};m.x=5;m.y=5;m.dir=0;m.energy=500;m.alive=true;m.id=1;v.occ[5*L+5]=0;
+      std::vector<std::int8_t> lr((std::size_t)q5.S*32,(std::int8_t)-100);lr[5]=100;const std::int8_t* l5[1]={lr.data()};born.clear();v.tick(l5,born);
+      CHECK(born.size()==1&&v.parents.size()==1&&v.parents[0]==0,"wave 2: parents records the parent slot of each newborn");}
     {World a,b;a.init(q,5);b.init(q,5);std::vector<std::int8_t> rl((std::size_t)q.S*32);auto drive3=[&](World& w,int n){for(int t=0;t<n;++t){
         for(std::size_t i=0;i<rl.size();++i)rl[i]=(std::int8_t)((i*41+t*13)%29-14);const std::int8_t* l[1]={rl.data()};born.clear();w.tick(l,born);}};
       drive3(a,120);drive3(b,120);int nm=0;for(auto x:a.mat)nm+=x==1;CHECK(hash(a)==hash(b)&&a.tape==b.tape&&nm>0,"W3: deterministic with agents building machines");
