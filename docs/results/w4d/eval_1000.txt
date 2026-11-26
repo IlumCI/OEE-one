@@ -1,0 +1,4 @@
+# runs8/w4h_s1 e 1000 world: -S 64 -regrow 16 -nact 10 -matter 1 -spawn 20 -mut 1024 -season 300 -view 1 -signals 1 -wall_decay 4 -m_cost 4 -m_give 0 -graze 1 -pass 1 -irr 8 -irr_decay 16 -own 2 -land 1 -climate_ticks 1200
+champion agent_ticks 3967924 noop 0.004 fwd 0.282 left 0.193 right 0.004 eat 0.419 repro 0.064 attack 0.027 write 0.002 make 0.001 feed 0.004 kills/kt 0.22 births/kt 3.51 starved/kt 1.85 aged/kt 1.27 killed/kt 0.00 symbol 0.796 joint_harvests/kt 0.00 fed 6148 food 8212723 irr_own 9225 irr_other 0 irr_wild 140435
+random agent_ticks 50401 noop 0.083 fwd 0.205 left 0.059 right 0.030 eat 0.120 repro 0.135 attack 0.086 write 0.115 make 0.097 feed 0.069 kills/kt 1.29 births/kt 19.36 starved/kt 11.49 aged/kt 0.00 killed/kt 18.04 symbol 0.594 joint_harvests/kt 0.00 fed 7810 food 103135 irr_own 193 irr_other 0 irr_wild 32
+wipe	0.4113	0.0506	-1.75	0.3855	0.0663	-1.73
