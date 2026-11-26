@@ -515,6 +515,35 @@ References checked 2026-11-26 (web search, arXiv):
   - Transitions need incentive alignment and conflict suppression, or they are unstable (arXiv:2601.12837).
     Fused agents must therefore share fate: pooled energy and joint reproduction.
 
+### Wave 2 protocol: old and disputed ideas, one per arm (fixed 2026-11-26, before the runs)
+
+Each arm is pilot arm C (substrate, ownership, split-role nodes) plus exactly one change. 3 seeds × 2000 epochs,
+the same seeds as C, so every comparison is paired with C.
+
+| Arm | Change | Idea and source | Targets |
+|---|---|---|---|
+| C+kin | `-kin_sig 1`: symbols heard by own lineage only | Cheap talk is informative only with common interest; overhearing competitors create conflict (Crawford and Sobel 1982; Godfrey-Smith and Martínez 2013, PLoS Comput Biol) | Signals unused |
+| C+cat | `-cat_every 250 -cat_keep 0.1`: every 250 epochs, every agent outside a random 10% window dies; structures stay | Punctuated equilibrium; extinction events select for evolvability (Lehman and Miikkulainen 2015, PLOS ONE e0132886) | Collapses, plateau, monoculture |
+| C+stress | `-stress 4`: a lineage's update fraction rises with the relative drop of its fitness below its running average | Ashby's ultrastability (1952); stress-induced mutagenesis (Cairns 1988, disputed, later shown mechanistically) | Plateau |
+| C+lam | `-lamarck 1`: newborns start with the parent's recurrent state | Inheritance of acquired characters (Lamarck; disproven for genes), here as a vertical channel for culture | Memory, building (knowing where the granaries are) |
+
+Measures (at 2000, paired with C on the same seed):
+- head-to-head against C's champion (post-founder share);
+- generality: solo, swap and head-to-head (tools/w/generality.sh);
+- era progress: collapses and mean share;
+- the arm-specific test:
+  - C+kin: deaf ablation, and joint harvests against C;
+  - C+cat and C+stress: collapse count and mean era share;
+  - C+lam: amnesia and shuffle costs, and the wipe ablation.
+
+Pass and kill:
+- An arm **passes** if it beats C head-to-head at 2000 (post-founder > 0.5, t > 3) in at least 2 of 3 seeds, or
+  meets its arm-specific criterion in at least 2 of 3:
+  - C+kin: deafness costs fitness, t < −3;
+  - C+cat and C+stress: fewer collapses and a higher mean era share than C;
+  - C+lam: higher solo generality than C, t > 3.
+- An arm with neither is closed. Ideas that pass are combined only after each has passed alone.
+
 ## 7. Implementation (planned files)
 
 - `src/w/world.{hpp,cpp}`: grid, resources, machines, agents, deterministic tick (counter RNG), copyable for forks.
