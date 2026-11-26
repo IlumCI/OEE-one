@@ -941,8 +941,11 @@ arenas.
 |---|---|---|---|---|
 | C+kin | 0.79 (t 4.2) / 0.49 (t −0.1) | −0.04 (t −0.1) | deaf: 0.43 (t −1.1), no cost | fail |
 | C+cat | 0.14 (t −6.5) | −0.20 (t −0.7) | era mean 0.81 vs C 0.86, 0 collapses each | fail |
+| C+stress | **0.87 (t 6.9, 14/16)** | +1.44 (t 3.1, 61/64) | era mean 0.64 vs C 0.86, 0 collapses each | **pass** (head-to-head) |
 
 - C+kin wins head-to-head in its own world but not in C's, so it fails under the amendment (both worlds).
+- C+stress splits 1–1 (seed 1 lost head-to-head, 0.25). Seed 3 decides: it passes only if seed 3 also beats C
+  head-to-head, since its arm-specific test has failed in both seeds.
 - **C+kin and C+cat are closed.** Each failed in seeds 1 and 2, so neither can pass 2 of 3. Their third seeds
   are not run (runs8/w3ckin_s3 and w3ccat_s3 carry PAUSED), which frees the queue for C+stress and C+lam.
 
