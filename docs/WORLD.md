@@ -497,6 +497,24 @@ Pass and kill:
 - Order after the pilot: W4 (law space: instructions that change local rules) if building pays; fusion of agents
   (major transitions) after W4.
 
+References checked 2026-11-26 (web search, arXiv):
+- **Communication from shared consequences.**
+  - Foraging games (arXiv:2505.12872): communication emerges with interdependence. Agents fall back on implicit
+    communication, watching a partner, when messages give no edge. So the deaf ablation alone can miss implicit
+    signalling; the joint-harvest rate is also needed.
+  - Electric-fish collectives (arXiv:2511.08436): signalling from shared consequences, with no reward for it.
+  - Pheromone foraging in evolved swarms (arXiv:2212.08484).
+- **Environment co-evolution (W4a).**
+  - Minimal criterion coevolution (Brant and Stanley, GECCO 2017).
+  - MCC-style filters on models and tasks (AC/DC, arXiv:2604.14969).
+  - Difficulty-aligned coevolution (GenEnv, arXiv:2512.19682).
+  - Only the selection scheme is usable here: those systems use pretrained models (rule 2).
+- **Major transitions (fusion phase).**
+  - Multi-level selection as the measurable sign of a transition (arXiv:2508.14232).
+  - Neuronal flocks that reproduce as units (arXiv:2409.13254).
+  - Transitions need incentive alignment and conflict suppression, or they are unstable (arXiv:2601.12837).
+    Fused agents must therefore share fate: pooled energy and joint reproduction.
+
 ## 7. Implementation (planned files)
 
 - `src/w/world.{hpp,cpp}`: grid, resources, machines, agents, deterministic tick (counter RNG), copyable for forks.
