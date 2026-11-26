@@ -619,6 +619,32 @@ References checked 2026-11-26 (web search, arXiv):
   there. Here the strength of a single bite is fixed. Agents still choose how often to graze, and machines can
   evolve defences such as walls.
 
+### Calibration fix 3 failed at longer horizons; fix 4: passable machines (2026-11-26)
+
+- **The restarted runs collapsed after the 70–150-epoch calibration window.** Settings: m_cost 4, m_give 16,
+  graze 1, own 2. Runs moved to runs8/nonviable2.
+  - Seed 1, arms A and C: healthy to epoch 150 (58–68 agents, 2–3 reseeds, fitness up to 13,000). Then a new wild
+    replicator variant (`_R.__E_C`, `-RC{CE+C__C_}CC{`) spread to 420–500 machines holding about 170k store by
+    epoch 175. 89–101 reseeds by epoch 480.
+  - Seed 2, arm A: an agent-made replicator took over from epoch 25 (458 machines, 150k store), with 54 reseeds by
+    epoch 197.
+  - Grazing did not stop a fast replicator. Agents graze only machines in front of them, so the inside of a colony
+    stays out of reach.
+- **Copies born empty (m_give 0, own 1; 400 epochs) did not stop it either.** Runs: runs8/cal_g0.
+  - Takeovers occurred in 3 of 4 runs: A seed 1 (30 reseeds), C seed 1 (one lineage's farm of 150 machines with 83k
+    store; 32 reseeds), A seed 2 (population 78 down to 12–35). B seed 1 stayed viable.
+  - Agents feed machines by accident (0.3% of actions under the stochastic policy). Each feed lets an empty copy run,
+    and the colony then holds the fertile cells.
+  - Agent-free, m_give 0, about 2000 epochs: spawned harvesters accumulate slowly (m_cost 4: 35 to 137 machines;
+    m_cost 8: 63 to 297).
+- **Diagnosis: space monopolisation by a sessile competitor that its consumers cannot reach.** In Paine's sea-star
+  removal experiment, local diversity depends on how efficiently predators prevent one species from monopolising
+  the major requisites (Paine 1966; revisited by Lafferty and Suchanek, Am. Nat. 2016, doi:10.1086/688045).
+  Here the requisite is the fertile cells. Machines block movement, so agents can graze only a colony's edge.
+- **Fix 4: `-pass 1`.** Agents can stand on machine cells; walls and nodes still block. Eating then also grazes the
+  machine underfoot, with the same rights as `-graze`. With `-own 2` every copy is wild, so any agent can eat any
+  colony from the inside.
+
 ### Wave 2 protocol: old and disputed ideas, one per arm (fixed 2026-11-26, before the runs)
 
 Each arm is pilot arm C (substrate, ownership, split-role nodes) plus exactly one change. 3 seeds × 2000 epochs,
