@@ -957,6 +957,16 @@ W4d calibration (2026-11-26; runs8/w4h_s1 at epoch 200).
 - At epoch 200 the world has 5 irrigated cells, all common: no lineage owns land yet.
 - Seeds 2 and 3 started (runs8/w4h_s2, w4h_s3; binary runs8/oee_w_v22).
 
+W4d seed 1 at epoch 1000 (2026-11-26; docs/results/w4d/eval_1000.txt).
+- **Building is below random:** write 0.2%, make 0.1%, feed 0.4%, against 11.5%, 9.7% and 6.9% for random agents.
+- **The no-feed ablation costs nothing:** 0.47 (t −0.5) in fresh arenas and 0.47 (t −1.0) in its own final world.
+  The wipe: 0.41 (t −1.75).
+- **No boom** in epochs 200–1000 (E seed 1: 8.1% boom time, two booms). Mean population 62 against E's 77. At the
+  end, 3 of 18 irrigated cells are owned.
+- H's champion beats E's final champion in both worlds (0.9996, 16/16). E's late champions collapsed against their
+  own ancestors after its booms (W4a verdict), so this does not show an effect of land.
+- Seed 1 meets the kill condition. The verdict waits for seeds 2 and 3.
+
 Interim observation (2026-11-26, W4b seed 1). F seed 1 boomed early, at epochs 80–115 (peak 198 agents at 100).
 - At epoch 100 one lineage owned 502 of the 541 machines, holding 10.6k store.
 - The other lineages still grew to their 64-slot caps, and the boom collapsed by epoch 135.
