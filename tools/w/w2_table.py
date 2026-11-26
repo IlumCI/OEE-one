@@ -15,7 +15,7 @@ for f in sorted(glob.glob(os.path.join(d,'final_*3000.txt'))):
     m=re.match(r'(?:(w2_(sig|nosig)_s(\d)): |era: )(.*)',ln.strip())
     if m:
       k=(int(m.group(3)),m.group(2)) if m.group(1) else cur
-      era[k]=[float(x.split(':')[1]) for x in m.group(4).split()]
+      era[k]=[float(x.split(':')[1]) for x in m.group(4).split() if int(x.split(':')[0])>=500]  # same eras in every seed
 cols=[('amnesia','seasons'),('shuffle','seasons'),('deaf','seasons'),('amnesia','static'),('shuffle','static'),('deaf','static')]
 print('seed\tarm\t'+'\t'.join(a+'/'+b for a,b in cols)+'\tcollapses\tmean_era')
 for k in sorted(runs):

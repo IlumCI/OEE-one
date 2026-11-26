@@ -724,6 +724,43 @@ Post-founder share of the ablated copy:
   being forced. It supports the W2 premise: information that changes, here the other agents, selects for keeping
   it.
 
+### W2a final: 5 seeds, epoch 3000 (2026-11-26; docs/results/w2a/table_5seeds.tsv, tools/w/w2_table.py)
+
+Post-founder share (t) of the ablated copy in the seasonal training arenas:
+
+| Seed | Arm | Amnesia | Shuffle | Deaf |
+|---|---|---|---|---|
+| 1 | signals | 0.000 (−3744) | 0.063 (−10) | 0.469 (−0.4) |
+| 1 | no signals | 0.126 (−5.2) | 0.188 (−5.0) | — |
+| 2 | signals | 0.597 (+1.5) | 0.005 (−226) | 0.473 (−0.3) |
+| 2 | no signals | 0.097 (−9.1) | 0.096 (−8.1) | — |
+| 3 | signals | 0.123 (−5.3) | 0.096 (−6.0) | 0.500 (0.0) |
+| 3 | no signals | 0.036 (−15) | 0.093 (−8.2) | — |
+| 4 | signals | 0.004 (−282) | 0.002 (−750) | 0.598 (+1.1) |
+| 4 | no signals | 0.318 (−2.5) | 0.002 (−372) | — |
+| 5 | signals | 0.844 (+4.6) | 0.003 (−319) | 0.722 (+3.6) |
+| 5 | no signals | 0.399 (−1.0) | 0.004 (−393) | — |
+
+- **Memory: pass.**
+  - Shuffling states costs fitness in all 10 runs with seasons (share 0.19 or less, t ≤ −5), and much less without
+    seasons (0.39–0.49).
+  - Amnesia costs in 6 of 10.
+  - In seed 5 with signals the amnesic copy wins (0.84, t +4.6) while shuffling is lethal (0.003). That champion
+    depends on its own state, yet a blank state does better than it does in head-to-head play.
+- **Signals: fail.**
+  - Deafness costs nothing in the seasonal arenas in 5 of 5 runs. In seed 5 it helps (0.72, t +3.6), as in one
+    early W3 run.
+  - In static arenas it costs a little in 3 of 5 runs.
+- **Era progress** (post-founder share, 500 to 3000):
+
+  | Arm | Collapses (< 0.25) | Mean era share |
+  |---|---|---|
+  | signals | 2 of 5 runs, one each | 0.66 |
+  | no signals | 2 of 5 runs, one each | 0.59 |
+
+- **W2a is closed.** Memory pays where the world changes; a free channel is not used. Signals and memory are measured
+  again in W3.
+
 ### W2a seed 1 final, epoch 3000 (2026-11-26; docs/results/w2a/final_s1_3000.txt)
 
 Post-founder share of the ablated copy:
