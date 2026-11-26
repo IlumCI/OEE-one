@@ -1,0 +1,7 @@
+== w2_nosig_s3 epoch 3000
+# champion runs8/w2_nosig_s3/archive/egg_3000.bin; world: -S 64 -regrow 16 -nact 7 -season 300 -view 1 -ticks 2000 -signals 0
+amnesia	seasons	0.0665	0.0274	-15.83	0.0363	0.0313	-14.83
+amnesia	static	0.5260	0.0015	17.07	0.5284	0.0015	19.26
+shuffle	seasons	0.1410	0.0442	-8.12	0.0929	0.0499	-8.17
+shuffle	static	0.4599	0.0012	-33.92	0.4579	0.0011	-37.29
+era: 500:1.00 750:0.84 1000:0.59 1250:0.75 1500:0.75 1750:0.59 2000:0.38 2250:0.25 2500:0.28 2750:0.44 3000:0.62 
