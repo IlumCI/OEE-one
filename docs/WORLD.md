@@ -855,9 +855,12 @@ W4c seed 1 at its final epoch 333 (2026-11-26; docs/results/w4c/eval_333.txt).
 |---|---|---|---|---|---|
 | 1 | 2.3% / 0.1% / 1.1% | 12.2% / 9.8% / 6.6% | 0.52 (t 0.4) | 0.0006 / 0.0005 | 0.034 / 0.081 |
 | 2 | 0.1% / 0.1% / 0.1% | 20.4% / 4.6% / 9.5% | 0.49 (t −0.2) | 0.25 (t −3.9) / 0.25 (t −3.9) | 0.019 / 0.000 |
+| 3 (exploratory) | 0.1% / 0.0% / 0.0% | 24.7% / 6.0% / 12.7% | 0.50 (t −0.1) | 0.10 (t −8.1) / 0.10 (t −8.1) | 0.281 / 0.064 |
 
-- **Killed.** In both seeds building is below random and the wipe costs nothing. Seed 3 is excluded by the guard
-  and is reported when it finishes.
+- **Killed.** In both seeds building is below random and the wipe costs nothing.
+- Seed 3, excluded by the guard, agrees: no building and no wipe cost. It boomed far more than E seed 3 (28% of
+  epochs above 150 agents, two booms, mean population 107 against 76), yet its champion does not feed. The booms
+  came from accidental feeding again.
 - G's champions lose to E's in both worlds. At equal ticks G gets a third as many ES updates, so this mixes the
   horizon with the number of updates. An unconfounded test would hold each perturbation over a long horizon but
   update as often as E (noise-reuse online ES, Li et al. 2023, arXiv:2304.12180).
