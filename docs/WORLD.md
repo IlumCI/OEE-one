@@ -951,6 +951,12 @@ Pass and kill:
   starves the others counts as non-viable if it trips the guard; such a run is reported, not scored.
 - Calibration: seed 1 for 200 epochs before the three runs, to check viability.
 
+W4d calibration (2026-11-26; runs8/w4h_s1 at epoch 200).
+- Viable: 1 reseed, at startup; none after.
+- Mean population 53 over epochs 0–200 (E seed 1: 60), peak 125, no boom yet (E had its first at 175–200).
+- At epoch 200 the world has 5 irrigated cells, all common: no lineage owns land yet.
+- Seeds 2 and 3 started (runs8/w4h_s2, w4h_s3; binary runs8/oee_w_v22).
+
 Interim observation (2026-11-26, W4b seed 1). F seed 1 boomed early, at epochs 80–115 (peak 198 agents at 100).
 - At epoch 100 one lineage owned 502 of the 541 machines, holding 10.6k store.
 - The other lineages still grew to their 64-slot caps, and the boom collapsed by epoch 135.
