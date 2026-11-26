@@ -1,0 +1,17 @@
+# nofeed ablation: shares of the copy that cannot feed (A); < 0.5 with t < -3 means feeding pays the feeder's lineage
+## E s3 epoch-500 champion, E s3 boom world (ck_500)
+mean_shareA 0.5293
+mean_ishareA 0.5426	se 0.0024	t 17.39	wins 16/16
+mean_lshareA 0.5364	se 0.0028	t 12.80	wins 16/16	after tick 500
+## E s3 epoch-500 champion, fresh arenas
+mean_shareA 0.5000
+mean_ishareA 0.5070	se 0.0590	t 0.12	wins 9/16
+mean_lshareA 0.5067	se 0.0768	t 0.09	wins 5/16	after tick 500
+## E s3 epoch-500 champion, E s3 pre-boom world (ck_400)
+mean_shareA 0.4688
+mean_ishareA 0.4723	se 0.0509	t -0.54	wins 9/16
+mean_lshareA 0.4690	se 0.0553	t -0.56	wins 2/16	after tick 500
+## G s3 epoch-175 champion, G s3 boom world (ck_170)
+mean_shareA 0.5039
+mean_ishareA 0.4999	se 0.0022	t -0.03	wins 9/16
+mean_lshareA 0.4978	se 0.0027	t -0.80	wins 6/16	after tick 500
