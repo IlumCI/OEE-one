@@ -30,6 +30,9 @@ struct WParams{
   int mk_cost=10,wr_cost=1,feed_amt=20,rep_cost=16,wall_cost=32;
   int spawn=0;     // W3.1: new random programs per 1000 ticks per 1024 cells (spontaneous generation)
   int mut=0;       // W3.1: copy error per copied byte, in 1/65536 (a wrong byte becomes a random instruction)
+  int own=0;       // W3.2: machines belong to their maker's lineage (copies too). Only the owner can unmake one and
+                   // recover its store; others can only destroy it (cost 2*mk_cost, store lost). The owner also eats
+                   // from the store of its own machine in front once its cell is empty (a private granary).
 };
 
 struct Agent{int x=0,y=0,dir=0,energy=0,age=0,lineage=0;bool alive=false;std::uint64_t id=0;int sig=0,wpos=0;};

@@ -108,7 +108,9 @@ void World::tick(const std::int8_t* const* logits,std::vector<int>& born){
       case 1:if(occ[fc]<0&&(!p.matter||!mat[fc])){occ[c]=-1;a.x=fc%p.L;a.y=fc/p.L;occ[fc]=s;}a.energy-=p.move;break;
       case 2:a.dir=(a.dir+3)&3;a.energy-=p.turn;break;
       case 3:a.dir=(a.dir+1)&3;a.energy-=p.turn;break;
-      case 4:{const int take=std::min<int>(res[c],p.bite);res[c]-=(std::uint8_t)take;a.energy=std::min(p.ecap,a.energy+take);break;}
+      case 4:{int take=std::min<int>(res[c],p.bite);res[c]-=(std::uint8_t)take;
+        if(p.own&&p.matter&&take<p.bite&&mat[fc]==1&&mlin[fc]==a.lineage){const int t2=std::min<int>(p.bite-take,mst[fc]);mst[fc]=(std::int16_t)(mst[fc]-t2);take+=t2;}  // granary
+        a.energy=std::min(p.ecap,a.energy+take);break;}
       case 5:if(a.energy>=p.repro_min&&occ[fc]<0&&(!p.matter||!mat[fc])){const int k=a.lineage;int j=-1;
           for(int q=0;q<p.S;++q)if(!ag[(std::size_t)k*p.S+q].alive){j=q;break;}
           if(j>=0){const int cs=k*p.S+j;Agent& b=ag[cs];b=Agent{};b.x=fc%p.L;b.y=fc/p.L;b.dir=a.dir;b.energy=p.repro_give;b.lineage=k;b.alive=true;b.id=next_id++;
@@ -120,7 +122,8 @@ void World::tick(const std::int8_t* const* logits,std::vector<int>& born){
         break;}
       case 7:if(p.matter){if(mat[fc]==1){tape[(std::size_t)fc*16+a.wpos]=kCode[code[s]];a.wpos=(a.wpos+1)&15;}a.energy-=p.wr_cost;}break;  // write
       case 8:if(p.matter){if(mat[fc]==0&&occ[fc]<0){make_machine(fc,a.dir,a.lineage);a.wpos=0;a.energy-=p.mk_cost;}  // make or unmake
-          else if(mat[fc]==1){a.energy=std::min(p.ecap,a.energy+mst[fc]);kill_machine(fc);a.energy-=p.move;}}
+          else if(mat[fc]==1){if(!p.own||mlin[fc]<0||mlin[fc]==a.lineage){a.energy=std::min(p.ecap,a.energy+mst[fc]);kill_machine(fc);a.energy-=p.move;}
+            else{kill_machine(fc);a.energy-=2*p.mk_cost;}}}  // W3.2: someone else's machine can only be destroyed
         break;
       case 9:if(p.matter&&mat[fc]==1){const int amt=std::min(p.feed_amt,std::max(0,a.energy-1));a.energy-=amt;mst[fc]=(std::int16_t)std::min(1000,mst[fc]+amt);}break;  // feed
       default:break;}
@@ -213,8 +216,8 @@ void World::save(std::FILE* f) const{
     p.stoch,p.nact,p.atk_cost,p.atk_take,(std::int64_t)p.seed,t,(std::int64_t)next_id};
   for(auto x:q){wr(f,x);}
   if(ext()){wr(f,kExt);const std::int64_t e[]={p.season,p.view,p.signals,p.rot,p.sig_cost,per};for(auto x:e){wr(f,x);}wv(f,ph);wv(f,fp);}
-  if(p.matter){wr(f,(p.spawn||p.mut)?kExt31:kExt3);const std::int64_t e[]={p.matter,p.m_steps,p.m_decay,p.mk_cost,p.wr_cost,p.feed_amt,p.rep_cost,p.wall_cost};for(auto x:e){wr(f,x);}
-    if(p.spawn||p.mut){wr(f,p.spawn);wr(f,p.mut);}
+  if(p.matter){wr(f,(p.spawn||p.mut||p.own)?kExt31:kExt3);const std::int64_t e[]={p.matter,p.m_steps,p.m_decay,p.mk_cost,p.wr_cost,p.feed_amt,p.rep_cost,p.wall_cost};for(auto x:e){wr(f,x);}
+    if(p.spawn||p.mut||p.own){wr(f,p.spawn);wr(f,p.mut);wr(f,p.own);}
     wv(f,mat);wv(f,tape);wv(f,mip);wv(f,mh0);wv(f,mh1);wv(f,mdir);wv(f,mst);wv(f,mhalt);wv(f,mlin);wv(f,mbt);wv(f,mfx);}
   wv(f,res);wv(f,fert);wv(f,racc);wv(f,occ);wr(f,(std::int64_t)ag.size());
   for(auto& a:ag){const std::int64_t r[]={a.x,a.y,a.dir,a.energy,a.age,a.lineage,a.alive,(std::int64_t)a.id};for(auto x:r)wr(f,x);}
@@ -233,10 +236,10 @@ bool World::load(std::FILE* f){
     else if(std::fseek(f,pos,SEEK_SET)!=0)return false;}  // W1 record: no extension
   p.matter=0;mat.clear();tape.clear();mip.clear();mh0.clear();mh1.clear();mdir.clear();mst.clear();mhalt.clear();mlin.clear();mbt.clear();mfx.clear();
   {std::int64_t m=0;const long pos=std::ftell(f);if(!rd(f,m))return false;
-    p.spawn=0;p.mut=0;
+    p.spawn=0;p.mut=0;p.own=0;
     if(m==kExt3||m==kExt31){std::int64_t e[8];for(auto& x:e)if(!rd(f,x))return false;
       p.matter=(int)e[0];p.m_steps=(int)e[1];p.m_decay=(int)e[2];p.mk_cost=(int)e[3];p.wr_cost=(int)e[4];p.feed_amt=(int)e[5];p.rep_cost=(int)e[6];p.wall_cost=(int)e[7];
-      if(m==kExt31){std::int64_t a=0,b=0;if(!rd(f,a)||!rd(f,b))return false;p.spawn=(int)a;p.mut=(int)b;}
+      if(m==kExt31){std::int64_t a=0,b=0,c=0;if(!rd(f,a)||!rd(f,b)||!rd(f,c))return false;p.spawn=(int)a;p.mut=(int)b;p.own=(int)c;}
       if(!rv(f,mat)||!rv(f,tape)||!rv(f,mip)||!rv(f,mh0)||!rv(f,mh1)||!rv(f,mdir)||!rv(f,mst)||!rv(f,mhalt)||!rv(f,mlin)||!rv(f,mbt)||!rv(f,mfx))return false;}
     else if(std::fseek(f,pos,SEEK_SET)!=0)return false;}  // no W3 block
   if(!rv(f,res)||!rv(f,fert)||!rv(f,racc)||!rv(f,occ)){return false;}std::int64_t n=0;if(!rd(f,n)||n<0||n>(1<<24)){return false;}ag.assign((std::size_t)n,Agent{});

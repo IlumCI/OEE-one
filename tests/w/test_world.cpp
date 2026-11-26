@@ -77,6 +77,13 @@ int main(){
       act(9,0);const bool fed=w.mst[f]>0;const int e0=w.ag[0].energy,st0=w.mst[f];act(8,0);const bool un=w.mat[f]==0&&w.ag[0].energy>=e0+st0-2;
       act(8,0);act(1,0);const bool blocked=w.ag[0].y==5;
       CHECK(made&&wrote&&fed&&un&&blocked,"W3 agent: make, write E and C, feed, unmake (store returned), machines block movement");}
+    {WParams q2=q;q2.own=1;q2.K=2;World w;w.init(q2,0);for(auto& r:w.res)r=0;const int f=4*L+5;w.mat[f]=1;w.mst[f]=100;w.mlin[f]=0;w.mbt[f]=-1;
+      Agent& a=w.ag[0];a=Agent{};a.x=5;a.y=5;a.dir=0;a.energy=100;a.alive=true;a.id=1;w.occ[5*L+5]=0;
+      std::vector<std::int8_t> la((std::size_t)q2.S*32,(std::int8_t)-100),lb((std::size_t)q2.S*32,(std::int8_t)-100);la[4]=100;
+      const std::int8_t* l2[2]={la.data(),lb.data()};w.tick(l2,born);const bool gran=w.mst[f]==100-q2.bite-1&&w.ag[0].energy==100+q2.bite-q2.base;  // -1: the machine runs this tick
+      Agent& b=w.ag[q2.S];b=Agent{};b.x=5;b.y=3;b.dir=2;b.energy=100;b.lineage=1;b.alive=true;b.id=2;w.occ[3*L+5]=q2.S;  // lineage 1, facing the machine from the north
+      std::fill(la.begin(),la.end(),(std::int8_t)-100);la[0]=100;lb[8]=100;const int eb=w.ag[q2.S].energy;w.tick(l2,born);
+      CHECK(gran&&w.mat[f]==0&&w.ag[q2.S].energy==eb-2*q2.mk_cost-q2.base,"W3.2 ownership: owner eats from its granary; another lineage can only destroy it");}
     {World a,b;a.init(q,5);b.init(q,5);std::vector<std::int8_t> rl((std::size_t)q.S*32);auto drive3=[&](World& w,int n){for(int t=0;t<n;++t){
         for(std::size_t i=0;i<rl.size();++i)rl[i]=(std::int8_t)((i*41+t*13)%29-14);const std::int8_t* l[1]={rl.data()};born.clear();w.tick(l,born);}};
       drive3(a,120);drive3(b,120);int nm=0;for(auto x:a.mat)nm+=x==1;CHECK(hash(a)==hash(b)&&a.tape==b.tape&&nm>0,"W3: deterministic with agents building machines");
