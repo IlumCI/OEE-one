@@ -50,3 +50,10 @@ top tapes (count owner tape):
 agents by lineage slot: 31 32 0 0 0
 h2h_F_vs_E	world w4f_s2	0.3456	0.0869	-1.78	3/16
 h2h_F_vs_E	world w4e_s2	0.3454	0.0870	-1.78	2/16
+# runs8/w4f_s3 e 1000 world: -S 64 -regrow 16 -nact 10 -matter 1 -spawn 20 -mut 1024 -season 300 -view 1 -signals 1 -wall_decay 4 -m_cost 4 -m_give 0 -graze 1 -pass 1 -irr 8 -irr_decay 16 -own 1 -claim 1 -climate_ticks 1200
+champion agent_ticks 4000247 noop 0.002 fwd 0.368 left 0.004 right 0.131 eat 0.367 repro 0.108 attack 0.015 write 0.001 make 0.000 feed 0.003 kills/kt 0.16 births/kt 3.50 starved/kt 1.78 aged/kt 1.32 killed/kt 0.01 symbol 0.075 joint_harvests/kt 0.00
+random agent_ticks 27657 noop 0.058 fwd 0.045 left 0.082 right 0.138 eat 0.084 repro 0.055 attack 0.083 write 0.269 make 0.059 feed 0.125 kills/kt 0.80 births/kt 13.49 starved/kt 9.08 aged/kt 0.00 killed/kt 22.92 symbol 0.853 joint_harvests/kt 0.00
+wipe	0.5029	0.0372	0.08	0.5012	0.0457	0.03
+deaf	0.4232	0.0591	-1.30	0.4075	0.0676	-1.37
+== generality (e vs e-500)
+e	e_prev	solo_log_ratio	t	median	surviveA	surviveB	lshareA	lt	swap_recovery	swap_t

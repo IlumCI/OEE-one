@@ -855,6 +855,41 @@ Interim observation (2026-11-26, W4b seed 1). F seed 1 boomed early, at epochs 8
 
 ## 9. Results
 
+### W4b verdict: property of machines does not stabilise the boom (2026-11-26; docs/results/w4b/)
+
+Boom time is the fraction of epochs with more than 150 agents (tools/w/booms.py).
+
+| Seed | Window | F (claim + own 1) | E (W4a, commons) | D (no irrigation) |
+|---|---|---|---|---|
+| 1 | 200–1000 | 0% | 8.1% | 0% |
+| 2 | 200–1000 | 0% | 0% | 0% |
+| 3 | 200–1000 | 0% | 6.4% | 0% |
+| 1 | 0–200 | 13.5% | 2.5% | — |
+| 2 | 0–200 | 2.0% | 1.5% | — |
+| 3 | 0–200 | 19.5% | 0% | — |
+
+Mean population, epochs 0–1000:
+
+| Seed | F | E | D |
+|---|---|---|---|
+| 1 | 69 | 74 | 58 |
+| 2 | 70 | 69 | 67 |
+| 3 | 70 | 72 | 61 |
+
+- **Killed (pre-registered window 200–1000).** F has no more boom time than E in every seed.
+- **But property changes the course, not just the level.**
+  - Under property the first boom comes sooner and is bigger (epochs 0–200). One lineage claims the farm economy:
+    700 of 728 machines and 52k store at epoch 170 in seed 3, 502 of 541 at epoch 100 in seed 1.
+  - After that first wave no boom recurs in any seed. Under the commons, booms recur (E seed 1 at 185 and 665;
+    E seed 3 at about 490).
+- **Irrigation raises carrying capacity** under both regimes: mean population is above D's in every seed, though
+  only slightly in seed 2.
+- **Why property does not help here.**
+  - Claiming privatises machines, not the irrigated land, which is the boom's main food (§9, W4b interim).
+  - Concentrated ownership makes one lineage the farmer. Its population is capped at 64, so a big boom needs other
+    lineages eating the common land.
+- Next: the credit-horizon test W4c is running. Land ownership is the untested remainder of this question.
+
 ### Wave 2, seed 1 at epoch 2000 (interim, 2026-11-26; docs/results/w3x/wave2_2000.txt)
 
 Each arm against C's champion on the same seed. Head-to-head: post-founder share of the arm in its own world (and

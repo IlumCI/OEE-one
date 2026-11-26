@@ -1,0 +1,7 @@
+run	epochs	boom_time	mean_pop	booms	largest_share_in_booms	peak
+runs8/w4f_s1	801	0.000	63.3	0	-	125
+runs8/w4f_s2	801	0.000	67.1	0	-	132
+runs8/w4f_s3	801	0.000	65.2	0	-	147
+runs8/w4e_s1	801	0.081	77.4	2	0.28	256
+runs8/w4e_s2	801	0.000	67.1	0	-	128
+runs8/w4e_s3	801	0.064	76.1	3	0.27	256
