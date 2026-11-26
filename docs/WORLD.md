@@ -699,6 +699,50 @@ Pass and kill:
 - Scripts: tools/w/w3_check.sh (kill test), tools/w/w3x_eval.sh (pilot measures), tools/w/wave2_eval.sh (wave 2).
   All of them read the world flags from cmd.txt.
 
+### W4a protocol: construction that creates value (fixed 2026-11-26, before the code)
+
+Why. The W3.x pilot killed building in every arm (§9). A machine can only store or move energy that the regrowth
+field provides. Agriculture emerged in learning agents only with scarce wild food, a long horizon and protection
+from cheaters (arXiv:2605.22256). W4a supplies all three. It also lets construction create value, which is an
+instruction-set change that the W3 rule allows and that is W4's content (machines change local rules).
+
+Changes:
+- **Irrigation (`-irr 2`).** Instruction `,` becomes `I`.
+  - A running machine executing `I` raises the irrigation level of its own cell by 2 (up to 255), for 1 store.
+    Nothing happens and nothing is paid at the cap.
+  - A cell's capacity becomes min(255, natural or seasonal capacity + irrigation), so the cell regrows toward a
+    higher level, out of season too.
+  - Irrigation decays by 1 every 64 ticks, so a farm needs upkeep.
+  - A farm (`IE`: irrigate, harvest) on any cell earns about 0.5 per tick at regrow 8. Its upkeep is 0.25 plus
+    about 0.01 for irrigation, so it nets about +0.24 per tick all year, anywhere.
+- **Scarce wild food (`-regrow 8`).** Natural regrowth is halved.
+- **Long horizon (`-H 600 -climate_every 2`).** Fork fitness covers 600 ticks, 3× the W3 horizon. A farm's
+  payback (about 130 ticks) fits inside one epoch. The climate still changes about every 1,200 ticks.
+- **Protection.** `-own 2` as in W3.x B: an agent's own machine is private, and its copies are wild.
+
+Arms (3 seeds × 1000 epochs; 600-tick epochs, so 3× the ticks per epoch of W3.x):
+- D (control): W3.x arm B settings with `-regrow 8 -H 600 -climate_every 2`.
+- E: D plus `-irr 2`.
+
+Calibration before the runs:
+- Agent-free (tools/w/mcal.cpp): does a spontaneous farm replicator take over?
+- With agents: E and D, seeds 1–2, 300 epochs, with the viability guard.
+
+Measures at 1000 (tools/w/w3_check.sh, w3x_eval.sh; tournaments in each run's training world):
+- building rates against random agents;
+- the wipe ablation;
+- E's champion against D's champion head-to-head, in E's world and in D's world;
+- era progress and generality.
+
+Pass and kill:
+- **Pass:** in E, the wipe costs fitness (t < −3) in at least 2 of 3 seeds, and E's champion beats D's in E's
+  world (post-founder > 0.5, t > 3) in at least 2 of 3 seeds.
+- **Kill:** in E, building rates are at or below random agents' and the wipe costs nothing, in every seed.
+  - Then the limit is not what construction can do. It is whether the learner can find and keep a delayed
+    investment.
+  - The next step is a credit-horizon test, a longer H at equal compute, before any further world change.
+- The viability guard applies (more than 10 reseeds within 200 epochs: non-viable, not scored).
+
 ## 7. Implementation (planned files)
 
 - `src/w/world.{hpp,cpp}`: grid, resources, machines, agents, deterministic tick (counter RNG), copyable for forks.
