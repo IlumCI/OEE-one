@@ -906,6 +906,50 @@ Conclusion.
     world payoffs instead of changing the world; lower priority now that the learner is not the limit.
   - W4a–W4c are three changes to one substrate, and the rules warn against adding mechanisms to the same
     substrate. The next substrate in the plan is the alternative.
+- Decision (owner, 2026-11-26): test land ownership first. The plan moves on to W4 only if building pays, and land
+  ownership decides whether it can in this world.
+
+### W4d protocol: land ownership (fixed 2026-11-26, before the code)
+
+Why. Feeding farms is a net cost to the lineage that feeds them, because food grown on irrigated land is a commons
+(diagnosis above). W4b made machines private but left the land common, and the land is the boom's main food. This
+test makes the land private. It is the direct test of the diagnosis: when the return on an investment goes to the
+investor, are building and feeding selected?
+- Exclusion made use of a common-pool resource sustainable, at the cost of inequality (Perolat et al. 2017,
+  arXiv:1707.06600).
+- Agriculture among learning agents needed protection from cheaters (Hamon et al. 2026, arXiv:2605.22256).
+
+Change (one rule, `-land 1`):
+- When a machine irrigates its own cell, the cell becomes land of the lineage that last fed that machine. If no
+  agent has fed it, the cell stays common.
+- While an owned cell is irrigated, only the owner's lineage can eat its food. Other lineages see no food there.
+- Ownership lapses when the irrigation decays to zero. Irrigation by a machine that another lineage fed last
+  transfers it.
+- One observation entry tells an agent whether the cell it stands on is its own land, another lineage's, or common.
+- Everything else as W4a arm E: copies are wild (`-own 2`), anyone may graze machines, `-m_give 0`.
+
+Arms (3 seeds × 1000 epochs at H 600; the same seeds as W4a):
+- H: W4a arm E with `-land 1`.
+- The comparison is W4a arm E on the same seed (already run).
+
+Measures at epoch 1000 (the W4a measures, plus):
+- building rates (write, make, feed) against random agents, and the wipe ablation;
+- the no-feed ablation (`-ablate nofeed`) in fresh arenas and in the run's own final world (`-arena_ck`);
+- H's champion against E's final champion, head-to-head in both worlds;
+- boom time, mean population and the number of booms over epochs 200–1000 (tools/w/booms.py);
+- inequality: the largest lineage's share of agents over epochs 200–1000, and the share of land owned at the end.
+
+Pass and kill:
+- **Pass:** in at least 2 of 3 seeds, the feed or building rates exceed random agents', or the no-feed ablation
+  costs fitness in the run's own world (share < 0.5, t < −3).
+- **Kill:** in every seed, building and feeding are at or below random and the no-feed ablation costs nothing.
+  - Then private returns are not enough, and the limit is the agents or the learner, not this world. Stop changing
+    this world and re-plan.
+- If H passes, W4 (machines change local rules) follows as planned.
+- Viability guard, stated in ticks (W4c lesson): more than 10 reseeds within any 120,000 ticks (200 epochs at H 600),
+  not counting the first 30,000 ticks, marks a run non-viable. An enclosure in which one lineage owns the land and
+  starves the others counts as non-viable if it trips the guard; such a run is reported, not scored.
+- Calibration: seed 1 for 200 epochs before the three runs, to check viability.
 
 Interim observation (2026-11-26, W4b seed 1). F seed 1 boomed early, at epochs 80–115 (peak 198 agents at 100).
 - At epoch 100 one lineage owned 502 of the 541 machines, holding 10.6k store.
