@@ -515,6 +515,22 @@ References checked 2026-11-26 (web search, arXiv):
   - Transitions need incentive alignment and conflict suppression, or they are unstable (arXiv:2601.12837).
     Fused agents must therefore share fate: pooled energy and joint reproduction.
 
+### Calibration fix before the W3.x pilot and wave 2 (2026-11-26)
+
+- **Defect.**
+  - Spontaneous programs often contain the wall instruction, and walls never disappear.
+  - In the first pilot runs walls grew from 96 to 313 cells (30% of the world) by epoch 800. Populations shrank and
+    reseeds rose from 2 to 6.
+  - This was a substrate defect, not a result.
+- **Fix.** `-wall_decay 4`: a wall erodes with probability 4/65536 per tick.
+  - Mean wall lifetime is about 16,000 ticks (80 epochs, many generations), so structures still outlive their
+    builders.
+  - Equilibrium is about 45–50 walls at the observed build rate.
+- The two affected pilot runs were moved to runs8/old_walls. All W3.x and wave-2 runs restart with the fix. Nothing
+  else in the protocols changes.
+- Building was already selected away in those runs (make 0.2–0.3% of actions against 10% for random agents), but the
+  walls confound that, so it is not counted.
+
 ### Wave 2 protocol: old and disputed ideas, one per arm (fixed 2026-11-26, before the runs)
 
 Each arm is pilot arm C (substrate, ownership, split-role nodes) plus exactly one change. 3 seeds × 2000 epochs,
