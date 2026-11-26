@@ -837,6 +837,18 @@ W4c note (2026-11-26, during the runs).
 - **Lesson for later protocols.** A guard counted in epochs is not scale-free: 200 epochs are 360,000 ticks at
   H 1800 but 40,000 at H 200. Future guards should be stated in ticks and exclude a fixed startup period.
 
+W4c seed 1 at its final epoch 333 (2026-11-26; docs/results/w4c/eval_333.txt).
+- **Building is below random.** Write 2.3%, make 0.1% and feed 1.1% of actions, against 12.2%, 9.8% and 6.6% for
+  random agents.
+- **The wipe costs nothing:** 0.52 (t 0.4).
+- **Against E's final champion** (same seed, equal ticks), G's champion holds 0.0006 of post-founder biomass in G's
+  world and 0.0005 in E's world (0 of 16 games each).
+  - At equal ticks G gets a third as many ES updates as E (333 against 1,000), so this comparison mixes the
+    horizon with the number of updates.
+- **Boom time:** 0.034 over epochs 67–333 (one boom, peak 255 agents, mean population 66), against E's 0.081 over
+  epochs 200–1000 (two booms, mean population 77).
+- Seed 1 meets the kill condition. The verdict waits for seed 2.
+
 Interim observation (2026-11-26, W4b seed 1). F seed 1 boomed early, at epochs 80–115 (peak 198 agents at 100).
 - At epoch 100 one lineage owned 502 of the 541 machines, holding 10.6k store.
 - The other lineages still grew to their 64-slot caps, and the boom collapsed by epoch 135.
