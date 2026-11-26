@@ -144,7 +144,7 @@ void World::tick(const std::int8_t* const* logits,std::vector<int>& born){
   for(int s=0;s<p.K*p.S;++s){Agent& a=ag[s];if(!a.alive)continue;a.energy-=p.base+(a.sig>0?p.sig_cost:0);++a.age;
     if(a.energy<=0||a.age>p.max_age){a.alive=false;occ[a.y*p.L+a.x]=-1;if(track)++stat[(std::size_t)a.lineage*32+(a.energy<=0?18:19)];}}
   if(p.matter)run_machines();
-  if(p.matter&&p.irr>0&&t%64==63)for(auto& x:irl)if(x)--x;  // irrigation decays
+  if(p.matter&&p.irr>0&&t%std::max(1,p.irr_decay)==std::max(1,p.irr_decay)-1)for(auto& x:irl)if(x)--x;  // irrigation decays
   if(p.matter&&p.wall_decay>0)for(int c=0;c<N;++c)if(mat[c]==2&&(int)(mix(mix(p.seed^0xe40dULL)+((std::uint64_t)t<<24)+c)&0xffff)<p.wall_decay)mat[c]=0;  // erosion
   if(p.matter&&p.spawn>0){const long r=(long)p.spawn*N/1024;const std::uint64_t h=mix(mix(p.seed^0x5badULL)+(std::uint64_t)t);  // spontaneous generation
     const int n=(int)(r/1000)+((long)(h%1000)<r%1000?1:0);if(n>0)seed_programs(n,(std::uint64_t)t*16+7,50,0.7);}
@@ -251,7 +251,7 @@ void World::save(std::FILE* f) const{
   if(p.kin_sig||p.lamarck||p.wall_decay){wr(f,kExt4);wr(f,p.kin_sig);wr(f,p.lamarck);wr(f,p.wall_decay);}
   if(p.pass){wr(f,kExt7);wr(f,p.m_cost);wr(f,p.m_give);wr(f,p.graze);wr(f,p.pass);}
   else if(p.m_cost!=1||p.m_give||p.graze){wr(f,kExt6);wr(f,p.m_cost);wr(f,p.m_give);wr(f,p.graze);}
-  if(p.matter&&p.irr>0){wr(f,kExt8);wr(f,p.irr);wv(f,irl);}
+  if(p.matter&&p.irr>0){wr(f,kExt8);wr(f,p.irr);wr(f,p.irr_decay);wv(f,irl);}
   wv(f,res);wv(f,fert);wv(f,racc);wv(f,occ);wr(f,(std::int64_t)ag.size());
   for(auto& a:ag){const std::int64_t r[]={a.x,a.y,a.dir,a.energy,a.age,a.lineage,a.alive,(std::int64_t)a.id};for(auto x:r)wr(f,x);}
   if(ext())for(auto& a:ag){wr(f,a.sig);}
@@ -284,9 +284,9 @@ bool World::load(std::FILE* f){
   {std::int64_t m=0;const long pos=std::ftell(f);if(!rd(f,m))return false;
     if(m==kExt5||m==kExt6||m==kExt7){std::int64_t a=0,b=0,g=0,ps=0;if(!rd(f,a)||!rd(f,b)||(m!=kExt5&&!rd(f,g))||(m==kExt7&&!rd(f,ps)))return false;p.m_cost=(int)a;p.m_give=(int)b;p.graze=(int)g;p.pass=(int)ps;}
     else if(std::fseek(f,pos,SEEK_SET)!=0)return false;}  // no machine-economy block
-  p.irr=0;irl.clear();
+  p.irr=0;p.irr_decay=16;irl.clear();
   {std::int64_t m=0;const long pos=std::ftell(f);if(!rd(f,m))return false;
-    if(m==kExt8){std::int64_t a=0;if(!rd(f,a)||!rv(f,irl))return false;p.irr=(int)a;}
+    if(m==kExt8){std::int64_t a=0,b=0;if(!rd(f,a)||!rd(f,b)||!rv(f,irl))return false;p.irr=(int)a;p.irr_decay=(int)b;}
     else if(std::fseek(f,pos,SEEK_SET)!=0)return false;}  // no irrigation block
   if(!rv(f,res)||!rv(f,fert)||!rv(f,racc)||!rv(f,occ)){return false;}std::int64_t n=0;if(!rd(f,n)||n<0||n>(1<<24)){return false;}ag.assign((std::size_t)n,Agent{});
   for(auto& a:ag){std::int64_t r[8];for(auto& x:r)if(!rd(f,x))return false;

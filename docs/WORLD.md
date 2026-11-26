@@ -721,8 +721,21 @@ Changes:
 - **Protection.** `-own 2` as in W3.x B: an agent's own machine is private, and its copies are wild.
 
 Arms (3 seeds × 1000 epochs; 600-tick epochs, so 3× the ticks per epoch of W3.x):
-- D (control): W3.x arm B settings with `-regrow 8 -H 600 -climate_every 2`.
-- E: D plus `-irr 2`.
+- D (control): W3.x arm B settings with `-regrow 8 -H 600 -climate_every 2 -m_give 0`.
+- E: D plus `-irr 8 -irr_decay 16`.
+
+Calibration amendments (2026-11-26, before any W4a run):
+- **Irrigation strength: irr 8 and decay 1 per 16 ticks (planned: 2 and 1 per 64).**
+  - With irr 2, a farm on barren land died during its ramp-up. Its store of 50 ran out before the irrigation paid
+    back.
+  - With irr 8 and decay 1/16, the same farm grows from 50 to 999 store in 6,000 ticks (+0.19 per tick) at
+    regrow 8. A plain harvester on the best natural cell dies at regrow 8.
+- **Copies start empty (`-m_give 0`) in both arms.**
+  - Agent-free with endowed copies, a spontaneous farm replicator filled the whole world in both seeds:
+    1,014–1,024 of 1,024 cells, about 1M store, within 20,000–60,000 ticks.
+  - With empty copies, wild farms accumulate slowly and linearly (244–252 machines after 400,000 ticks). The
+    commonest one is the 2-byte program `,E`.
+  - W4a tests agent-built farms, not a wild machine ecology.
 
 Calibration before the runs:
 - Agent-free (tools/w/mcal.cpp): does a spontaneous farm replicator take over?

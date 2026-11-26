@@ -54,8 +54,8 @@ struct WParams{
   int pass=0;
   // W4a irrigation (instruction set): irr>0 turns ',' into I: raise the irrigation level of the machine's own cell by
   // irr (cap 255) for 1 store. A cell's capacity is min(255, natural/seasonal capacity + irrigation); irrigation
-  // decays by 1 every 64 ticks.
-  int irr=0;
+  // decays by 1 every irr_decay ticks.
+  int irr=0,irr_decay=16;  // irr_decay: ticks per unit of irrigation decay
 };
 
 struct Agent{int x=0,y=0,dir=0,energy=0,age=0,lineage=0;bool alive=false;std::uint64_t id=0;int sig=0,wpos=0;};
