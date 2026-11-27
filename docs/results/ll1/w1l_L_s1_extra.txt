@@ -6,3 +6,9 @@ L s1 freeze  500 fresh: frozen share 0.5263 se 0.0331 t 0.79 wins 9/16
 learning: agent_ticks 1022875 eat 0.426 attack 0.186 repro 0.013 kills/kt 2.05 births/kt 3.80 killed/kt 2.05
 frozen:   agent_ticks 1395295 eat 0.472 attack 0.130 repro 0.013 kills/kt 1.43 births/kt 3.40 killed/kt 1.28
 # reading: learning raises attacks (0.19 vs 0.13) because a hit pays 20 energy at once; mutual aggression costs agents
+# by age (probe, 2 seeds x 4 games, champion 2000, self-play): attack when another lineage's agent is in front / no one;
+# eat share. Learning vs frozen A:
+learning  age 0-49: P(att|other) 0.58 P(att|none) 0.04 eat 0.48  age 50-199: 0.66 0.05 eat 0.45  age 200-499: 0.84 0.06 eat 0.39
+frozen    age 0-49: P(att|other) 0.54 P(att|none) 0.03 eat 0.51  age 50-199: 0.60 0.03 eat 0.49  age 200-499: 0.86 0.04 eat 0.46
+# reading: aggression rises with age in both (innate, through the age input); learning adds a little more attacking and
+# a little less eating. Its effects on the policy are small.
