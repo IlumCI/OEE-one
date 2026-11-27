@@ -79,7 +79,8 @@ struct WParams{
   // non-zero one resets it, silence leaves it; a full key pays art_pay energy to that agent and the artifact rests
   // art_rest ticks. The law is redrawn every art_era ticks (0: never; locks reset); art_family 1 draws each era's law
   // from a hidden family (a fixed base table under a token shift and reversal: a law of the laws, AR3).
-  int art=0,art_glyphs=8,art_pay=60,art_rest=100,art_era=1000,art_family=0;
+  // art_lock: a wrong token also locks the artifact for art_lock ticks (guessing is costly; 0: no lockout)
+  int art=0,art_glyphs=8,art_pay=60,art_rest=100,art_era=1000,art_family=0,art_lock=0;
 };
 
 struct Agent{int x=0,y=0,dir=0,energy=0,age=0,lineage=0;bool alive=false;std::uint64_t id=0;int sig=0,wpos=0;};
@@ -121,6 +122,7 @@ struct World{
   std::uint32_t sharp=0,greedy=0;  // analysis (not saved): lineages that sample with P(a) ~ 2^(logit/8) / take the argmax
   std::uint32_t nogive=0;          // analysis (not saved): lineages whose give action does nothing
   std::uint32_t artmute=0;         // analysis (not saved): lineages whose symbols artifacts ignore
+  std::uint32_t artoracle=0;       // analysis (not saved): lineages that, facing a ready artifact, speak its next key token
   // AR1 per cell (with p.art; saved): artifact glyph (-1 none), lock progress, rest ticks left; astat (analysis, track):
   // per lineage tokens spoken to artifacts, openings, resets, energy gained
   std::vector<std::int8_t> aglyph;std::vector<std::uint8_t> aprog;std::vector<std::int16_t> arest;std::vector<long> astat;

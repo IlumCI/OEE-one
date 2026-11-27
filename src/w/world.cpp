@@ -187,11 +187,13 @@ void World::tick(const std::int8_t* const* logits,std::vector<int>& born){
       i=j;}}
   if(p.art>0){const long era=p.art_era>0?t/p.art_era:0;if(p.art_era>0&&t%p.art_era==0)std::fill(aprog.begin(),aprog.end(),0);  // AR1: a new law resets the locks
     if(track&&astat.size()!=(std::size_t)p.K*4)astat.assign((std::size_t)p.K*4,0);std::vector<char> heard(N,0);
+    if(artoracle)for(int s:order){Agent& a=ag[s];if(!a.alive||!((artoracle>>a.lineage)&1u))continue;  // analysis: the value of knowing the law
+      const int fc=((a.y+FY[a.dir]+p.L)%p.L)*p.L+(a.x+FX[a.dir]+p.L)%p.L;if(!is_art(fc)||arest[fc]>0)continue;int key[3],k=1;art_key(aglyph[fc],era,key,k);a.sig=key[aprog[fc]];}
     for(int s:order){Agent& a=ag[s];if(!a.alive||a.sig<=0)continue;const int fc=((a.y+FY[a.dir]+p.L)%p.L)*p.L+(a.x+FX[a.dir]+p.L)%p.L;
       if(!is_art(fc)||arest[fc]>0||heard[fc])continue;heard[fc]=1;if((artmute>>a.lineage)&1u)continue;
       int key[3],k=1;art_key(aglyph[fc],era,key,k);const std::size_t ls=(std::size_t)a.lineage*4;if(track)++astat[ls];
       if(a.sig==key[aprog[fc]]){if(++aprog[fc]>=k){a.energy=std::min(p.ecap,a.energy+p.art_pay);aprog[fc]=0;arest[fc]=(std::int16_t)p.art_rest;if(track){++astat[ls+1];astat[ls+3]+=p.art_pay;}}}
-      else{aprog[fc]=0;if(track)++astat[ls+2];}}
+      else{aprog[fc]=0;arest[fc]=(std::int16_t)p.art_lock;if(track)++astat[ls+2];}}
     for(auto& r:arest)if(r>0)--r;}
   for(int s=0;s<p.K*p.S;++s){Agent& a=ag[s];if(!a.alive)continue;a.energy-=p.base+(a.sig>0?p.sig_cost:0);++a.age;
     if(a.energy<=0||a.age>p.max_age){a.alive=false;occ[a.y*p.L+a.x]=-1;if(track)++stat[(std::size_t)a.lineage*32+(a.energy<=0?18:19)];if(probe)pdie[s]=a.energy<=0?1:2;}}
@@ -339,7 +341,7 @@ void World::save(std::FILE* f) const{
   if(p.matter&&p.land){wr(f,kExt10);wr(f,p.land);wv(f,lown);wv(f,mfd);}
   if(p.matter&&p.farms){wr(f,kExt13);wr(f,p.farms);wr(f,p.farm_store);wr(f,p.farm_every);wr(f,p.farm_free);wr(f,p.irr_full);wv(f,hfm);wr(f,p.farm_reset);wr(f,p.home_cue);}
   if(p.give){wr(f,kExt14);wr(f,p.give);wr(f,p.give_amt);}
-  if(p.art>0){wr(f,kExt15);for(std::int64_t x:{p.art,p.art_glyphs,p.art_pay,p.art_rest,p.art_era,p.art_family})wr(f,x);wv(f,aglyph);wv(f,aprog);wv(f,arest);}
+  if(p.art>0){wr(f,kExt15);for(std::int64_t x:{p.art,p.art_glyphs,p.art_pay,p.art_rest,p.art_era,p.art_family,p.art_lock})wr(f,x);wv(f,aglyph);wv(f,aprog);wv(f,arest);}
   wv(f,res);wv(f,fert);wv(f,racc);wv(f,occ);wr(f,(std::int64_t)ag.size());
   for(auto& a:ag){const std::int64_t r[]={a.x,a.y,a.dir,a.energy,a.age,a.lineage,a.alive,(std::int64_t)a.id};for(auto x:r)wr(f,x);}
   if(ext())for(auto& a:ag){wr(f,a.sig);}
@@ -393,10 +395,10 @@ bool World::load(std::FILE* f){
   {std::int64_t m=0;const long pos=std::ftell(f);if(!rd(f,m))return false;
     if(m==kExt14){std::int64_t a=0,b=0;if(!rd(f,a)||!rd(f,b))return false;p.give=(int)a;p.give_amt=(int)b;}
     else if(std::fseek(f,pos,SEEK_SET)!=0)return false;}  // no give block
-  p.art=0;p.art_glyphs=8;p.art_pay=60;p.art_rest=100;p.art_era=1000;p.art_family=0;aglyph.clear();aprog.clear();arest.clear();
+  p.art=0;p.art_glyphs=8;p.art_pay=60;p.art_rest=100;p.art_era=1000;p.art_family=0;p.art_lock=0;aglyph.clear();aprog.clear();arest.clear();
   {std::int64_t m=0;const long pos=std::ftell(f);if(!rd(f,m))return false;
-    if(m==kExt15){std::int64_t x[6];for(auto& y:x)if(!rd(f,y))return false;if(!rv(f,aglyph)||!rv(f,aprog)||!rv(f,arest))return false;
-      p.art=(int)x[0];p.art_glyphs=(int)x[1];p.art_pay=(int)x[2];p.art_rest=(int)x[3];p.art_era=(int)x[4];p.art_family=(int)x[5];}
+    if(m==kExt15){std::int64_t x[7];for(auto& y:x)if(!rd(f,y))return false;if(!rv(f,aglyph)||!rv(f,aprog)||!rv(f,arest))return false;
+      p.art=(int)x[0];p.art_glyphs=(int)x[1];p.art_pay=(int)x[2];p.art_rest=(int)x[3];p.art_era=(int)x[4];p.art_family=(int)x[5];p.art_lock=(int)x[6];}
     else if(std::fseek(f,pos,SEEK_SET)!=0)return false;}  // no artifact block
   if(!rv(f,res)||!rv(f,fert)||!rv(f,racc)||!rv(f,occ)){return false;}std::int64_t n=0;if(!rd(f,n)||n<0||n>(1<<24)){return false;}ag.assign((std::size_t)n,Agent{});
   for(auto& a:ag){std::int64_t r[8];for(auto& x:r)if(!rd(f,x))return false;

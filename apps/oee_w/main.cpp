@@ -56,7 +56,7 @@
 //          lifetime learning, docs/LIFE.md; -ablate freeze: A's plastic synapses stay zero (A without learning);
 //          -life_b 0: B does not learn (to play a genome evolved without learning).
 //          -art N [-art_glyphs 8 -art_pay 60 -art_rest 100 -art_era 1000 -art_family 0] (docs/ARTIFACTS.md, AR1); -ablate artmute:
-//          artifacts ignore A's symbols. -life_teach 1 / -life_obs 1 / -give 1 (docs/SOCIAL.md); -ablate noteach / noobs / nogive: A without teaching at
+//          artifacts ignore A's symbols; -ablate artoracle: A speaks the right token to any ready artifact it faces. -life_teach 1 / -life_obs 1 / -give 1 (docs/SOCIAL.md); -ablate noteach / noobs / nogive: A without teaching at
 //          birth / observational learning / giving.
 //          -probe FILE (analysis): one record per living agent of A per tick in the first -probe_games games (default 2;
 //          solo: lineage 0, i.e. B in odd games): what it saw, its logits, its recurrent state after the step, the action
@@ -219,7 +219,7 @@ int main(int argc,char** argv){
     else if(!std::strcmp(s,"-life_teach"))lcfg.teach=std::atoi(v);else if(!std::strcmp(s,"-life_obs"))lcfg.obs=std::atoi(v);
     else if(!std::strcmp(s,"-give"))wp.give=std::atoi(v);else if(!std::strcmp(s,"-give_amt"))wp.give_amt=std::atoi(v);
     else if(!std::strcmp(s,"-art"))wp.art=std::atoi(v);else if(!std::strcmp(s,"-art_glyphs"))wp.art_glyphs=std::atoi(v);else if(!std::strcmp(s,"-art_pay"))wp.art_pay=std::atoi(v);
-    else if(!std::strcmp(s,"-art_rest"))wp.art_rest=std::atoi(v);else if(!std::strcmp(s,"-art_era"))wp.art_era=std::atoi(v);else if(!std::strcmp(s,"-art_family"))wp.art_family=std::atoi(v);
+    else if(!std::strcmp(s,"-art_rest"))wp.art_rest=std::atoi(v);else if(!std::strcmp(s,"-art_era"))wp.art_era=std::atoi(v);else if(!std::strcmp(s,"-art_family"))wp.art_family=std::atoi(v);else if(!std::strcmp(s,"-art_lock"))wp.art_lock=std::atoi(v);
     else if(!std::strcmp(s,"-ablate"))ablate=v;else if(!std::strcmp(s,"-arena_ck"))arena_ck=v;else if(!std::strcmp(s,"-ck"))ckf=v;
     else if(!std::strcmp(s,"-season"))wp.season=std::atoi(v);else if(!std::strcmp(s,"-view"))wp.view=std::atoi(v);
     else if(!std::strcmp(s,"-signals"))wp.signals=std::atoi(v);else if(!std::strcmp(s,"-rot"))wp.rot=std::atoi(v);
@@ -256,9 +256,9 @@ int main(int argc,char** argv){
   const bool w2=wp.season>0||wp.signals>0||wp.view!=2||wp.matter>0;
 
   if(!ta.empty()){  // tournament, mirrored: game 2k has A in slot 0, game 2k+1 has A in slot 1 (same arena seed)
-    if(!ablate.empty()&&ablate!="amnesia"&&ablate!="shuffle"&&ablate!="deaf"&&ablate!="deafkin"&&ablate!="deafother"&&ablate!="wipe"&&ablate!="nofeed"&&ablate!="nocue"&&ablate!="gate_eat"&&ablate!="gate_all"&&ablate!="sharp"&&ablate!="greedy"&&ablate!="freeze"&&ablate!="noteach"&&ablate!="noobs"&&ablate!="nogive"&&ablate!="artmute"){std::fprintf(stderr,"unknown ablation %s\n",ablate.c_str());return 2;}
+    if(!ablate.empty()&&ablate!="amnesia"&&ablate!="shuffle"&&ablate!="deaf"&&ablate!="deafkin"&&ablate!="deafother"&&ablate!="wipe"&&ablate!="nofeed"&&ablate!="nocue"&&ablate!="gate_eat"&&ablate!="gate_all"&&ablate!="sharp"&&ablate!="greedy"&&ablate!="freeze"&&ablate!="noteach"&&ablate!="noobs"&&ablate!="nogive"&&ablate!="artmute"&&ablate!="artoracle"){std::fprintf(stderr,"unknown ablation %s\n",ablate.c_str());return 2;}
     if(ablate=="freeze"&&!lcfg.on){std::fprintf(stderr,"-ablate freeze needs -life 1\n");return 2;}
-    if((ablate=="noteach"&&!lcfg.teach)||(ablate=="noobs"&&!lcfg.obs)||(ablate=="nogive"&&!wp.give)||(ablate=="artmute"&&!wp.art)){std::fprintf(stderr,"-ablate %s needs the mechanism on\n",ablate.c_str());return 2;}
+    if((ablate=="noteach"&&!lcfg.teach)||(ablate=="noobs"&&!lcfg.obs)||(ablate=="nogive"&&!wp.give)||((ablate=="artmute"||ablate=="artoracle")&&!wp.art)){std::fprintf(stderr,"-ablate %s needs the mechanism on\n",ablate.c_str());return 2;}
     if(ablate=="nofeed"&&!wp.matter){std::fprintf(stderr,"-ablate nofeed needs -matter 1\n");return 2;}
     if(ablate=="wipe"&&!wp.matter){std::fprintf(stderr,"-ablate wipe needs -matter 1\n");return 2;}
     if(ablate.rfind("deaf",0)==0&&!wp.signals){std::fprintf(stderr,"-ablate deaf needs -signals 1\n");return 2;}
@@ -291,7 +291,7 @@ int main(int argc,char** argv){
       if(!solo)s1=std::make_unique<evo::Stepper>(sw?A:B,nullptr,rows,q.S,q.S);
       std::vector<w::World> one{W};std::vector<evo::Stepper*> st{&s0};if(!solo)st.push_back(s1.get());st.resize(q.K,nullptr);std::vector<std::vector<long>> ig(q.K,std::vector<long>(1,0));
       const int sa=solo?0:sw;  // A's lineage slot (solo: the only slot, A in even games)
-      std::vector<char> amn(q.K,0);if(!solo||sw==0){amn[sa]=ablate=="amnesia"?1:ablate=="shuffle"?2:0;if(ablate=="deaf")one[0].deaf=1u<<sa;if(ablate=="deafkin")one[0].deaf_kin=1u<<sa;if(ablate=="deafother")one[0].deaf_other=1u<<sa;if(ablate=="nofeed")one[0].nofeed=1u<<sa;if(ablate=="nocue")one[0].nocue=1u<<sa;if(ablate=="gate_eat")one[0].gate_eat=1u<<sa;if(ablate=="gate_all")one[0].gate_all=1u<<sa;if(ablate=="sharp")one[0].sharp=1u<<sa;if(ablate=="greedy")one[0].greedy=1u<<sa;if(ablate=="nogive")one[0].nogive=1u<<sa;if(ablate=="artmute")one[0].artmute=1u<<sa;}one[0].track=stats>0;
+      std::vector<char> amn(q.K,0);if(!solo||sw==0){amn[sa]=ablate=="amnesia"?1:ablate=="shuffle"?2:0;if(ablate=="deaf")one[0].deaf=1u<<sa;if(ablate=="deafkin")one[0].deaf_kin=1u<<sa;if(ablate=="deafother")one[0].deaf_other=1u<<sa;if(ablate=="nofeed")one[0].nofeed=1u<<sa;if(ablate=="nocue")one[0].nocue=1u<<sa;if(ablate=="gate_eat")one[0].gate_eat=1u<<sa;if(ablate=="gate_all")one[0].gate_all=1u<<sa;if(ablate=="sharp")one[0].sharp=1u<<sa;if(ablate=="greedy")one[0].greedy=1u<<sa;if(ablate=="nogive")one[0].nogive=1u<<sa;if(ablate=="artmute")one[0].artmute=1u<<sa;if(ablate=="artoracle")one[0].artoracle=1u<<sa;}one[0].track=stats>0;
       std::vector<const Norm*> nmv(q.K,nullptr);nmv[0]=sw?(hB?&nB:nullptr):(hA?&nA:nullptr);if(!solo)nmv[1]=sw?(hA?&nA:nullptr):(hB?&nB:nullptr);
       w::Life lfg;std::vector<w::LifeCfg> lcv(q.K,lcfg);if(lcfg.on){lfg.init(q.K*q.S,bc.D,q.nact);if(!solo||sw==0){if(ablate=="freeze")lcv[sa].on=0;if(ablate=="noteach")lcv[sa].teach=0;if(ablate=="noobs")lcv[sa].obs=0;}  // A without learning / teaching / observing
         if(life_b==0)for(int k=0;k<q.K;++k)if(solo?sw==1:k!=sa)lcv[k].on=0;}  // -life_b 0: B learns nothing (a genome evolved without learning)
@@ -390,7 +390,7 @@ int main(int argc,char** argv){
   if(ef)fp2.push_back(9990300+ef);
   if(lcfg.teach||lcfg.obs)fp2.push_back(9991000+lcfg.teach+2*lcfg.obs);
   if(wp.give){fp2.push_back(9991100+wp.give);fp2.push_back(9991200+wp.give_amt);}
-  if(wp.art){for(std::int64_t x:{wp.art,wp.art_glyphs,wp.art_pay,wp.art_rest,wp.art_era,wp.art_family})fp2.push_back(9992000000LL+x);}
+  if(wp.art){for(std::int64_t x:{wp.art,wp.art_glyphs,wp.art_pay,wp.art_rest,wp.art_era,wp.art_family,wp.art_lock})fp2.push_back(9992000000LL+x);}
   if(lcfg.on){fp2.push_back(9990400+lcfg.on+2*lcfg.repro+4*lcfg.mod);fp2.push_back(9990500+lcfg.eta);fp2.push_back(9990600+lcfg.lam);fp2.push_back(9990900+lcfg.beta);}
   const int Din=bc.Din;std::vector<std::int64_t> nacc((std::size_t)2*Din+1,0);Norm cur;cur.from(nacc,Din);  // -obs_norm: raw sums since the start, current normaliser
   const std::vector<const Norm*> nmv(K,&cur);
@@ -450,7 +450,7 @@ int main(int argc,char** argv){
     if(hist_pair)std::fprintf(lg,"# W1e hist_pair %d (an ancestor drawn for each fork pair)\n",hist_pair);
     if(lcfg.on)std::fprintf(lg,"# life %d repro %d mod %d eta %d lam %d beta %d teach %d obs %d (lifetime and social learning, docs/LIFE.md, SOCIAL.md)\n",lcfg.on,lcfg.repro,lcfg.mod,lcfg.eta,lcfg.lam,lcfg.beta,lcfg.teach,lcfg.obs);
     if(wp.give)std::fprintf(lg,"# IN1 give %d give_amt %d (energy to the kin agent in front, action %d)\n",wp.give,wp.give_amt,wp.matter?10:7);
-    if(wp.art)std::fprintf(lg,"# AR1 artifacts %d per 1024 cells, glyphs %d, pay %d, rest %d, era %d, family %d (docs/ARTIFACTS.md)\n",wp.art,wp.art_glyphs,wp.art_pay,wp.art_rest,wp.art_era,wp.art_family);
+    if(wp.art)std::fprintf(lg,"# AR1 artifacts %d per 1024 cells, glyphs %d, pay %d, rest %d, era %d, family %d, lock %d (docs/ARTIFACTS.md)\n",wp.art,wp.art_glyphs,wp.art_pay,wp.art_rest,wp.art_era,wp.art_family,wp.art_lock);
     if(ef)std::fprintf(lg,"# ef %d (update with error feedback: residual decay 2^-%d, the top alpha of |residual| move)\n",ef,ef);
     if(obs_norm)std::fprintf(lg,"# obs_norm %d (input normalisation: running mean and SD of each observation entry, ARS V2)\n",obs_norm);
     if(!archive.empty()){lin[0].g->save(archive+"/egg_0.bin",0);if(obs_norm)cur.save(archive+"/egg_0.bin.nrm");}}

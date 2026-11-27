@@ -55,14 +55,36 @@ trial and error, like a combination lock with a light, so within-life learning h
 - Within an era, research pays and its results transfer between artifacts.
 - Across eras, facts expire, but the way to find them does not.
 
-**Parameters (to calibrate before the runs):**
+**Parameters (calibrated 2026-11-27, before the runs):**
 - 8 glyphs;
-- density 16 per 1024 cells;
-- P = 60 energy, C = 100 ticks;
+- density 32 per 1024 cells;
+- P = 300 energy, C = 100 ticks;
+- a wrong token also locks the artifact for 30 ticks (`-art_lock 30`), so guessing is costly;
 - T_law = 1,000 ticks (twice the maximum lifespan) for AR1.
 
-Calibration target: random speakers open some artifacts, but an agent that knows the law gains at least 3 times as
-much energy from artifacts as a random speaker, so knowledge pays.
+Calibration target: an agent that knows the law gains at least 3 times as much energy from artifacts as a random
+speaker, and knowing it pays in fitness.
+
+Calibration:
+- Genome: the W2 champion (runs8/w2_sig_s1, epoch 3000), which evolved without artifacts and speaks at random.
+- Method: the oracle analysis (`-ablate artoracle`: A speaks the right token to any ready artifact it faces), 8 seeds
+  × 2.
+
+| Density | Pay | Lockout | Openings/kt, champion / oracle | Artifact energy/kt, champion / oracle | Oracle copy's share |
+|---|---|---|---|---|---|
+| 16 | 60 | 0 | 0.76 / 2.03 | 46 / 122 | 0.50 (t 0.0) |
+| 32 | 60 | 0 | 1.48 / 3.76 | 89 / 226 | 0.50 (t 0.0) |
+| 32 | 200 | 20 | 1.06 / 3.78 | 211 / 756 | 0.76 (t 2.8) |
+| **32** | **300** | **30** | **1.01 / 3.81** | **303 / 1,142** | **0.87 (t 4.6)** |
+| 48 | 200 | 30 | 1.42 / 5.42 | 284 / 1,084 | 0.88 (t 4.8) |
+
+- Without a lockout, chance openings by random speaking are too common, and the payoff too small for knowledge to
+  matter (oracle share 0.50).
+- With the chosen settings:
+  - knowing the law opens 3.8 times as many artifacts;
+  - artifacts supply about 40% of a knowing agent's food;
+  - the oracle copy wins (0.87).
+- So knowledge pays, and the research problem is real.
 
 **World and arms.**
 - The W2 world: seasons, view 1, symbols on, so the symbol channel exists and memory already pays.
@@ -148,7 +170,7 @@ Measure, from AR2's runs:
 
 ## Implementation plan (AR1)
 
-- `WParams`:
+- `WParams` (built 2026-11-27, with `-art_lock` and the analysis `-ablate artoracle`):
   - `art` (artifacts per 1024 cells);
   - `art_glyphs` 8, `art_pay` 60, `art_rest` 100;
   - `art_era` (T_law ticks);
