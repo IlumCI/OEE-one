@@ -975,6 +975,26 @@ W4d seed 3 at epoch 1000 (2026-11-27).
 - Seed 3 meets the kill condition. With seeds 1 and 3 failing, H can no longer pass; seed 2 decides between kill
   and no verdict.
 
+### W4d verdict: land ownership does not make farming emerge (2026-11-27; docs/results/w4d/eval_1000.txt)
+
+| Seed | H building (write / make / feed) | Random agents | No-feed copy, fresh / own world | Wipe | Owned / irrigated cells at end | Boom time H / E | Mean population H / E |
+|---|---|---|---|---|---|---|---|
+| 1 | 0.2 / 0.1 / 0.4% | 11.5 / 9.7 / 6.9% | 0.47 (t −0.5) / 0.47 (t −1.0) | 0.41 (t −1.75) | 3 / 18 | 0 / 0.081 | 62 / 77 |
+| 2 | 0.1 / 0.0 / 0.3% | 21.7 / 4.3 / 9.3% | 0.47 (t −1.0) / 0.53 (t +1.0) | 0.51 (t +1.7) | 2 / 13 | 0 / 0 | 69 / 67 |
+| 3 | 0.2 / 0.0 / 0.3% | 26.1 / 6.1 / 12.1% | 0.41 (t −1.9) / 0.47 (t −0.4) | 0.58 (t +1.9) | 1 / 10 | 0 / 0.064 | 63 / 76 |
+
+- **Killed.** In every seed building and feeding are below random, and the no-feed ablation costs nothing.
+- Land ownership removed the commons booms. In E, accidental feeding of wild farms fed everyone. Here the land such
+  feeding irrigates becomes private to the feeder. No seed boomed, and mean population fell in seeds 1 and 3.
+- On paper a private farm now pays. At full irrigation a farm cell regrows about 1 food per tick, against at most
+  0.37 for the best natural cell. Keeping it running costs about 0.26 store per tick (1 per 4 ticks to run, about
+  1 per 128 ticks for irrigation upkeep).
+  - Collecting that return takes a sequence of actions over hundreds of ticks: feed a farm repeatedly, stay near it,
+    and eat its land. Evolution never found the sequence.
+- Head-to-head against E's final champions is mixed (0.9996, 0.09, 0.25), with no consistent effect of land.
+- **Conclusion (as fixed in the protocol):** private returns were not enough. The limit is in the agents or the
+  learner, not in this world. Changes to this world stop here, and the next step is a re-plan.
+
 Interim observation (2026-11-26, W4b seed 1). F seed 1 boomed early, at epochs 80–115 (peak 198 agents at 100).
 - At epoch 100 one lineage owned 502 of the 541 machines, holding 10.6k store.
 - The other lineages still grew to their 64-slot caps, and the boom collapsed by epoch 135.
