@@ -1321,6 +1321,56 @@ Reading.
   The literature adds input normalisation and update accumulation (Adam-like) as the established remedies for
   random search.
 
+### LT1 protocol: can the learner remove the waste? (fixed 2026-11-27, before the runs; the owner's 20-minute timer ran out, so the recommended option was taken)
+
+Why. In every world so far, champions waste about a third of their actions on moves they can see will do nothing.
+A copy that skips those choices beats them decisively, and more training does not close the gap (agent study,
+above). Single weights change like unselected ones, and the response to an input follows the input's spread. Both
+point at the learner: too little signal per update, and inputs with a small spread drowned by large ones.
+
+World: W1b, the simplest world, where the gap is largest (seed 1: a copy that skips futile actions takes the whole
+share; a copy that skips empty bites takes 0.91). Same settings as runs8/w1b_hist_s1..s3: H 200, 64 pairs, 4
+lineages, actions 7, historical self-play every 4th pair, split lineages keep the parent's age; 2000 epochs.
+
+Arms (seeds 1-3):
+- C (control): the existing runs8/w1b_hist_s1..s3. The current binary reproduces them exactly (log of epochs 1-5
+  identical with 1 and 2 threads).
+- P: 4 times more fork pairs per update (`-pairs 256`). This is the documented first remedy ("If updates stall,
+  raise P before changing anything else", §8). The noise in an update falls as 1/N.
+- N: input normalisation (`-obs_norm 1`): each observation entry is rescaled by the running mean and SD of all
+  observations seen in training, as in augmented random search (Mania, Guy and Recht 2018, arXiv:1803.07055: needed
+  for their hardest task) and the sensor normalisation of OpenAI-ES (Salimans et al. 2017; Pagliuca, Milano and Nolfi
+  2020, arXiv:1912.05239: "crucial in more complex" problems). Same compute as C.
+
+Measures per seed (champion of the arm; 16 seeds x 2 mirrored games unless stated):
+1. Waste headroom: the champion with every futile draw drawn again against an intact copy (`-ablate gate_all`), and
+   with futile eats only (`gate_eat`); mean post-founder share of the gated copy. Headroom varies between nearby
+   epochs (W1 seed 1: 0.85 at 1000, 0.57 at 2500, 0.98 at 5000), so it is averaged over the champions at epochs 1000,
+   1250, 1500, 1750 and 2000. The same average is measured for the control runs.
+2. Futile share of the champion's actions, and conditioning: P(eat | food) - P(eat | no food), P(attack | agent in
+   front) - P(attack | no one) (probe, 2 seeds x 2 games).
+3. Strength at epoch 2000: the arm's champion against each of the five control champions (runs8/w1b_hist_s1..s5;
+   mean post-founder share, t). Each genome plays with its own input normalisation.
+   - Runs of one learner differ a lot. Among the control champions at 2000, seed 1 takes 0.03 against seed 2 and
+     0.02 against seed 3, and seed 2 takes 0.78 against seed 3. A single pairing would mostly measure luck.
+   - Strength is therefore the arm's mean share against all five controls, averaged over its three seeds.
+4. Progress within the arm: champion at 2000 against the arm's champion at 1000.
+
+Pass, per arm: both hold.
+- The mean waste headroom (gate_all) is at most 0.70 in at least 2 of 3 seeds. The controls are at 0.996-1.00 at
+  every epoch measured.
+- The arm is at least as strong as the controls: its mean share against the five control champions is at least 0.5.
+Kill, per arm: the mean headroom stays at or above 0.90 in every seed. The remedy does not reach the flaw, whatever
+the strength.
+Otherwise there is no verdict; report it. Strength is reported in every case.
+
+Next steps:
+- If an arm passes, repeat it in the W4f world (the main line) against W4f arm J.
+- If both are killed, try accumulating the update signal across epochs (the integer analogue of Adam or momentum,
+  credited by Pagliuca et al. with OpenAI-ES's efficacy), then learning within a lifetime.
+
+Compute: arm N about 1.4 h per seed at one thread; arm P about 4 times that. Binary runs8/oee_w_v26 (commit 357fc51).
+
 Interim observation (2026-11-26, W4b seed 1). F seed 1 boomed early, at epochs 80–115 (peak 198 agents at 100).
 - At epoch 100 one lineage owned 502 of the 541 machines, holding 10.6k store.
 - The other lineages still grew to their 64-slot caps, and the boom collapsed by epoch 135.
