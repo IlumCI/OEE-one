@@ -29,3 +29,32 @@ wipe	0.5778	0.0404	1.93	0.5947	0.0499	1.90
 deaf	0.4092	0.0548	-1.66	0.4075	0.0659	-1.40
 == generality (e vs e-500)
 e	e_prev	solo_log_ratio	t	median	surviveA	surviveB	lshareA	lt	swap_recovery	swap_t
+1000	500	-0.7234	-2.53	-0.0477	53/64	58/64	0.7254	6.01	-0.0821	-0.22
+== era (post-founder share, e vs e-250)
+250:1.00 500:0.97 750:0.87 1000:0.69 
+== census (epoch machines walls tapes classes)
+1000 12 44 9 5
+== machines by owner in the latest checkpoint (mcal -ck)
+t 600000 own 2 graze 1
+owner	machines	store
+-1	9	25
+0	1	0
+1	2	0
+top tapes (count owner tape):
+2	1	________________
+1	0	________________
+1	-1	__>_____________
+1	-1	W]]}CE__________
+1	-1	E-W<{ES<[+D_____
+agents by lineage slot: 32 32 0 0 0
+nofeed	world fresh	0.4095	0.0484	-1.87	2/16
+nofeed	world own	0.4688	0.0717	-0.43	2/16
+h2h_H_vs_E	world w4h_s3	0.2525	0.0634	-3.90	0/16
+h2h_H_vs_E	world w4e_s3	0.2544	0.0629	-3.90	0/16
+== land and irrigation in the final world
+machines 12 running 1 withI 2 withE 4 withIE 0 withC 2 | irrigated cells 10 mean irr 88.6
+agents 64
+land (irrigated cells by owner lineage; common first): common 9 L0 1 L1 0 L2 0 L3 0 L4 0
+run	epochs	boom_time	mean_pop	booms	largest_share_in_booms	peak	largest_share_all
+runs8/w4h_s3	801	0.000	63.2	0	-	124	0.51
+runs8/w4e_s3	801	0.064	76.1	3	0.27	256	0.49
