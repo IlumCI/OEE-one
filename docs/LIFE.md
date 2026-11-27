@@ -122,6 +122,10 @@ Next:
 - If an arm passes, carry it to the W4f/W4g world (the main line), against W4f arm J.
 - Then evolve the rule's form (DiscoRL, Oh et al., Nature 2025: learning rules discovered by meta-learning).
 
+LL1 seeds: arms LR and LM stop at seeds 1 and 2. Their third seeds were not run, to free the cores for LL1c (owner's
+options, 2026-11-27; the decision timer expired with the recommendation applied). runs8/w1l_LM_s3 is paused at epoch 70
+and can resume.
+
 ## LL2: an evolved reward (designed 2026-11-27; runs only if LL1 shows learning neutral or harmful)
 
 Why:
@@ -203,6 +207,10 @@ Arms (seeds 1–3, 2,000 epochs, the LL1 settings otherwise; binary runs8/oee_w_
 - **L:** LL1's L (eta 12, lam 230, beta 7), with the plastic synapses also reading the kind lines (`-life_in 53,57`).
 - **LM:** L with the evolved neuromodulator (`-life_mod 1`). Evolution can gate when learning happens, i.e. prepared
   learning (Dunlap and Stephens 2014).
+- **LL2:** L with the evolved reward (`-life_rew 1`, LL2 above). Added 2026-11-27 before the runs, when the owner's
+  decision timer expired with the recommended option applied: LL1 has come out neutral or harmful, LL2's
+  precondition. If L fails and LL2 passes, the energy reward was the problem rather than the learning rule
+  (Ackley and Littman 1991, evolved evaluation network).
 
 Measures (final champions, fresh held-out arenas, 16 seeds):
 1. **Learning is used:** freeze A's plasticity against an intact copy (L, LM).
@@ -213,6 +221,11 @@ Measures (final champions, fresh held-out arenas, 16 seeds):
 
 Pass, per arm: freezing costs fitness (share < 0.5, t < −3) in at least 2 of 3 seeds, and the champion beats E's
 (share > 0.5, t > 2) in at least 2 of 3 seeds.
+- LL2 additionally: `-ablate norew` (learning from energy only) also costs (t < −3) in at least 2 of 3 seeds. That
+  shows the evolved reward is what makes learning pay.
 
-Kill: freezing costs nothing (|t| < 2) in every seed of both L and LM. Then the three-factor learner does not pay
-even where a perfect individual learner wins 0.83, so the learner is the bottleneck, not the world.
+Kill: freezing costs nothing (|t| < 2) in every seed of L, LM and LL2. Then the three-factor learner does not pay even
+where a perfect individual learner wins 0.83, so the learner is the bottleneck, not the world.
+
+Runs: runs8/w1k_{E,L,LM,LL2}_s{1,2,3}, queued in that order by seed, from 16:58 UTC on 2026-11-27. Scored by
+tools/w/ll1c_eval.sh into docs/results/ll1c/.
