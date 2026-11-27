@@ -3,6 +3,7 @@
 #include <cstdio>
 #include <vector>
 
+#include "w/life.hpp"
 #include "w/world.hpp"
 
 using namespace oee::w;
@@ -216,5 +217,16 @@ int main(){
         v.res[5*L+5]=(std::uint8_t)food;v.gate_eat=ge;v.gate_all=ga;std::vector<std::int8_t> lq((std::size_t)q.S*32,(std::int8_t)-128);lq[4]=127;lq[1]=100;lq[9]=110;
         const std::int8_t* l3[1]={lq.data()};born.clear();v.tick(l3,born);return (int)v.pact[0];};
       CHECK(gt2(0,0,0)==4&&gt2(1,0,0)==9&&gt2(0,1,0)==1&&gt2(1,0,50)==4,"gates: an eat that would take nothing is drawn again (gate_eat: feed next; gate_all: feed is futile too, so fwd); with food it stays");}}
+  {// lifetime learning: an action that costs energy every time is suppressed during life; one that pays is reinforced
+    LifeCfg c;c.on=1;c.eta=10;Life lf;lf.init(1,8,7);std::int8_t h[8]={40,-30,20,10,-50,60,5,-15};const std::uint32_t m=c.mask(7,false);
+    std::vector<std::int8_t> base(16,0);auto pa=[&](int a){std::vector<std::int8_t> l=base;lf.apply(c,m,0,h,l.data());const std::int64_t* E=act_weights();
+      std::int64_t S=0;for(int k=0;k<7;++k)S+=E[(int)l[k]+128];return (double)E[(int)l[a]+128]/S;};
+    const double f0=pa(1),e0=pa(4);
+    for(int t=0;t<3000;++t){std::vector<std::int8_t> l=base;lf.apply(c,m,0,h,l.data());const int a=act_sample(l.data(),(std::uint64_t)t*2654435761ULL+7,7);
+      const int dE=a==1?-3:a==4?2:-1;lf.learn(c,m,0,h,l.data(),a,dE);}
+    const double f1=pa(1),e1=pa(4);char msg[160];std::snprintf(msg,sizeof msg,"lifetime learning: costly action %.3f -> %.3f, paying action %.3f -> %.3f; reproduction not plastic",f0,f1,e0,e1);
+    CHECK(f1<f0/2&&e1>e0*2&&!((m>>5)&1u)&&((c.mask(7,false)>>4)&1u),msg);
+    Life z;z.init(1,8,7);LifeCfg off=c;off.on=0;for(int t=0;t<50;++t){std::vector<std::int8_t> l=base;z.learn(off,m,0,h,l.data(),1,-3);}
+    bool zero=true;for(auto w:z.W)zero=zero&&w==0;CHECK(zero,"lifetime learning off: synapses stay zero");}
   std::printf(fails?"%d FAILED\n":"all passed\n",fails);return fails?1:0;
 }

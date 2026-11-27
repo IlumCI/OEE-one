@@ -174,5 +174,6 @@ struct World{
 int act_of(const std::int8_t* logit,int n);  // argmax over the first n logits, ties to the lowest index
 // sample over the first n logits with P(a) ~ 2^(logit/16), from 64 random bits
 int act_sample(const std::int8_t* logit,std::uint64_t bits,int n);
+const std::int64_t* act_weights();  // the sampling weights: P(a) ~ act_weights()[logit+128] = round(16*2^((logit+128)/16))
 
 }  // namespace oee::w

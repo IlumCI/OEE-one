@@ -24,6 +24,7 @@ const std::int64_t* ew8(){static std::int64_t E[256];static bool init=[]{for(int
 int act_sample8(const std::int8_t* l,std::uint64_t bits,int n){const std::int64_t* E=ew8();std::int64_t w[32],tot=0;for(int a=0;a<n;++a){w[a]=E[(int)l[a]+128];tot+=w[a];}
   std::int64_t u=(std::int64_t)(bits%(std::uint64_t)tot);for(int a=0;a<n;++a){if(u<w[a])return a;u-=w[a];}return n-1;}
 }  // namespace
+const std::int64_t* act_weights(){return ew();}
 int act_sample(const std::int8_t* l,std::uint64_t bits,int n){
   const std::int64_t* E=ew();std::int64_t w[32],tot=0;for(int a=0;a<n;++a){w[a]=E[(int)l[a]+128];tot+=w[a];}
   std::int64_t u=(std::int64_t)(bits%(std::uint64_t)tot);for(int a=0;a<n;++a){if(u<w[a])return a;u-=w[a];}return n-1;

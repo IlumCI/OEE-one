@@ -52,6 +52,8 @@
 //          action that would have no effect), it draws again from the other actions with the same policy.
 //          -ablate sharp / greedy (analysis): A samples its actions with P(a) ~ 2^(logit/8) (twice as decisive) / takes
 //          the action with the highest logit.
+//          -life 1 [-life_repro 1] [-life_mod 1] [-life_eta 10 -life_lam 230 -life_beta 4] (training and tournaments):
+//          lifetime learning, docs/LIFE.md; -ablate freeze: A's plastic synapses stay zero (A without learning).
 //          -probe FILE (analysis): one record per living agent of A per tick in the first -probe_games games (default 2;
 //          solo: lineage 0, i.e. B in odd games): what it saw, its logits, its recurrent state after the step, the action
 //          drawn, its effect and how the agent died (layout in tools/w/probe.py).
@@ -82,6 +84,7 @@
 #include <vector>
 
 #include "evo/egg.hpp"
+#include "w/life.hpp"
 #include "w/world.hpp"
 
 using namespace oee;
@@ -117,12 +120,15 @@ void put16(std::uint8_t* r,int v){const std::uint16_t x=(std::uint16_t)(std::int
 void put32(std::uint8_t* r,std::uint32_t x){std::memcpy(r,&x,4);}
 void run_worlds(std::vector<w::World>& ws,evo::Rows& rows,const std::vector<evo::Stepper*>& st,int S,int H,std::vector<std::vector<long>>* integ,
                 const std::vector<char>* amn=nullptr,const std::vector<evo::Stepper*>* pf=nullptr,int kp=-1,Probe* pr=nullptr,
-                const std::vector<const Norm*>* nm=nullptr,std::vector<std::int64_t>* acc=nullptr){  // nm: per-lineage input normalisation; acc: raw sums
+                const std::vector<const Norm*>* nm=nullptr,std::vector<std::int64_t>* acc=nullptr,
+                const std::vector<w::LifeCfg>* lc=nullptr,w::Life* lf=nullptr){  // nm: per-lineage input normalisation; acc: raw sums; lc, lf: lifetime learning (docs/LIFE.md)
   const int nw=(int)ws.size(),K=(int)st.size(),Din=ws[0].din(),V=ws[0].nv();const int L=(int)(rows.state.size()/rows.R);
   std::vector<std::int8_t> obs((std::size_t)nw*S*Din),lgt((std::size_t)K*nw*S*V,0);std::vector<int> idx,born;
   const std::vector<std::int8_t> zero((std::size_t)S*V,0);std::vector<const std::int8_t*> lp(K);
   const int RS=24+Din+V+L;std::vector<std::uint8_t> pend;std::vector<int> pid;std::vector<std::int8_t> raw;  // probe records waiting for the tick; raw obs
-  for(int t=0;t<H;++t){pid.clear();
+  const bool lrn=lc&&lf;const int Dh=lf?lf->D:0;std::vector<std::uint32_t> lmask(K,0);std::vector<int> le0,lrows;std::vector<std::uint64_t> lid0;  // learning: energy and id before the tick, rows stepped
+  if(lrn){for(int k=0;k<K;++k)if((*lc)[k].on)lmask[k]=(*lc)[k].mask(ws[0].p.nact,ws[0].p.matter>0);le0.assign((std::size_t)K*nw*S,0);lid0.assign((std::size_t)K*nw*S,0);for(auto& w:ws)w.probe=true;}
+  for(int t=0;t<H;++t){pid.clear();lrows.clear();
     for(int k=0;k<K;++k){if(!st[k])continue;idx.clear();
       if(pf&&k==kp){for(int i=0;i<nw;++i){if(!(*pf)[i])continue;idx.clear();  // one stepper per world
           for(int s=0;s<S;++s)if(ws[i].ag[(std::size_t)k*S+s].alive){ws[i].observe(k*S+s,obs.data()+idx.size()*Din);if(nm&&(*nm)[k])(*nm)[k]->apply(obs.data()+idx.size()*Din);idx.push_back(s);}
@@ -143,6 +149,9 @@ void run_worlds(std::vector<w::World>& ws,evo::Rows& rows,const std::vector<evo:
         std::copy(t0.begin(),t0.end(),rows.state.begin()+((std::size_t)k*nw*S+idx.back())*L);}
       const std::int8_t* o=st[k]->step(obs.data(),idx.data(),(int)idx.size());
       for(std::size_t j=0;j<idx.size();++j)std::memcpy(lgt.data()+((std::size_t)k*nw*S+idx[j])*V,o+j*V,V);
+      if(lrn&&(*lc)[k].on)for(std::size_t j=0;j<idx.size();++j){const std::size_t row=(std::size_t)k*nw*S+idx[j];  // plastic synapses add to the logits
+        lf->apply((*lc)[k],lmask[k],(int)row,rows.state.data()+row*L+L-Dh,lgt.data()+row*V);
+        const w::Agent& ag=ws[idx[j]/S].ag[(std::size_t)k*S+idx[j]%S];le0[row]=ag.energy;lid0[row]=ag.id;lrows.push_back((int)row);}
       if(pr&&pr->rec&&k==pr->k){pend.assign(idx.size()*RS,0);pid=idx;
         for(std::size_t j=0;j<idx.size();++j){std::uint8_t* r=pend.data()+j*RS;const int i=idx[j]/S,s=idx[j]%S;const w::Agent& a=ws[i].ag[(std::size_t)k*S+s];
           put32(r,(std::uint32_t)ws[i].t);put32(r+4,(std::uint32_t)a.id);r[8]=(std::uint8_t)pr->game;r[9]=(std::uint8_t)s;r[10]=(std::uint8_t)a.x;r[11]=(std::uint8_t)a.y;r[12]=(std::uint8_t)a.dir;
@@ -152,7 +161,11 @@ void run_worlds(std::vector<w::World>& ws,evo::Rows& rows,const std::vector<evo:
       if(pr&&pr->rec&&!pid.empty())for(std::size_t j=0;j<pid.size();++j){if(pid[j]/S!=i)continue;std::uint8_t* r=pend.data()+j*RS;const int sl=pr->k*S+pid[j]%S;const w::World& Z=ws[i];
         std::uint32_t id;std::memcpy(&id,r+4,4);r[13]=Z.pact.empty()||Z.pact[sl]<0?255:(std::uint8_t)Z.pact[sl];r[14]=Z.pdie.empty()?0:Z.pdie[sl];put16(r+16,Z.peff.empty()?0:Z.peff[sl]);
         put16(r+20,Z.ag[sl].alive&&(std::uint32_t)Z.ag[sl].id==id?Z.ag[sl].energy:0);pr->buf.insert(pr->buf.end(),r,r+RS);}
-      for(std::size_t bi=0;bi<born.size();++bi){const int b=born[bi],k=b/S,s=b%S;auto dst=rows.state.begin()+((std::size_t)(k*nw+i)*S+s)*L;
+      if(lrn)for(int row:lrows){const int k=row/(nw*S),q=row%(nw*S);if(q/S!=i)continue;const int sl=k*S+q%S;const w::Agent& ag=ws[i].ag[sl];  // learn from the tick
+        if(!ag.alive||ag.id!=lid0[row]||ws[i].pact.empty()||ws[i].pact[sl]<0)continue;const int act=ws[i].pact[sl];int dE=ag.energy-le0[row];
+        if((*lc)[k].repro&&act==5&&ws[i].peff[sl]==1)dE+=ws[i].p.repro_give;  // inclusive: the newborn's energy counts as kept
+        lf->learn((*lc)[k],lmask[k],row,rows.state.data()+(std::size_t)row*L+L-Dh,lgt.data()+(std::size_t)row*V,act,dE);}
+      for(std::size_t bi=0;bi<born.size();++bi){const int b=born[bi],k=b/S,s=b%S;auto dst=rows.state.begin()+((std::size_t)(k*nw+i)*S+s)*L;if(lf)lf->reset((k*nw+i)*S+s);
         if(ws[i].p.lamarck&&bi<ws[i].parents.size()){const int q=ws[i].parents[bi];std::copy(rows.state.begin()+((std::size_t)(k*nw+i)*S+q%S)*L,rows.state.begin()+((std::size_t)(k*nw+i)*S+q%S+1)*L,dst);}
         else std::fill(dst,dst+L,0);}
       if(integ)for(int k=0;k<K;++k)if(st[k])(*integ)[k][i]+=ws[i].biomass(k);}
@@ -171,7 +184,7 @@ constexpr std::int64_t kCkMagic=0x3130574b43454f4fLL;  // "OEECKW01"
 int main(int argc,char** argv){
   int epochs=100,P=128,H=200,threads=4,layers=2,D=64,sig=4,archive_every=50,seeds=5,ticks=2000,Kmax=1,split_at=-1,hist_frac=0,hist_founders=8,ck_every=10,climate_every=5,climate_ticks=1000,stats=0,curve=0,skip=-1,split_age=0,null_es=0,hist_pair=0,gen=0,arena_progs=0,solo=0,swap_at=0,swap_win=500,cat_every=0;
   double prog_cont=0.7,cat_keep=0.1,stress=0;
-  double alpha_floor=0;std::uint64_t seed=1,seed0=1000;std::string logf,archive,ta,tb,ckf,ablate,arena_ck,probef,maskf,mask_mode="zero";int probe_games=2,obs_norm=0,ef=0;w::WParams wp;int founders=16;
+  double alpha_floor=0;std::uint64_t seed=1,seed0=1000;std::string logf,archive,ta,tb,ckf,ablate,arena_ck,probef,maskf,mask_mode="zero";int probe_games=2,obs_norm=0,ef=0;w::LifeCfg lcfg;w::WParams wp;int founders=16;
   for(int a=1;a<argc;a+=2){const char* s=argv[a];const char* v=a+1<argc?argv[a+1]:"";
     if(!std::strcmp(s,"-epochs"))epochs=std::atoi(v);else if(!std::strcmp(s,"-pairs"))P=std::atoi(v);else if(!std::strcmp(s,"-H"))H=std::atoi(v);
     else if(!std::strcmp(s,"-L"))wp.L=std::atoi(v);else if(!std::strcmp(s,"-S"))wp.S=std::atoi(v);else if(!std::strcmp(s,"-founders"))founders=std::atoi(v);
@@ -184,6 +197,8 @@ int main(int argc,char** argv){
     else if(!std::strcmp(s,"-lineages"))Kmax=std::atoi(v);else if(!std::strcmp(s,"-split_at"))split_at=std::atoi(v);else if(!std::strcmp(s,"-nact"))wp.nact=std::atoi(v);
     else if(!std::strcmp(s,"-hist_frac"))hist_frac=std::atoi(v);else if(!std::strcmp(s,"-hist_founders"))hist_founders=std::atoi(v);
     else if(!std::strcmp(s,"-probe"))probef=v;else if(!std::strcmp(s,"-probe_games"))probe_games=std::atoi(v);else if(!std::strcmp(s,"-mask"))maskf=v;else if(!std::strcmp(s,"-mask_mode"))mask_mode=v;else if(!std::strcmp(s,"-obs_norm"))obs_norm=std::atoi(v);else if(!std::strcmp(s,"-ef"))ef=std::atoi(v);
+    else if(!std::strcmp(s,"-life"))lcfg.on=std::atoi(v);else if(!std::strcmp(s,"-life_repro"))lcfg.repro=std::atoi(v);else if(!std::strcmp(s,"-life_mod"))lcfg.mod=std::atoi(v);
+    else if(!std::strcmp(s,"-life_eta"))lcfg.eta=std::atoi(v);else if(!std::strcmp(s,"-life_lam"))lcfg.lam=std::atoi(v);else if(!std::strcmp(s,"-life_beta"))lcfg.beta=std::atoi(v);
     else if(!std::strcmp(s,"-ablate"))ablate=v;else if(!std::strcmp(s,"-arena_ck"))arena_ck=v;else if(!std::strcmp(s,"-ck"))ckf=v;
     else if(!std::strcmp(s,"-season"))wp.season=std::atoi(v);else if(!std::strcmp(s,"-view"))wp.view=std::atoi(v);
     else if(!std::strcmp(s,"-signals"))wp.signals=std::atoi(v);else if(!std::strcmp(s,"-rot"))wp.rot=std::atoi(v);
@@ -211,10 +226,14 @@ int main(int argc,char** argv){
   if(wp.home_cue&&!wp.farms){std::fprintf(stderr,"-home_cue needs -farms\n");return 2;}
   if(wp.irr_full&&!wp.farms){std::fprintf(stderr,"-irr_full is saved with the homestead block: use it with -farms\n");return 2;}
   const evo::EggCfg bc=brain_cfg(layers,D,sig,(wp.signals||wp.matter)?128:w::World::kDin,wp.matter?32:w::World::kV);
+  lcfg.mlog=wp.matter?11:15;  // an output no action, symbol or write code uses
+  if(lcfg.on<0||lcfg.on>1||lcfg.eta<0||lcfg.eta>40||lcfg.lam<0||lcfg.lam>255||lcfg.beta<0||lcfg.beta>16){std::fprintf(stderr,"-life 0|1, -life_eta 0..40, -life_lam 0..255, -life_beta 0..16\n");return 2;}
+  if((lcfg.repro||lcfg.mod)&&!lcfg.on){std::fprintf(stderr,"-life_repro and -life_mod need -life 1\n");return 2;}
   const bool w2=wp.season>0||wp.signals>0||wp.view!=2||wp.matter>0;
 
   if(!ta.empty()){  // tournament, mirrored: game 2k has A in slot 0, game 2k+1 has A in slot 1 (same arena seed)
-    if(!ablate.empty()&&ablate!="amnesia"&&ablate!="shuffle"&&ablate!="deaf"&&ablate!="deafkin"&&ablate!="deafother"&&ablate!="wipe"&&ablate!="nofeed"&&ablate!="nocue"&&ablate!="gate_eat"&&ablate!="gate_all"&&ablate!="sharp"&&ablate!="greedy"){std::fprintf(stderr,"unknown ablation %s\n",ablate.c_str());return 2;}
+    if(!ablate.empty()&&ablate!="amnesia"&&ablate!="shuffle"&&ablate!="deaf"&&ablate!="deafkin"&&ablate!="deafother"&&ablate!="wipe"&&ablate!="nofeed"&&ablate!="nocue"&&ablate!="gate_eat"&&ablate!="gate_all"&&ablate!="sharp"&&ablate!="greedy"&&ablate!="freeze"){std::fprintf(stderr,"unknown ablation %s\n",ablate.c_str());return 2;}
+    if(ablate=="freeze"&&!lcfg.on){std::fprintf(stderr,"-ablate freeze needs -life 1\n");return 2;}
     if(ablate=="nofeed"&&!wp.matter){std::fprintf(stderr,"-ablate nofeed needs -matter 1\n");return 2;}
     if(ablate=="wipe"&&!wp.matter){std::fprintf(stderr,"-ablate wipe needs -matter 1\n");return 2;}
     if(ablate.rfind("deaf",0)==0&&!wp.signals){std::fprintf(stderr,"-ablate deaf needs -signals 1\n");return 2;}
@@ -249,13 +268,14 @@ int main(int argc,char** argv){
       const int sa=solo?0:sw;  // A's lineage slot (solo: the only slot, A in even games)
       std::vector<char> amn(q.K,0);if(!solo||sw==0){amn[sa]=ablate=="amnesia"?1:ablate=="shuffle"?2:0;if(ablate=="deaf")one[0].deaf=1u<<sa;if(ablate=="deafkin")one[0].deaf_kin=1u<<sa;if(ablate=="deafother")one[0].deaf_other=1u<<sa;if(ablate=="nofeed")one[0].nofeed=1u<<sa;if(ablate=="nocue")one[0].nocue=1u<<sa;if(ablate=="gate_eat")one[0].gate_eat=1u<<sa;if(ablate=="gate_all")one[0].gate_all=1u<<sa;if(ablate=="sharp")one[0].sharp=1u<<sa;if(ablate=="greedy")one[0].greedy=1u<<sa;}one[0].track=stats>0;
       std::vector<const Norm*> nmv(q.K,nullptr);nmv[0]=sw?(hB?&nB:nullptr):(hA?&nA:nullptr);if(!solo)nmv[1]=sw?(hA?&nA:nullptr):(hB?&nB:nullptr);
+      w::Life lfg;std::vector<w::LifeCfg> lcv(q.K,lcfg);if(lcfg.on){lfg.init(q.K*q.S,bc.D,q.nact);if(ablate=="freeze"&&(!solo||sw==0))lcv[sa].on=0;}  // freeze: A learns nothing
       Probe pr;pr.k=sa;pr.game=gi;if(!solo||sw==0)pr.mask=msk;pr.shuf=mask_mode=="shuffle";pr.rec=!probef.empty()&&gi<probe_games;one[0].probe=pr.rec;
       int step=curve>0?std::min(curve,climate_ticks):climate_ticks;long la=-1,lb=-1;if(ablate=="wipe")step=std::min(step,100);  // wipe A's machines every 100 ticks
       long sp0=-1,sp1=-1,sp2=-1;  // swap test: integrated biomass at swap_at - swap_win, swap_at, swap_at + swap_win
       for(int t0=0;t0<ticks;){int n=std::min(step-t0%step,ticks-t0);if(t0<sk)n=std::min(n,sk-t0);  // segment ends at curve points, climate changes and skip
         if(swap_at>0)for(int b:{swap_at-swap_win,swap_at,swap_at+swap_win})if(t0<b)n=std::min(n,b-t0);
         if(t0>0&&t0%climate_ticks==0)one[0].set_climate((std::uint64_t)(t0/climate_ticks));
-        run_worlds(one,rows,st,q.S,n,&ig,&amn,nullptr,-1,&pr,&nmv);t0+=n;if(t0==sk){la=ig[sa][0];lb=solo?0:ig[1-sw][0];}
+        run_worlds(one,rows,st,q.S,n,&ig,&amn,nullptr,-1,&pr,&nmv,nullptr,lcfg.on?&lcv:nullptr,lcfg.on?&lfg:nullptr);t0+=n;if(t0==sk){la=ig[sa][0];lb=solo?0:ig[1-sw][0];}
         if(ablate=="wipe"&&t0%100==0&&(!solo||sw==0))one[0].wipe(sa);
         if(swap_at>0){if(t0==swap_at-swap_win)sp0=ig[0][0];if(t0==swap_at){sp1=ig[0][0];one[0].swap_programs(q.seed^0x5a5aULL,100,prog_cont);}if(t0==swap_at+swap_win)sp2=ig[0][0];}
         if(curve>0&&t0%curve==0&&!solo){const long x=one[0].biomass(sw),y=one[0].biomass(1-sw);cv[gi][t0/curve-1]=x+y>0?(double)x/(x+y):0.5;}}
@@ -338,8 +358,10 @@ int main(int argc,char** argv){
   if(obs_norm)fp2.push_back(9990200+obs_norm);
   if(ef<0||ef>16){std::fprintf(stderr,"-ef: 0 (off) or the residual decay shift 1..16\n");return 2;}
   if(ef)fp2.push_back(9990300+ef);
+  if(lcfg.on){fp2.push_back(9990400+lcfg.on+2*lcfg.repro+4*lcfg.mod);fp2.push_back(9990500+lcfg.eta);fp2.push_back(9990600+lcfg.lam);fp2.push_back(9990900+lcfg.beta);}
   const int Din=bc.Din;std::vector<std::int64_t> nacc((std::size_t)2*Din+1,0);Norm cur;cur.from(nacc,Din);  // -obs_norm: raw sums since the start, current normaliser
   const std::vector<const Norm*> nmv(K,&cur);
+  w::Life lfC;if(lcfg.on)lfC.init(K*wp.S,D,wp.nact);const std::vector<w::LifeCfg> lcv(K,lcfg);  // -life: plastic synapses of the canonical world's agents
   if(cat_every){fp2.push_back(9200000+cat_every);fp2.push_back((std::int64_t)std::llround(cat_keep*1e6));}
   if(stress>0)fp2.push_back(9300000000LL+std::llround(stress*1e6));
   if(hist_pair&&!hist){std::fprintf(stderr,"-hist_pair needs -hist_frac > 0\n");return 2;}
@@ -350,6 +372,7 @@ int main(int argc,char** argv){
       if(ef&&l.active){w((std::int64_t)l.res.size());std::fwrite(l.res.data(),4,l.res.size(),f);}}
     w((std::int64_t)anc.size());for(auto& a:anc)a->save(f,0);
     if(obs_norm){w((std::int64_t)nacc.size());for(auto x:nacc)w(x);}
+    if(lcfg.on)lfC.save(f);
     const bool ok=std::fflush(f)==0&&!std::ferror(f);std::fclose(f);return ok&&std::rename(tmp.c_str(),ckf.c_str())==0;};
   auto load_ck=[&](std::FILE* f)->int{  // epochs done, or -1
     auto r=[&](std::int64_t& x){return std::fread(&x,8,1,f)==1;};std::int64_t x=0,n=0;
@@ -364,6 +387,7 @@ int main(int argc,char** argv){
       l.res.clear();if(ef&&l.active){std::int64_t m;if(!r(m)||m<0||m>(std::int64_t)1<<28)return -1;l.res.resize((std::size_t)m);if(m&&std::fread(l.res.data(),4,(std::size_t)m,f)!=(std::size_t)m)return -1;}}
     if(!r(n)||n<0||n>1024){return -1;}anc.clear();for(std::int64_t i=0;i<n;++i){anc.push_back(std::make_unique<evo::Egg>(bc,1));anc.back()->load(f);}
     if(obs_norm){if(!r(n)||n!=(std::int64_t)nacc.size())return -1;for(auto& x:nacc)if(!r(x))return -1;cur.from(nacc,Din);}
+    if(lcfg.on&&!lfC.load(f))return -1;
     return (int)e;};
   if(!ckf.empty())if(std::FILE* f=std::fopen(ckf.c_str(),"rb")){int e=-1;try{e=load_ck(f);}catch(const std::exception&){e=-1;}std::fclose(f);
     if(e<0){std::fprintf(stderr,"cannot resume from %s\n",ckf.c_str());return 2;}e0=e;}
@@ -391,6 +415,7 @@ int main(int argc,char** argv){
     if(split_age)std::fprintf(lg,"# W1b split_age %d (split lineages take the parent's age)\n",split_age);
     if(null_es)std::fprintf(lg,"# W1c null_es %d (random update signs: fitness ignored)\n",null_es);
     if(hist_pair)std::fprintf(lg,"# W1e hist_pair %d (an ancestor drawn for each fork pair)\n",hist_pair);
+    if(lcfg.on)std::fprintf(lg,"# life %d repro %d mod %d eta %d lam %d beta %d (lifetime learning, docs/LIFE.md)\n",lcfg.on,lcfg.repro,lcfg.mod,lcfg.eta,lcfg.lam,lcfg.beta);
     if(ef)std::fprintf(lg,"# ef %d (update with error feedback: residual decay 2^-%d, the top alpha of |residual| move)\n",ef,ef);
     if(obs_norm)std::fprintf(lg,"# obs_norm %d (input normalisation: running mean and SD of each observation entry, ARS V2)\n",obs_norm);
     if(!archive.empty()){lin[0].g->save(archive+"/egg_0.bin",0);if(obs_norm)cur.save(archive+"/egg_0.bin.nrm");}}
@@ -400,7 +425,7 @@ int main(int argc,char** argv){
     if(wp.season>0&&e>0&&e%climate_every==0)canon.set_climate((std::uint64_t)(e/climate_every));  // new climate (forks copy it)
     if(cat_every>0&&e>0&&e%cat_every==0){canon.catastrophe((std::uint64_t)e,cat_keep);  // extinction event: survivors re-radiate
       int any=0;for(int k=0;k<Kmax;++k)any+=lin[k].active&&canon.count(k)>0;
-      if(!any)for(int k=0;k<Kmax;++k)if(lin[k].active){canon.reseed_lineage(k,founders,(std::uint64_t)e*7+1);std::fill(rc.state.begin(),rc.state.end(),0);++reseeds;break;}}
+      if(!any)for(int k=0;k<Kmax;++k)if(lin[k].active){canon.reseed_lineage(k,founders,(std::uint64_t)e*7+1);std::fill(rc.state.begin(),rc.state.end(),0);if(lcfg.on)lfC.init(K*wp.S,D,wp.nact);++reseeds;break;}}
     int k0=-1;for(int k=0;k<Kmax;++k)if(lin[k].active){k0=k;break;}  // one lineage is always active (reseeded if all die)
     for(int k=0;k<Kmax;++k)if(lin[k].active)lin[k].nz.gen(*lin[k].g,P,lin[k].id==0?seed:mixu(seed*31+lin[k].id),e);
     const int F2=2*P;std::vector<std::vector<long>> fit(Kmax,std::vector<long>(F2,0));
@@ -414,12 +439,13 @@ int main(int argc,char** argv){
           if(hp||(an&&p%hist_frac==0))ws[i].reseed_lineage(Kh,hist_founders,(std::uint64_t)e*P+p);  // same placement in both forks of the pair
           for(int k=0;k<K;++k)for(int s=0;s<wp.S;++s){const int row=(k*nw+i)*wp.S+s;r.pair[row]=p;r.sign[row]=k<Kmax?((f%2==0)?1:-1):0;
             std::copy(rc.state.begin()+(std::size_t)(k*wp.S+s)*Ls,rc.state.begin()+(std::size_t)(k*wp.S+s+1)*Ls,r.state.begin()+(std::size_t)row*Ls);}}
+        w::Life lfF;if(lcfg.on){lfF.init(K*nw*wp.S,D,wp.nact);for(int k=0;k<K;++k)for(int i=0;i<nw;++i)for(int s=0;s<wp.S;++s)lfF.copy_row((k*nw+i)*wp.S+s,lfC,k*wp.S+s);}
         std::vector<std::unique_ptr<evo::Stepper>> own;std::vector<evo::Stepper*> st(K,nullptr);
         for(int k=0;k<Kmax;++k)if(lin[k].active){own.push_back(std::make_unique<evo::Stepper>(*lin[k].g,&lin[k].nz,r,k*nw*wp.S,nw*wp.S));st[k]=own.back().get();}
         std::vector<evo::Stepper*> pf;
         if(hp){pf.assign(nw,nullptr);for(int i=0;i<nw;++i){own.push_back(std::make_unique<evo::Stepper>(*anp[i],nullptr,r,(Kh*nw+i)*wp.S,wp.S));pf[i]=own.back().get();}st[Kh]=pf[0];}
         else if(an){own.push_back(std::make_unique<evo::Stepper>(*an,nullptr,r,Kh*nw*wp.S,nw*wp.S));st[Kh]=own.back().get();}
-        std::vector<std::vector<long>> integ(K,std::vector<long>(nw,0));run_worlds(ws,r,st,wp.S,H,&integ,nullptr,hp?&pf:nullptr,Kh,nullptr,obs_norm?&nmv:nullptr,obs_norm?&tacc[ti]:nullptr);
+        std::vector<std::vector<long>> integ(K,std::vector<long>(nw,0));run_worlds(ws,r,st,wp.S,H,&integ,nullptr,hp?&pf:nullptr,Kh,nullptr,obs_norm?&nmv:nullptr,obs_norm?&tacc[ti]:nullptr,lcfg.on?&lcv:nullptr,lcfg.on?&lfF:nullptr);
         for(int k=0;k<Kmax;++k)for(int i=0;i<nw;++i)fit[k][f0+i]=integ[k][i]/H;});}
     for(auto& x:th)x.join();
     if(obs_norm){for(auto& a:tacc)for(std::size_t j=0;j<a.size();++j)nacc[j]+=a[j];cur.from(nacc,Din);}  // integer sums: same for any thread count
@@ -435,11 +461,11 @@ int main(int argc,char** argv){
     m/=F2;const double sd=std::sqrt(std::max(0.0,m2/F2-m*m));
     {std::vector<w::World> one{canon};std::vector<std::unique_ptr<evo::Stepper>> own;std::vector<evo::Stepper*> st(K,nullptr);
       for(int k=0;k<Kmax;++k)if(lin[k].active){own.push_back(std::make_unique<evo::Stepper>(*lin[k].g,nullptr,rc,k*wp.S,wp.S));st[k]=own.back().get();}
-      run_worlds(one,rc,st,wp.S,H,nullptr,nullptr,nullptr,-1,nullptr,obs_norm?&nmv:nullptr);canon=one[0];}
+      run_worlds(one,rc,st,wp.S,H,nullptr,nullptr,nullptr,-1,nullptr,obs_norm?&nmv:nullptr,nullptr,lcfg.on?&lcv:nullptr,lcfg.on?&lfC:nullptr);canon=one[0];}
     // lineage dynamics: extinction (or reseed of the first active lineage if nothing is left), then splits
     int alive_l=0;for(int k=0;k<Kmax;++k)if(lin[k].active&&canon.count(k)>0)++alive_l;
     for(int k=0;k<Kmax;++k){if(!lin[k].active||canon.count(k)>0)continue;
-      if(alive_l==0&&k==k0){canon.reseed_lineage(k,founders,(std::uint64_t)e+1);std::fill(rc.state.begin(),rc.state.end(),0);++reseeds;continue;}
+      if(alive_l==0&&k==k0){canon.reseed_lineage(k,founders,(std::uint64_t)e+1);std::fill(rc.state.begin(),rc.state.end(),0);if(lcfg.on)lfC.init(K*wp.S,D,wp.nact);++reseeds;continue;}
       if(!archive.empty()){const std::string fn=archive+"/extinct_L"+std::to_string(lin[k].id)+"_e"+std::to_string(e+1)+".bin";lin[k].g->save(fn,e+1);if(obs_norm)cur.save(fn+".nrm");}
       lin[k].active=false;lin[k].g.reset();lin[k].res.clear();++extinct;}
     for(int k=0;k<Kmax;++k){if(!lin[k].active||canon.count(k)<split_at)continue;int j=-1;for(int q=0;q<Kmax;++q)if(!lin[q].active){j=q;break;}if(j<0)break;
@@ -452,7 +478,8 @@ int main(int argc,char** argv){
         while(t<wp.S&&canon.ag[(std::size_t)j*wp.S+t].alive){++t;}
         if(t>=wp.S)break;
         canon.move_slot(k*wp.S+s,j*wp.S+t);
-        std::copy(rc.state.begin()+(std::size_t)(k*wp.S+s)*Ls,rc.state.begin()+(std::size_t)(k*wp.S+s+1)*Ls,rc.state.begin()+(std::size_t)(j*wp.S+t)*Ls);}}
+        std::copy(rc.state.begin()+(std::size_t)(k*wp.S+s)*Ls,rc.state.begin()+(std::size_t)(k*wp.S+s+1)*Ls,rc.state.begin()+(std::size_t)(j*wp.S+t)*Ls);
+        if(lcfg.on)lfC.copy_row(j*wp.S+t,lfC,k*wp.S+s);}}
     // champion (most abundant lineage): archived for tournaments and historical self-play
     int ck=-1;for(int k=0;k<Kmax;++k)if(lin[k].active&&(ck<0||canon.count(k)>canon.count(ck)))ck=k;
     const double sec=std::chrono::duration<double>(std::chrono::steady_clock::now()-t0).count();

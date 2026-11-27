@@ -117,7 +117,7 @@ add_test(NAME evo_egg COMMAND test_evo_egg)
 add_executable(oee_egg apps/oee_egg/main.cpp)
 target_link_libraries(oee_egg PRIVATE oee_evo_core)
 # World v1 (docs/WORLD.md)
-add_library(oee_w_core src/w/world.cpp)
+add_library(oee_w_core src/w/world.cpp src/w/life.cpp)
 target_include_directories(oee_w_core PUBLIC ${CMAKE_SOURCE_DIR}/src)
 add_executable(oee_w apps/oee_w/main.cpp)
 target_link_libraries(oee_w PRIVATE oee_w_core oee_evo_core)
@@ -159,6 +159,10 @@ add_test(NAME w_obsnorm
 # update with error feedback (-ef 3): resume stays bit-exact for any thread count (residuals in the checkpoint)
 add_test(NAME w_ef_resume
   COMMAND sh -c "B=$<TARGET_FILE:oee_w>; C='-pairs 4 -H 20 -L 12 -S 16 -founders 6 -lineages 3 -nact 7 -hist_frac 2 -hist_founders 4 -archive_every 2 -seed 3 -regrow 1 -base 2 -ck_every 4 -split_age 1 -ef 3'; rm -f we3_a.ck we3_b.ck; $B $C -epochs 24 -threads 1 -ck we3_a.ck -log we3_a.txt && $B $C -epochs 8 -threads 2 -ck we3_b.ck -log we3_b.txt && $B $C -epochs 24 -threads 3 -ck we3_b.ck -log we3_b.txt && cmp we3_a.ck we3_b.ck && grep -v '^#' we3_a.txt | cut -f1-7,9- > we3_a.cut && grep -v '^#' we3_b.txt | cut -f1-7,9- > we3_b.cut && cmp we3_a.cut we3_b.cut && awk '!/^#/{s=$12}END{exit !(s>0)}' we3_a.txt")
+# lifetime learning (-life 1, with reproduction plastic and the network-computed neuromodulator): resume stays bit-exact
+# for any thread count (plastic state in the checkpoint); a genome against itself scores exactly 0.5; freeze runs
+add_test(NAME w_life
+  COMMAND sh -c "B=$<TARGET_FILE:oee_w>; C='-pairs 4 -H 20 -L 12 -S 16 -founders 6 -lineages 3 -nact 7 -hist_frac 2 -hist_founders 4 -archive_every 2 -seed 3 -regrow 1 -base 2 -ck_every 4 -split_age 1 -life 1 -life_mod 1 -life_repro 1'; rm -rf wl_a.ck wl_b.ck wla && mkdir -p wla && $B $C -epochs 24 -threads 1 -ck wl_a.ck -log wl_a.txt -archive wla && $B $C -epochs 8 -threads 2 -ck wl_b.ck -log wl_b.txt && $B $C -epochs 24 -threads 3 -ck wl_b.ck -log wl_b.txt && cmp wl_a.ck wl_b.ck && grep -v '^#' wl_a.txt | cut -f1-7,9- > wl_a.cut && grep -v '^#' wl_b.txt | cut -f1-7,9- > wl_b.cut && cmp wl_a.cut wl_b.cut && T='-seeds 2 -ticks 700 -L 12 -S 16 -founders 6 -nact 7 -regrow 1 -base 2 -life 1 -life_mod 1 -life_repro 1' && $B -tourney wla/egg_24.bin wla/egg_24.bin $T | grep -q '^mean_lshareA 0.5000' && $B -tourney wla/egg_24.bin wla/egg_24.bin $T -ablate freeze | grep -q '^mean_lshareA'")
 # same for W2a (seasons with climate redraws across the checkpoint, hidden resources, signals)
 add_test(NAME w2_resume
   COMMAND sh -c "B=$<TARGET_FILE:oee_w>; C='-pairs 4 -H 20 -L 12 -S 16 -founders 6 -lineages 3 -nact 7 -hist_frac 2 -hist_founders 4 -archive_every 2 -seed 3 -regrow 6 -season 30 -view 1 -signals 1 -climate_every 3 -ck_every 4'; rm -f w2r_a.ck w2r_b.ck; $B $C -epochs 30 -threads 1 -ck w2r_a.ck -log w2r_a.txt && $B $C -epochs 12 -threads 2 -ck w2r_b.ck -log w2r_b.txt && $B $C -epochs 30 -threads 3 -ck w2r_b.ck -log w2r_b.txt && cmp w2r_a.ck w2r_b.ck && grep -v '^#' w2r_a.txt | cut -f1-7,9- > w2r_a.cut && grep -v '^#' w2r_b.txt | cut -f1-7,9- > w2r_b.cut && cmp w2r_a.cut w2r_b.cut && test $(grep -c -v '^#' w2r_a.txt) = 30")
