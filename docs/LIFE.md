@@ -156,3 +156,63 @@ Measures and pass/kill (W1b; on the best LL1 arm; 3 seeds × 2000 epochs):
 Pass: 1 and 2 hold.
 Kill: freezing costs nothing in every seed (|t| < 2).
 
+
+## LL1c: the decisive test, learning where it can pay (protocol fixed 2026-11-27, before the runs)
+
+Why (the rethink of 2026-11-27):
+- LL1 runs in W1b, a static world. The literature this plan cites predicts no benefit of plasticity there: it pays
+  only in proportion to change faster than evolution and slower than a lifetime (WORLD.md, Le 2026; Stephens 1991).
+- Learning is favoured only if it pays off within the agent's lifetime; otherwise evolution hard-codes a heuristic
+  (Lange and Sprekeler, "Learning not to learn", arXiv:2010.04466).
+- The artifacts world fails that test for individuals. Agents speak to a ready artifact about 4 times per life, so
+  perfect individual memory recovers only about a quarter to a third of the value of knowing the law, even for a
+  single key. Lineage-pooled memory recovers about 95% (ARTIFACTS.md, value of information).
+- The design that made learning evolve in the laboratory: substrate value that changes between generations, with
+  many choices per life (Mery and Kawecki 2002, PNAS 99:14274; Dunlap and Stephens 2014, PNAS).
+
+World (`-kinds 2 -kind_era 1000 -kind_tox 1` on W1b):
+- Each cell's food is of one of 2 kinds, fixed per cell and drawn from the seed.
+- In each era of 1,000 ticks (two maximum lifespans), each kind is nutritious or toxic. At least one kind is
+  nutritious. Eating toxic food costs the energy it would have given.
+- Agents see the kind of the food underfoot and in front as one-hot lines (entries 53–56).
+- Every eat is a trial with an immediate reward. Agents eat on about 40% of ticks.
+- Evolution cannot hard-code the values: they change every 5 epochs, and the era is not observable.
+
+Calibration (value of information, W1b champion runs8/w1b_hist_s1 epoch 2000 against itself, 16 seeds × 2, A modified):
+
+| World | A never eats toxic (oracle) | A remembers its own eats (perfect individual learner) | A shares one memory per lineage |
+|---|---|---|---|
+| kinds 2, tox 1 | 0.91 (t 8.6) | **0.83 (t 5.7)** | 0.84 (t 6.9) |
+| kinds 2, tox 2 | 0.91 (t 8.6) | 0.67 (t 4.0) | 0.75 (t 5.0) |
+| kinds 4, tox 1 | 0.67 (t 2.1) | 0.60 (t 1.2) | 0.67 (t 2.3) |
+| kinds 4, tox 2 | 0.83 (t 5.6) | 0.64 (t 3.2) | 0.80 (t 4.8) |
+
+- With kinds 2 and tox 1, a perfect individual learner gets most of what knowledge is worth. This is the world for the
+  test.
+- With kinds 4 and tox 2, pooled memory is worth more than individual memory. That is the world for social learning
+  later (SL1).
+
+Learner check (the same champion, with learning and without; `-ablate freeze` freezes A):
+- The LL1 rule lowers B's toxic share of eats from 0.18–0.20 (frozen A) to 0.10–0.15.
+- The fitness effect is small (frozen A's share 0.45–0.52, |t| < 1.4).
+- Learning on a genome that never evolved with it captures little of the value. Whether evolution and learning
+  together close the gap is what the runs test (the Baldwin effect).
+
+Arms (seeds 1–3, 2,000 epochs, the LL1 settings otherwise; binary runs8/oee_w_v28):
+- **E:** no learning (control; the recurrent state can still adapt within a life).
+- **L:** LL1's L (eta 12, lam 230, beta 7), with the plastic synapses also reading the kind lines (`-life_in 53,57`).
+- **LM:** L with the evolved neuromodulator (`-life_mod 1`). Evolution can gate when learning happens, i.e. prepared
+  learning (Dunlap and Stephens 2014).
+
+Measures (final champions, fresh held-out arenas, 16 seeds):
+1. **Learning is used:** freeze A's plasticity against an intact copy (L, LM).
+2. **Learning helps evolution:** the arm's champion against the E champion of the same seed.
+3. **The learning curve:** toxic share of eats by age within an era, and after an era change, against E and against
+   the frozen copy.
+4. **Control:** the same freeze test in static W1b (LL1). The freeze cost should be larger here.
+
+Pass, per arm: freezing costs fitness (share < 0.5, t < −3) in at least 2 of 3 seeds, and the champion beats E's
+(share > 0.5, t > 2) in at least 2 of 3 seeds.
+
+Kill: freezing costs nothing (|t| < 2) in every seed of both L and LM. Then the three-factor learner does not pay
+even where a perfect individual learner wins 0.83, so the learner is the bottleneck, not the world.

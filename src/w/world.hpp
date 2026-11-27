@@ -81,6 +81,14 @@ struct WParams{
   // from a hidden family (a fixed base table under a token shift and reversal: a law of the laws, AR3).
   // art_lock: a wrong token also locks the artifact for art_lock ticks (guessing is costly; 0: no lockout)
   int art=0,art_glyphs=8,art_pay=60,art_rest=100,art_era=1000,art_family=0,art_lock=0;
+  // art_code 1: the ready artifact in front is shown as one line of 3*art_glyphs (glyph x lock progress) at 104.. (64),
+  // a categorical sense of the lock state, instead of the scalars at 104 (progress) and 105 (rest); all zero if resting
+  int art_code=0;
+  // LL1c (docs/LIFE.md; worlds without signals or matter): kinds K in 1..4: the food of every cell is of one of K kinds
+  // (fixed per cell, from the seed); in each era of kind_era ticks every kind is nutritious or toxic (drawn from the
+  // seed and the era; at least one nutritious); eating toxic food costs kind_tox energy per unit eaten instead of
+  // giving one. Seen as one-hot lines (64) for the food underfoot (53..52+K) and in front (53+K..52+2K)
+  int kinds=0,kind_era=1000,kind_tox=1;
 };
 
 struct Agent{int x=0,y=0,dir=0,energy=0,age=0,lineage=0;bool alive=false;std::uint64_t id=0;int sig=0,wpos=0;};
@@ -123,6 +131,21 @@ struct World{
   std::uint32_t nogive=0;          // analysis (not saved): lineages whose give action does nothing
   std::uint32_t artmute=0;         // analysis (not saved): lineages whose symbols artifacts ignore
   std::uint32_t artoracle=0;       // analysis (not saved): lineages that, facing a ready artifact, speak its next key token
+  // analysis (not saved), the value of information ladder: lineages that, facing a ready artifact, always speak:
+  // artguess a random token; artmemo the token their own memory knows for the lock state (glyph, progress), else an
+  // untried one (a perfect individual learner; forgets a known token when it fails); artmemol the same with one memory
+  // shared by the whole lineage (perfect pooled, cultural, memory)
+  std::uint32_t artguess=0,artmemo=0,artmemol=0;std::vector<std::int8_t> amem;std::vector<std::uint64_t> amid;
+  // LL1c per cell (with p.kinds; saved): food kind. kstat (analysis, track): per lineage eats of nutritious, eats of
+  // toxic food, energy lost to toxic food. Value of information (analysis, not saved): kindoracle lineages never eat
+  // toxic food; kindmemo agents refuse a kind their own last eat of it found toxic (retesting 1 time in 16); kindmemol
+  // the same with one memory per lineage
+  std::vector<std::uint8_t> fkind;std::vector<long> kstat;std::uint32_t kindoracle=0,kindmemo=0,kindmemol=0;std::vector<std::int8_t> kmem;std::vector<std::uint64_t> kmid;
+  bool ktox(int kind,long era) const;  // LL1c: kind is toxic in era
+  std::int8_t* kmrow(int s);           // LL1c analysis: the memory row (per kind: 0 unknown, 1 nutritious, 2 toxic) of slot s
+  // analysis (track, not saved): per lineage 6 bins x (tokens, openings, resets): bins 0-4 speakers born in the current
+  // era by age/100, bin 5 speakers born in an earlier era (within-life learning of the law, and relearning after a change)
+  std::vector<long> aage;
   // AR1 per cell (with p.art; saved): artifact glyph (-1 none), lock progress, rest ticks left; astat (analysis, track):
   // per lineage tokens spoken to artifacts, openings, resets, energy gained
   std::vector<std::int8_t> aglyph;std::vector<std::uint8_t> aprog;std::vector<std::int16_t> arest;std::vector<long> astat;

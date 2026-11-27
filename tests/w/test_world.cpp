@@ -262,6 +262,36 @@ int main(){
     bool differ=false;for(int gl=0;gl<8&&!differ;++gl){int k1,k2,a1[3],a2[3];w.art_key(gl,0,a1,k1);w.art_key(gl,1,a2,k2);differ=k1!=k2||!std::equal(a1,a1+k1,a2);}
     WParams f=g;f.art_family=1;World v;v.init(f,0);bool fam=true;for(int gl=0;gl<8;++gl){int k1,k2,a1[3],a2[3];v.art_key(gl,0,a1,k1);v.art_key(gl,5,a2,k2);fam=fam&&k1==k2;}
     char msg[200];std::snprintf(msg,sizeof msg,"AR1: artifact seen, opened by its %d-token key, pays and rests; a wrong token resets; cannot be entered; laws differ by era; family keeps key lengths",k);
-    CHECK(seen&&paid&&reset&&blocked&&differ&&fam,msg);}
+    CHECK(seen&&paid&&reset&&blocked&&differ&&fam,msg);
+    WParams gc=g;gc.art_code=1;World u;u.init(gc,0);for(auto& x:u.aglyph)x=-1;u.aglyph[fa]=3;u.aprog[fa]=1;u.ag[0]=w.ag[0];u.ag[0].y=5;u.ag[0].x=5;u.ag[0].dir=0;u.occ[5*L+5]=0;
+    std::vector<std::int8_t> oc(u.din());u.observe(0,oc.data());int on=0;for(int j=104;j<128;++j)on+=oc[j]!=0;const bool line=oc[104+3*3+1]==64&&on==1;
+    u.arest[fa]=7;u.observe(0,oc.data());on=0;for(int j=104;j<128;++j)on+=oc[j]!=0;
+    CHECK(line&&on==0&&oc[79+7]==15*4,"AR1 art_code: the ready artifact in front is one line of 24 (glyph x progress); none while it rests; window glyphs unchanged");}
+  {// AR1 learner: the plastic symbol head learns which token pays in which lock state from raw one-hot inputs (features
+    // h carry nothing); the action head and the symbol head share the reward
+    LifeCfg c;c.on=1;c.eta=10;c.sym=1;Life lf;lf.init(1,8,7,4,6,8);const std::int8_t h[8]={0,0,0,0,0,0,0,0};const std::uint32_t m=c.mask(7,false);
+    std::int8_t x1[6]={64,0,0,0,0,0},x2[6]={0,0,0,64,0,0};const std::int64_t* E=act_weights();
+    auto ps=[&](const std::int8_t* x,int s){std::vector<std::int8_t> l(16,0);lf.apply(c,m,0,h,x,l.data());std::int64_t S=0;for(int k=0;k<4;++k)S+=E[(int)l[8+k]+128];return (double)E[(int)l[8+s]+128]/S;};
+    const double a0=ps(x1,2),b0=ps(x2,3);
+    for(int t=0;t<4000;++t){const std::int8_t* x=t%2?x2:x1;std::vector<std::int8_t> l(16,0);lf.apply(c,m,0,h,x,l.data());
+      const int a=act_sample(l.data(),(std::uint64_t)t*2654435761ULL+7,7),sg=act_sample(l.data()+8,(std::uint64_t)t*40503ULL+11,4);
+      const int dE=(x==x1&&sg==2)||(x==x2&&sg==3)?6:-1;lf.learn8(c,m,0,h,x,l.data(),a,sg,(std::int64_t)dE*256);}
+    const double a1=ps(x1,2),b1=ps(x2,3),c1=ps(x2,2),d1=ps(x1,3);
+    Life z;z.init(1,8,7);std::vector<std::int8_t> l0(16,0);z.apply(c,m,0,h,l0.data());bool same=true;for(int k=8;k<12;++k)same=same&&l0[k]==0;
+    char msg[200];std::snprintf(msg,sizeof msg,"AR1 learner: P(token 2 | state 1) %.2f -> %.2f, P(token 3 | state 2) %.2f -> %.2f, cross %.2f %.2f; without the symbol head symbols stay innate",a0,a1,b0,b1,c1,d1);
+    CHECK(a1>0.6&&b1>0.6&&c1<0.25&&d1<0.25&&same,msg);}
+  {// LL1c: food kinds; every era each kind is nutritious or toxic (at least one nutritious); eating toxic food costs
+    // energy; the kinds underfoot and in front are seen as one-hot lines
+    WParams g;g.L=12;g.S=4;g.K=1;g.nact=7;g.regrow=0;g.stoch=0;g.kinds=4;g.kind_era=100;g.kind_tox=2;World w;w.init(g,0);const int L=g.L;
+    bool good=true,flip=false;for(long e=0;e<50;++e){bool any=false;for(int i=0;i<4;++i){any=any||!w.ktox(i,e);flip=flip||w.ktox(i,e)!=w.ktox(i,e+1);}good=good&&any;}
+    for(auto& r:w.res)r=0;Agent& a=w.ag[0];a=Agent{};a.x=5;a.y=5;a.dir=0;a.energy=200;a.lineage=0;a.alive=true;a.id=1;w.occ[5*L+5]=0;
+    const int c0=5*L+5,cf=4*L+5;w.res[c0]=40;w.res[cf]=40;std::vector<std::int8_t> o(w.din());w.observe(0,o.data());int on=0;for(int j=53;j<61;++j)on+=o[j]!=0;
+    const bool seen=o[53+w.fkind[c0]]==64&&o[57+w.fkind[cf]]==64&&on==2;const bool tx=w.ktox(w.fkind[c0],0);
+    std::vector<std::int8_t> l((std::size_t)g.S*16,(std::int8_t)-128);l[4]=127;const std::int8_t* lp[1]={l.data()};std::vector<int> born;const int e0=w.ag[0].energy;w.tick(lp,born);
+    const int dE=w.ag[0].energy-e0+g.base,bite=std::min(40,g.bite);const bool eat=tx?dE==-2*bite:dE==bite;
+    World v;v.init(g,0);const bool same=v.fkind==w.fkind;
+    int tk=-1;for(int i=0;i<4;++i)if(w.ktox(i,0))tk=i;bool hurt=tk<0;if(tk>=0){w.fkind[c0]=(std::uint8_t)tk;w.res[c0]=40;const int e1=w.ag[0].energy;born.clear();w.tick(lp,born);hurt=w.ag[0].energy-e1+g.base==-2*bite;}WParams h=g;h.seed=g.seed+1;World u;u.init(h,0);bool other=u.fkind!=w.fkind;
+    char msg[200];std::snprintf(msg,sizeof msg,"LL1c: kinds seen (underfoot, front); eating %s food changes energy by %d; one nutritious kind per era; values change by era; map from the seed",tx?"toxic":"nutritious",dE);
+    CHECK(good&&flip&&seen&&eat&&hurt&&same&&other,msg);}
   std::printf(fails?"%d FAILED\n":"all passed\n",fails);return fails?1:0;
 }

@@ -58,8 +58,14 @@ void World::init(const WParams& pp,int founders){
   if(p.art>0){aglyph.assign(N,-1);aprog.assign(N,0);arest.assign(N,0);const int na=std::max(1,(int)std::lround((double)p.art*N/1024));int placed=0;
     for(std::uint64_t i=0;placed<na&&i<(std::uint64_t)64*N;++i){const std::uint64_t h=mix(mix(p.seed^0xa47eULL)+i);const int c=(int)(h%N);if(aglyph[c]>=0)continue;
       aglyph[c]=(std::int8_t)((h>>32)%(std::uint64_t)std::max(1,p.art_glyphs));++placed;}}
+  fkind.clear();kstat.clear();if(p.kinds>0){fkind.assign(N,0);for(int c=0;c<N;++c)fkind[c]=(std::uint8_t)(mix(mix(p.seed^0x6b1dULL)+(std::uint64_t)c)%(std::uint64_t)p.kinds);}
   for(int k=0;k<p.K;++k)reseed_lineage(k,founders,0);
 }
+std::int8_t* World::kmrow(int s){const int n=p.K*p.S;if(kmem.size()!=(std::size_t)(n+p.K)*4){kmem.assign((std::size_t)(n+p.K)*4,0);kmid.assign((std::size_t)n,0);}
+  const Agent& a=ag[s];if((kindmemol>>a.lineage)&1u)return &kmem[((std::size_t)n+a.lineage)*4];
+  std::int8_t* m=&kmem[(std::size_t)s*4];if(kmid[s]!=a.id){std::fill(m,m+4,0);kmid[s]=a.id;}return m;}  // a newborn starts empty
+bool World::ktox(int kind,long era) const{bool any=false;for(int i=0;i<p.kinds;++i)any=any||!(mix(mix(p.seed^0x70c5ULL)+(std::uint64_t)era*64+i)&1);
+  if(!any)return kind!=(int)(era%p.kinds);return mix(mix(p.seed^0x70c5ULL)+(std::uint64_t)era*64+kind)&1;}
 void World::art_key(int g,long era,int* key,int& k) const{
   if(p.art_family){const std::uint64_t h=mix(mix(p.seed^0xa4f0ULL)+(std::uint64_t)g),e=mix(mix(p.seed^0xe7a0ULL)+(std::uint64_t)era);  // base table, era shift and order
     k=(int)(h%7)<4?1:(int)(h%7)<6?2:3;const int sh=(int)(e%3),rev=(int)((e>>8)&1);for(int i=0;i<k;++i)key[rev?k-1-i:i]=1+((int)((h>>(8+2*i))%3)+sh)%3;}
@@ -101,10 +107,12 @@ void World::observe(int slot,std::int8_t* o) const{
       if(std::max(std::abs(u),std::abs(v))<=p.view&&!(p.land&&!lown.empty()&&lown[c]>=0&&lown[c]!=lin&&irl[c]>0))o[i]=(std::int8_t)(res[c]>>1);const int q=occ[c];
       if(q>=0&&q!=slot){o[25+i]=(std::int8_t)(ag[q].lineage==lin?64:-64);if(hear&&(!p.kin_sig||ag[q].lineage==lin)&&(ag[q].lineage==lin?hk:ho))o[53+i]=(std::int8_t)(32*ag[q].sig);}}}
   o[50]=(std::int8_t)std::min(127,a.energy/8);o[51]=(std::int8_t)std::min(127,a.age/4);o[52]=64;
+  if(p.kinds>0){const int c0=a.y*L+a.x,cf=wr(a.y+fy)*L+wr(a.x+fx);if(res[c0]>0)o[53+fkind[c0]]=64;if(res[cf]>0)o[53+p.kinds+fkind[cf]]=64;}  // LL1c
   if(p.signals)o[78]=(std::int8_t)(32*a.sig);
   if(p.art>0){i=0;  // AR1: artifacts in the window (15*(glyph+1); no food shown there); the one in front: progress, rest
     for(int v=2;v>=-2;--v){const int bx=a.x+v*fx,by=a.y+v*fy;for(int u=-2;u<=2;++u,++i){const int c=wr(by+u*ry)*L+wr(bx+u*rx);if(aglyph[c]>=0){o[79+i]=(std::int8_t)(15*(aglyph[c]+1));o[i]=0;}}}
-    const int fa=wr(a.y+fy)*L+wr(a.x+fx);if(aglyph[fa]>=0){o[104]=(std::int8_t)(32*aprog[fa]);o[105]=(std::int8_t)(arest[fa]>0?-64:64);}}
+    const int fa=wr(a.y+fy)*L+wr(a.x+fx);if(aglyph[fa]>=0){if(p.art_code){if(arest[fa]==0)o[104+3*aglyph[fa]+aprog[fa]]=64;}
+      else{o[104]=(std::int8_t)(32*aprog[fa]);o[105]=(std::int8_t)(arest[fa]>0?-64:64);}}}
   if(p.give){const int q=occ[wr(a.y+fy)*L+wr(a.x+fx)];if(q>=0&&q!=slot&&ag[q].lineage==lin)o[din()-1]=(std::int8_t)std::min(127,ag[q].energy/8);}  // IN1: need of the kin in front
   if(p.matter){i=0;
     for(int v=2;v>=-2;--v){const int bx=a.x+v*fx,by=a.y+v*fy;
@@ -135,7 +143,10 @@ void World::tick(const std::int8_t* const* logits,std::vector<int>& born){
     if(((gate_eat|gate_all)>>k)&1u){const bool all=(gate_all>>k)&1u;  // analysis: draw a futile choice again
       if((all||act[s]==4)&&futile(s,act[s])){const std::int64_t* E=ew();std::int64_t w[32],tot=0;
         for(int a=0;a<p.nact;++a){w[a]=(a==act[s]||(all&&futile(s,a)))?0:E[(int)l[a]+128];tot+=w[a];}
-        if(tot>0){std::uint64_t u=mix(mix(p.seed^0x9a7eULL)+((std::uint64_t)t<<24)+ag[s].id)%(std::uint64_t)tot;for(int a=0;a<p.nact;++a){if(u<(std::uint64_t)w[a]){act[s]=a;break;}u-=(std::uint64_t)w[a];}}}}}
+        if(tot>0){std::uint64_t u=mix(mix(p.seed^0x9a7eULL)+((std::uint64_t)t<<24)+ag[s].id)%(std::uint64_t)tot;for(int a=0;a<p.nact;++a){if(u<(std::uint64_t)w[a]){act[s]=a;break;}u-=(std::uint64_t)w[a];}}}}
+    if(p.kinds>0&&act[s]==4&&(((kindoracle|kindmemo|kindmemol)>>k)&1u)){const int c0=ag[s].y*p.L+ag[s].x;  // analysis: value of information
+      if(res[c0]>0){if((kindoracle>>k)&1u){if(ktox(fkind[c0],p.kind_era>0?t/p.kind_era:0))act[s]=0;}
+        else if(kmrow(s)[fkind[c0]]==2&&mix(mix(p.seed^0x5e7eULL)+((std::uint64_t)t<<24)+ag[s].id)%16!=0)act[s]=0;}}}
   if(track&&stat.size()<(std::size_t)p.K*32)stat.assign((std::size_t)p.K*32,0);
   if(probe){const int n=p.K*p.S;pact.assign(n,-1);peff.assign(n,0);pdie.assign(n,0);for(int s:order)pact[s]=(std::int16_t)act[s];}
   if(p.farms>0&&p.land&&!lown.empty()&&t%std::max(1,p.farm_every)==0)homestead();
@@ -159,7 +170,10 @@ void World::tick(const std::int8_t* const* logits,std::vector<int>& born){
           if(!ilin.empty()&&irl[c]>0){const int L=ilin[c];if(L==a.lineage)stat[k*32+24]+=take;else if(L>=0)stat[(std::size_t)L*32+25]+=take;else stat[k*32+26]+=take;}}
         if(p.pass&&p.matter&&take<p.bite&&mat[c]==1&&(p.graze?(!p.own||mlin[c]<0||mlin[c]==a.lineage):(p.own&&mlin[c]==a.lineage))){const int t2=std::min<int>(p.bite-take,mst[c]);mst[c]=(std::int16_t)(mst[c]-t2);take+=t2;}  // underfoot
         if(p.matter&&take<p.bite&&mat[fc]==1&&(p.graze?(!p.own||mlin[fc]<0||mlin[fc]==a.lineage):(p.own&&mlin[fc]==a.lineage))){const int t2=std::min<int>(p.bite-take,mst[fc]);mst[fc]=(std::int16_t)(mst[fc]-t2);take+=t2;}  // granary or grazing
-        a.energy=std::min(p.ecap,a.energy+take);if(probe)peff[s]=(std::int16_t)take;break;}
+        int gain=take;if(p.kinds>0&&take>0){const bool tx=ktox(fkind[c],p.kind_era>0?t/p.kind_era:0);if(tx)gain=-p.kind_tox*take;  // LL1c
+          if(track){if(kstat.size()!=(std::size_t)p.K*3)kstat.assign((std::size_t)p.K*3,0);const std::size_t k=(std::size_t)a.lineage*3;++kstat[k+(tx?1:0)];if(tx)kstat[k+2]+=p.kind_tox*take;}
+          if(((kindmemo|kindmemol)>>a.lineage)&1u)kmrow(s)[fkind[c]]=(std::int8_t)(tx?2:1);}
+        a.energy=std::min(p.ecap,a.energy+gain);if(probe)peff[s]=(std::int16_t)take;break;}
       case 5:if(a.energy>=p.repro_min&&occ[fc]<0&&!is_art(fc)&&(!p.matter||!mat[fc]||(p.pass&&mat[fc]==1))){const int k=a.lineage;int j=-1;
           for(int q=0;q<p.S;++q)if(!ag[(std::size_t)k*p.S+q].alive){j=q;break;}
           if(j>=0){const int cs=k*p.S+j;Agent& b=ag[cs];b=Agent{};b.x=fc%p.L;b.y=fc/p.L;b.dir=a.dir;b.energy=p.repro_give;b.lineage=k;b.alive=true;b.id=next_id++;
@@ -189,11 +203,25 @@ void World::tick(const std::int8_t* const* logits,std::vector<int>& born){
     if(track&&astat.size()!=(std::size_t)p.K*4)astat.assign((std::size_t)p.K*4,0);std::vector<char> heard(N,0);
     if(artoracle)for(int s:order){Agent& a=ag[s];if(!a.alive||!((artoracle>>a.lineage)&1u))continue;  // analysis: the value of knowing the law
       const int fc=((a.y+FY[a.dir]+p.L)%p.L)*p.L+(a.x+FX[a.dir]+p.L)%p.L;if(!is_art(fc)||arest[fc]>0)continue;int key[3],k=1;art_key(aglyph[fc],era,key,k);a.sig=key[aprog[fc]];}
+    const std::uint32_t amask=artguess|artmemo|artmemol;const int G3=3*p.art_glyphs;
+    auto mrow=[&](int s)->std::int8_t*{const Agent& a=ag[s];if((artmemol>>a.lineage)&1u){if(amem.size()<(std::size_t)(p.K*p.S+p.K)*G3*2){amem.assign((std::size_t)(p.K*p.S+p.K)*G3*2,0);amid.assign((std::size_t)p.K*p.S,0);}
+        return &amem[((std::size_t)p.K*p.S+a.lineage)*G3*2];}
+      if(amem.size()<(std::size_t)(p.K*p.S+p.K)*G3*2){amem.assign((std::size_t)(p.K*p.S+p.K)*G3*2,0);amid.assign((std::size_t)p.K*p.S,0);}
+      std::int8_t* m=&amem[(std::size_t)s*G3*2];if(amid[s]!=a.id){std::fill(m,m+G3*2,0);amid[s]=a.id;}return m;};  // a newborn starts empty
+    if(amask)for(int s:order){Agent& a=ag[s];if(!a.alive||!((amask>>a.lineage)&1u))continue;
+      const int fc=((a.y+FY[a.dir]+p.L)%p.L)*p.L+(a.x+FX[a.dir]+p.L)%p.L;if(!is_art(fc)||arest[fc]>0)continue;
+      const std::uint64_t rb=mix(mix(p.seed^0xa11eULL)+((std::uint64_t)t<<24)+a.id);if((artguess>>a.lineage)&1u){a.sig=1+(int)(rb%3);continue;}
+      std::int8_t* m=mrow(s)+2*(3*aglyph[fc]+aprog[fc]);if(m[0]){a.sig=m[0];continue;}
+      int un[3],nu=0;for(int x=1;x<=3;++x)if(!((m[1]>>x)&1))un[nu++]=x;if(!nu){m[1]=0;un[0]=1;un[1]=2;un[2]=3;nu=3;}a.sig=un[rb%nu];}
     for(int s:order){Agent& a=ag[s];if(!a.alive||a.sig<=0)continue;const int fc=((a.y+FY[a.dir]+p.L)%p.L)*p.L+(a.x+FX[a.dir]+p.L)%p.L;
       if(!is_art(fc)||arest[fc]>0||heard[fc])continue;heard[fc]=1;if((artmute>>a.lineage)&1u)continue;
+      if(((artmemo|artmemol)>>a.lineage)&1u){int key[3],k=1;art_key(aglyph[fc],era,key,k);std::int8_t* m=mrow(s)+2*(3*aglyph[fc]+aprog[fc]);  // the memory learns the outcome
+        if(a.sig==key[aprog[fc]])m[0]=(std::int8_t)a.sig;else{if(m[0]==a.sig)m[1]=0;m[0]=0;m[1]|=(std::int8_t)(1<<a.sig);}}
       int key[3],k=1;art_key(aglyph[fc],era,key,k);const std::size_t ls=(std::size_t)a.lineage*4;if(track)++astat[ls];
-      if(a.sig==key[aprog[fc]]){if(++aprog[fc]>=k){a.energy=std::min(p.ecap,a.energy+p.art_pay);aprog[fc]=0;arest[fc]=(std::int16_t)p.art_rest;if(track){++astat[ls+1];astat[ls+3]+=p.art_pay;}}}
-      else{aprog[fc]=0;arest[fc]=(std::int16_t)p.art_lock;if(track)++astat[ls+2];}}
+      std::size_t lb=0;if(track){if(aage.size()!=(std::size_t)p.K*18)aage.assign((std::size_t)p.K*18,0);const long born=(long)t-a.age;
+        const int bin=p.art_era>0&&born<era*(long)p.art_era?5:std::min(4,a.age/100);lb=(std::size_t)a.lineage*18+3*bin;++aage[lb];}
+      if(a.sig==key[aprog[fc]]){if(++aprog[fc]>=k){a.energy=std::min(p.ecap,a.energy+p.art_pay);aprog[fc]=0;arest[fc]=(std::int16_t)p.art_rest;if(track){++astat[ls+1];astat[ls+3]+=p.art_pay;++aage[lb+1];}}}
+      else{aprog[fc]=0;arest[fc]=(std::int16_t)p.art_lock;if(track){++astat[ls+2];++aage[lb+2];}}}
     for(auto& r:arest)if(r>0)--r;}
   for(int s=0;s<p.K*p.S;++s){Agent& a=ag[s];if(!a.alive)continue;a.energy-=p.base+(a.sig>0?p.sig_cost:0);++a.age;
     if(a.energy<=0||a.age>p.max_age){a.alive=false;occ[a.y*p.L+a.x]=-1;if(track)++stat[(std::size_t)a.lineage*32+(a.energy<=0?18:19)];if(probe)pdie[s]=a.energy<=0?1:2;}}
@@ -320,6 +348,7 @@ constexpr std::int64_t kExt12=0x4345564157LL;  // W4f homesteads (kExt11 + farm_
 constexpr std::int64_t kExt13=0x4445564157LL;  // W4g homesteads (kExt12 + home_cue)
 constexpr std::int64_t kExt14=0x4545564157LL;  // IN1 give (give, give_amt)
 constexpr std::int64_t kExt15=0x4645564157LL;  // AR1 artifacts (params, glyphs, locks, rest)
+constexpr std::int64_t kExt16=0x4745564157LL;  // art_code; LL1c food kinds (params, kind map)
 template<class T> void wv(std::FILE* f,const std::vector<T>& v){wr(f,(std::int64_t)v.size());if(!v.empty())std::fwrite(v.data(),sizeof(T),v.size(),f);}
 template<class T> bool rv(std::FILE* f,std::vector<T>& v){std::int64_t n=0;if(!rd(f,n)||n<0||n>(1<<26))return false;v.resize((std::size_t)n);
   return n==0||std::fread(v.data(),sizeof(T),(std::size_t)n,f)==(std::size_t)n;}
@@ -342,6 +371,7 @@ void World::save(std::FILE* f) const{
   if(p.matter&&p.farms){wr(f,kExt13);wr(f,p.farms);wr(f,p.farm_store);wr(f,p.farm_every);wr(f,p.farm_free);wr(f,p.irr_full);wv(f,hfm);wr(f,p.farm_reset);wr(f,p.home_cue);}
   if(p.give){wr(f,kExt14);wr(f,p.give);wr(f,p.give_amt);}
   if(p.art>0){wr(f,kExt15);for(std::int64_t x:{p.art,p.art_glyphs,p.art_pay,p.art_rest,p.art_era,p.art_family,p.art_lock})wr(f,x);wv(f,aglyph);wv(f,aprog);wv(f,arest);}
+  if(p.art_code||p.kinds>0){wr(f,kExt16);for(std::int64_t x:{p.art_code,p.kinds,p.kind_era,p.kind_tox})wr(f,x);wv(f,fkind);}
   wv(f,res);wv(f,fert);wv(f,racc);wv(f,occ);wr(f,(std::int64_t)ag.size());
   for(auto& a:ag){const std::int64_t r[]={a.x,a.y,a.dir,a.energy,a.age,a.lineage,a.alive,(std::int64_t)a.id};for(auto x:r)wr(f,x);}
   if(ext())for(auto& a:ag){wr(f,a.sig);}
@@ -400,6 +430,10 @@ bool World::load(std::FILE* f){
     if(m==kExt15){std::int64_t x[7];for(auto& y:x)if(!rd(f,y))return false;if(!rv(f,aglyph)||!rv(f,aprog)||!rv(f,arest))return false;
       p.art=(int)x[0];p.art_glyphs=(int)x[1];p.art_pay=(int)x[2];p.art_rest=(int)x[3];p.art_era=(int)x[4];p.art_family=(int)x[5];p.art_lock=(int)x[6];}
     else if(std::fseek(f,pos,SEEK_SET)!=0)return false;}  // no artifact block
+  p.art_code=0;p.kinds=0;p.kind_era=1000;p.kind_tox=1;fkind.clear();
+  {std::int64_t m=0;const long pos=std::ftell(f);if(!rd(f,m))return false;
+    if(m==kExt16){std::int64_t x[4];for(auto& y:x)if(!rd(f,y))return false;if(!rv(f,fkind))return false;p.art_code=(int)x[0];p.kinds=(int)x[1];p.kind_era=(int)x[2];p.kind_tox=(int)x[3];}
+    else if(std::fseek(f,pos,SEEK_SET)!=0)return false;}  // no art_code / kinds block
   if(!rv(f,res)||!rv(f,fert)||!rv(f,racc)||!rv(f,occ)){return false;}std::int64_t n=0;if(!rd(f,n)||n<0||n>(1<<24)){return false;}ag.assign((std::size_t)n,Agent{});
   for(auto& a:ag){std::int64_t r[8];for(auto& x:r)if(!rd(f,x))return false;
     a.x=(int)r[0];a.y=(int)r[1];a.dir=(int)r[2];a.energy=(int)r[3];a.age=(int)r[4];a.lineage=(int)r[5];a.alive=r[6]!=0;a.id=(std::uint64_t)r[7];a.sig=0;}

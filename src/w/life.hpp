@@ -22,27 +22,37 @@ struct LifeCfg{
   int obs=0;     // SL1 O: each tick an agent also learns, at half rate, from its nearest kin neighbour's action and reward
   int rew=0;     // LL2: the reward adds logit[rlog]/8 energy units, an internal reward the network computes (evolved)
   int rlog=14;   // logit used as the evolved reward (an otherwise unused output)
+  int sym=0;     // 1: the symbol head (logits so..so+3, signals worlds) is plastic too: its own softmax, the same reward
+  int seta=-1;   // the symbol head's learning rate 2^-seta (-1: eta)
+  int symh=1;    // 0: the symbol head reads only the bias and the raw inputs, not the features h (a sparse code: specific)
+  int in0=0,in1=0;  // the synapses also read raw observation entries in0..in1-1 (as the network sees them), after the bias
   // plastic actions (bit a): all of the first na except reproduction (unless repro), give (IN1; index 7 without matter,
   // 10 with) and, with matter, write, make, feed
   std::uint32_t mask(int na,bool matter) const;
 };
 
 struct Life{
-  int R=0,D=0,na=0,J=0;  // rows (agents), features, actions, inputs J = D + 1 (the bias last)
-  std::vector<std::int32_t> W,e,b;  // R x na x J synapses (Q16: logit units per input unit) and traces; R baselines (Q8)
-  void init(int R,int D,int na);
+  // rows (agents), features, actions, inputs J = D + 1 + nx (h, the bias, then nx raw inputs), plastic logits nl (na
+  // actions, then 4 symbols at logits so..so+3 with LifeCfg::sym)
+  int R=0,D=0,na=0,J=0,nl=0,nx=0,so=8;
+  std::vector<std::int32_t> W,e,b;  // R x nl x J synapses (Q16: logit units per input unit) and traces; R baselines (Q8)
+  void init(int R,int D,int na,int ns=0,int nx=0,int so=8);  // ns 4: plastic symbol head
   void reset(int r);                            // a newborn in row r: synapses, traces and baseline to zero
   void copy_row(int rd,const Life& src,int rs);  // row rd of this = row rs of src (same D, na)
   void inherit(int rd,int rs);                   // SL1 V: row rd (a newborn) = half the synapses of row rs (its parent)
-  // adds the plastic contribution to the logits l (first na) of row r, given its features h (D int8)
-  void apply(const LifeCfg& c,std::uint32_t msk,int r,const std::int8_t* h,std::int8_t* l) const;
+  // adds the plastic contribution to the logits l of row r, given its features h (D int8) and raw inputs x (nx int8)
+  void apply(const LifeCfg& c,std::uint32_t msk,int r,const std::int8_t* h,const std::int8_t* x,std::int8_t* l) const;
+  void apply(const LifeCfg& c,std::uint32_t msk,int r,const std::int8_t* h,std::int8_t* l) const{apply(c,msk,r,h,nullptr,l);}
   // after the tick: l the logits the action was sampled from (V entries; l[c.mlog] is the neuromodulator), a the action
   // taken, dE the reward (energy change over the tick)
-  void learn(const LifeCfg& c,std::uint32_t msk,int r,const std::int8_t* h,const std::int8_t* l,int a,int dE){learn8(c,msk,r,h,l,a,(std::int64_t)dE*256);}
-  void learn8(const LifeCfg& c,std::uint32_t msk,int r,const std::int8_t* h,const std::int8_t* l,int a,std::int64_t r8);  // reward in Q8
+  void learn(const LifeCfg& c,std::uint32_t msk,int r,const std::int8_t* h,const std::int8_t* l,int a,int dE){learn8(c,msk,r,h,nullptr,l,a,-1,(std::int64_t)dE*256);}
+  void learn8(const LifeCfg& c,std::uint32_t msk,int r,const std::int8_t* h,const std::int8_t* l,int a,std::int64_t r8){learn8(c,msk,r,h,nullptr,l,a,-1,r8);}
+  // reward in Q8; sg the symbol emitted (0..3; -1 none), used by the symbol head
+  void learn8(const LifeCfg& c,std::uint32_t msk,int r,const std::int8_t* h,const std::int8_t* x,const std::int8_t* l,int a,int sg,std::int64_t r8);
   // SL1 O: row r (features h, logits l) learns from a neighbour's action a and reward prediction error d (Q8), at half
   // rate and without a trace; only when a is plastic
-  void learn_obs(const LifeCfg& c,std::uint32_t msk,int r,const std::int8_t* h,const std::int8_t* l,int a,std::int64_t d);
+  void learn_obs(const LifeCfg& c,std::uint32_t msk,int r,const std::int8_t* h,const std::int8_t* x,const std::int8_t* l,int a,std::int64_t d);
+  void learn_obs(const LifeCfg& c,std::uint32_t msk,int r,const std::int8_t* h,const std::int8_t* l,int a,std::int64_t d){learn_obs(c,msk,r,h,nullptr,l,a,d);}
   void save(std::FILE* f) const;
   bool load(std::FILE* f);
 };

@@ -6,7 +6,8 @@ Design (2026-11-27; owner's choice of options 1 and 3, instead of human texts). 
 - Containment unchanged: the artifacts are cells of the simulated grid, with no input or output beyond it.
 
 Gating (the bootstrap rule):
-- AR1 needs LL1 to pass, because agents must be able to learn.
+- AR1 needs LL1 to pass, because agents must be able to learn. Since 2026-11-27 the gate is LL1c (LIFE.md): AR1
+  rewards pooled knowledge rather than individual learning (value of information, below).
 - AR2 needs AR1 and SL1 (social learning).
 - AR3 is an analysis of AR2's runs.
 - AR4 comes last.
@@ -85,6 +86,43 @@ Calibration:
   - artifacts supply about 40% of a knowing agent's food;
   - the oracle copy wins (0.87).
 - So knowledge pays, and the research problem is real.
+
+**Value of information (measured 2026-11-27, before any AR1 run; `-art_code 1`; 16 seeds × 2 unless noted).**
+The W2 champion is played against itself, with A replaced by an analysis policy whenever it faces a ready artifact:
+- **guess:** always speak a random token.
+- **own memory:** a perfect individual learner. It speaks the token its own memory knows for the lock state (glyph,
+  progress), otherwise an untried one, and forgets a known token when it fails.
+- **lineage memory:** the same, with one memory shared by the whole lineage. This is perfect pooled (cultural)
+  knowledge.
+- **oracle:** knows the law.
+
+| Glyphs | Openings/kt: intact / guess / own memory / lineage memory / oracle | Share of A: guess / own / lineage / oracle |
+|---|---|---|
+| 8 (8 seeds) | 1.02 / 1.33 / 1.65 / 3.65 / 3.79 | 0.56 / 0.69 / 0.69 / 0.75 |
+| 4 | – / 1.48 / 1.88 / 3.82 / 3.91 | 0.50 / 0.59 / 0.78 / 0.81 |
+| 2 | – / 1.37 / 2.11 / 3.87 / 3.94 | 0.66 / 0.60 / 0.84 / 0.81 |
+| 1 | 0.88 / 1.34 / 2.48 / 3.90 / 3.95 | 0.56 / 0.59 / 0.75 / 0.78 |
+
+- An agent speaks to a ready artifact only about 4 times per life (5–8 tokens per thousand agent-ticks).
+- Even with one glyph, a perfect individual learner needs 200–300 ticks of its life to bring its tokens per opening
+  down from about 6 to about 2.
+- So a perfect individual learner recovers about a quarter to a third of the value of knowing the law. A perfect
+  lineage memory recovers about 95%.
+- Consequence: AR1 does not reward individual learning ("learning not to learn": learning pays only if it pays off
+  within a lifetime; Lange and Sprekeler, arXiv:2010.04466). It rewards pooled knowledge.
+  - AR1 is therefore a world for culture (AR2), entered after individual learning has passed where it can pay.
+  - That test is LL1c (LIFE.md).
+
+**Learner fix (2026-11-27).** The LL1 plastic layer covers the action logits only, and symbols come from logits 8–11.
+As built, learning could not change what an agent says to an artifact. Fixes, off by default:
+- `-life_sym 1`: a plastic symbol head (its own softmax, the same reward). `-life_seta` sets its learning rate;
+  `-life_symh 0` makes it read only the bias and the raw inputs.
+- `-life_in A,B`: the plastic synapses also read raw observation entries A to B−1.
+- `-art_code 1`: the artifact in front is shown as one of 24 lines (glyph × progress). This is a categorical lock state
+  that a linear plastic readout can map to a token.
+
+With the W2 champion and learning on, tokens per opening did not change (frozen 4.9, learning 4.6). That is expected
+from the experience rate above.
 
 **World and arms.**
 - The W2 world: seasons, view 1, symbols on, so the symbol channel exists and memory already pays.
