@@ -1,0 +1,118 @@
+# From learners to a collective: social learning (SL1) and integration (IN1)
+
+Design (2026-11-27). Both steps are gated on LL1 (docs/LIFE.md): each must pay alone before the next is built on it.
+Never require two new capabilities to appear together (Eigen's paradox: WORLD.md, agent study; the bootstrap rule).
+- SL1 starts only if LL1 passes: learning is used, and freezing it costs fitness.
+- IN1 can start in parallel with SL1 once LL1 passes, because roles are expected to emerge through individual
+  learning.
+
+## What the v-series taught (Geb ladder, docs/L3.md)
+
+| Step | Mechanism | Result |
+|---|---|---|
+| v4 | Kin colonies with evolvable grouping | Diversity plateau 2.5–3 times every control (6 vs 6, complete separation) |
+| v5 | Colony reproduction (propagules, size cap 32) | Plateau slightly higher (+25%, not significant) and more uniform; organisation saturates early |
+| v6 | Division of labour by a world rule (mixed warrior/breeder groups fight at double power) | Roles appeared and sustained activity, but did not raise the plateau; one seed lost its roles (warriors 0.41 to 0.18) |
+| v7–v8 | Growing world, joint growth | The plateau tracked capacity |
+
+Lessons:
+- A new level of organisation adds room once, not continually.
+- Roles imposed by a rule are not stable, and they do not raise the ceiling.
+- Those agents could not learn.
+- So this time nothing about roles is imposed. The colony is given only means of interdependence, and roles are
+  left to emerge where they pay.
+
+World v1 lineages are already colonies in the sense that matters for a higher-level individual:
+- clones sharing one genome (low conflict, relatedness 1);
+- selected as a unit (fitness is lineage biomass);
+- reproducing as a unit (splits).
+
+What they lack is what turns a society into an organism (Queller and Strassmann 2009, Phil. Trans. R. Soc. B 364:3143):
+- knowledge passed between members;
+- interdependence;
+- division of labour.
+
+## SL1: social learning (the colony learns, not only its members)
+
+Evidence:
+- **Rendell et al. 2010** (Science 328:208), a tournament of social learning strategies in a changing environment.
+  Strategies that relied heavily on copying won, even when copying cost as much as trial and error. Copied
+  individuals tend to show their best behaviour, which filters information for free.
+- **Accumulation in learning agents.** Agents that accumulate across generations outperform those trained for a
+  single lifetime with the same experience (Cook et al., NeurIPS 2024, arXiv:2406.00392).
+- **Cultural transmission without human data.** It arises and generalises in learning agents (Bhoopchand et al.,
+  Nature Communications 2023).
+
+Mechanism, two arms on top of the best LL1 arm. Both use channels that exist in animals, not copying of synapses at
+a distance:
+- **V (teaching at birth):**
+  - A newborn's plastic synapses start at half its parent's learned synapses. Traces start at zero; the baseline is
+    copied.
+  - Own experience overrides what was inherited.
+  - This is vertical cultural transmission. It goes through the parent, not through the genome, so it does not
+    wait on evolution.
+- **O (observational learning):**
+  - Each tick, an agent also learns from one kin agent in its 5×5 window: the nearest, ties broken by slot.
+  - It applies the three-factor rule to its own features h (what it perceives), with the neighbour's action and the
+    neighbour's reward prediction error: "what a neighbour just did, and whether it paid".
+  - Learning rate half of its own.
+  - Animals learn from others' outcomes this way: observational conditioning and local enhancement.
+
+Measures (as LL1, plus):
+1. **Transmission is used:** the champion with transmission blocked (V: newborns start at zero; O: no observational
+   updates) against an intact copy. Used if the blocked copy's share is below 0.5 with t < −3.
+2. **Accumulation:**
+   - the futile share of newborns (ages 0–49) against the LL1 arm;
+   - in V, whether newborn futility keeps falling over the run (a cultural ratchet), not only within lives.
+3. **Strength** against the LL1 champions of the same seeds.
+
+Pass, per arm: transmission is used in at least 2 of 3 seeds, and strength against LL1 is at least 0.5.
+Kill, per arm: blocking transmission costs nothing (|t| < 2) in every seed.
+
+## IN1: integration (interdependence and division of labour)
+
+Evidence:
+- Division of labour is favoured by positional effects, accelerating returns and synergy between parts, and
+  selection for robustness works against it. The conditions are restrictive (Rueffler, Hermisson and Wagner 2012,
+  PNAS 109:E326).
+- Specialists emerge in learner populations from competition alone (arXiv:2601.19943, 2026), and when tasks can be
+  done in parallel (arXiv:2503.15703).
+- In social insects, roles emerge without fixed castes when doing a task lowers the threshold for doing it again
+  (response-threshold reinforcement; Theraulaz, Bonabeau and Deneubourg 1998, Proc. R. Soc. B 265:327). LL1's
+  plastic layer is that reinforcement.
+
+Mechanism: **give**, a new innate action. An agent passes up to 20 energy to the kin agent in front, keeping at
+least 1.
+- **Why it is needed.** Without it every agent must feed itself, so no member can specialise in anything that does
+  not feed it: guarding, fighting, building or tending farms. Food sharing (trophallaxis, provisioning) is the
+  interdependence that social insects and multicellular bodies rest on.
+- **Why innate.** Like reproduction, it costs now and pays through kin. The plastic layer does not act on it;
+  evolution decides when to give.
+- **What can drive roles in W1b.** Fighting: W1b is a war world, where 70% of deaths are kills and agents attack
+  rivals far more than kin. Fed fighters and feeding foragers is the soldier and worker division of ants.
+- **The building worlds** (nodes, farms) add synergy and accelerating returns, the stronger conditions for division
+  of labour. IN1 moves there once it passes in W1b.
+
+Measures:
+1. **Giving is used:** the champion that cannot give against an intact copy (share < 0.5, t < −3).
+2. **Division of labour** (Gorelick, Bertram, Killeen and Fewell 2004, Behav. Ecol. Sociobiol. 56:242). The index
+   is the mutual information between individual and action, normalised by the action entropy, over each agent's
+   life (probe records).
+   - It is compared with a shuffle null (actions permuted across agents within age bins) and with the same arm
+     without giving.
+3. **Interdependence:** removing the top tenth of agents by giving harms the colony more than removing a random
+   tenth.
+4. **Strength** against the champions of the previous step.
+
+Pass: giving is used in at least 2 of 3 seeds, and the division-of-labour index is above the shuffle null and the
+no-give arm in at least 2 of 3 seeds.
+Kill: giving costs nothing in every seed, or the index is at the null everywhere.
+
+## Next, if both pass: IN2, a shared colony memory
+
+- A persistent, decaying mark that agents leave on cells, which only their kin sense (stigmergy; Grassé 1959; ant
+  trails).
+- It is an external memory owned by the colony, and the channel through which a superorganism's knowledge outlives
+  its members.
+- Kept for later to respect the bootstrap rule: memory pays only once members can learn, teach and depend on each
+  other.
