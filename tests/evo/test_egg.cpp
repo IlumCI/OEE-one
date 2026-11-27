@@ -57,5 +57,22 @@ int main(){
     const long ch1=egg_update(a,n2,F,0.05),tot=a.nparams();
     char msg[120];std::snprintf(msg,sizeof msg,"update: F=0 changes %ld; alpha=0.05 changes %.3f of params (expect ~0.05)",ch0,(double)ch1/tot);
     CHECK(ch0==0&&ch1>0&&ch1<0.12*tot,msg);}
+  // error feedback: as many parameters move as with egg_update; a weak signal repeated over updates is followed
+  {Egg a(c,5),b(c,5);std::vector<std::int32_t> ra,rb;long ca=0,cb=0;const long tot=a.nparams();
+    for(int t=0;t<30;++t){Noise n3;n3.gen(a,32,7,t);std::vector<int> F(32);for(int p=0;p<32;++p)F[p]=(p*7+t*3)%5<2?1:-1;
+      ca=egg_update_ef(a,n3,F,0.05,ra,3);cb=egg_update_ef(b,n3,F,0.05,rb,3);}
+    char msg[160];std::snprintf(msg,sizeof msg,"update with error feedback: deterministic; moves %.3f of params at alpha 0.05 (expect ~0.05)",(double)ca/tot);
+    bool same=ra==rb&&ca==cb;for(std::size_t k=0;k<a.mats.size();++k)same=same&&a.mats[k]->w==b.mats[k]->w;
+    CHECK(same&&ca>0.03*tot&&ca<0.07*tot,msg);
+    // a weak signal: fitness follows the perturbation of row 0 of matrix 0 along fixed signs s_j, plus much noise.
+    // Over 40 updates, error feedback moves row 0 along s further than the stateless update (same number of moves).
+    Egg h(c,9),z(c,9);std::vector<std::int32_t> rh;const int n0=h.mats[0]->n;std::vector<int> sg(n0);for(int j=0;j<n0;++j)sg[j]=(j*5+1)%3?1:-1;
+    const std::vector<std::int8_t> w0=h.mats[0]->w;long mh=0,mz=0;
+    for(int t=0;t<40;++t){Noise n4;n4.gen(h,32,11,t);std::vector<int> F(32);
+      for(int p=0;p<32;++p){long d=0;for(int j=0;j<n0;++j)d+=(long)sg[j]*n4.A(0,p)[0]*n4.B(0,p)[j];const long q=(long)((t*131+p*977)%2001-1000)*3;F[p]=d+q>0?1:-1;}
+      mh+=egg_update_ef(h,n4,F,0.05,rh,3);mz+=egg_update(z,n4,F,0.05);}
+    long ah=0,az=0;for(int j=0;j<n0;++j){ah+=sg[j]*(h.mats[0]->w[j]-w0[j]);az+=sg[j]*(z.mats[0]->w[j]-w0[j]);}
+    std::snprintf(msg,sizeof msg,"error feedback follows a weak repeated signal: row-0 movement along it %ld vs %ld without feedback (moves %ld / %ld)",ah,az,mh,mz);
+    CHECK(ah>az&&ah>0,msg);}
   std::printf(fails?"%d FAILED\n":"all passed\n",fails);return fails?1:0;
 }

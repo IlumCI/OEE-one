@@ -164,14 +164,14 @@ void copy_weights(evo::Egg& d,const evo::Egg& s){
   for(std::size_t k=0;k<d.vecs.size();++k){d.vecs[k]->w=s.vecs[k]->w;}
   d.repack();
 }
-struct Lin{std::unique_ptr<evo::Egg> g;evo::Noise nz;bool active=false;std::uint64_t id=0;int age=0;double ema=-1;};  // ema: fitness average (-stress)
+struct Lin{std::unique_ptr<evo::Egg> g;evo::Noise nz;bool active=false;std::uint64_t id=0;int age=0;double ema=-1;std::vector<std::int32_t> res;};  // ema: fitness average (-stress); res: -ef residuals
 constexpr std::int64_t kCkMagic=0x3130574b43454f4fLL;  // "OEECKW01"
 }  // namespace
 
 int main(int argc,char** argv){
   int epochs=100,P=128,H=200,threads=4,layers=2,D=64,sig=4,archive_every=50,seeds=5,ticks=2000,Kmax=1,split_at=-1,hist_frac=0,hist_founders=8,ck_every=10,climate_every=5,climate_ticks=1000,stats=0,curve=0,skip=-1,split_age=0,null_es=0,hist_pair=0,gen=0,arena_progs=0,solo=0,swap_at=0,swap_win=500,cat_every=0;
   double prog_cont=0.7,cat_keep=0.1,stress=0;
-  double alpha_floor=0;std::uint64_t seed=1,seed0=1000;std::string logf,archive,ta,tb,ckf,ablate,arena_ck,probef,maskf,mask_mode="zero";int probe_games=2,obs_norm=0;w::WParams wp;int founders=16;
+  double alpha_floor=0;std::uint64_t seed=1,seed0=1000;std::string logf,archive,ta,tb,ckf,ablate,arena_ck,probef,maskf,mask_mode="zero";int probe_games=2,obs_norm=0,ef=0;w::WParams wp;int founders=16;
   for(int a=1;a<argc;a+=2){const char* s=argv[a];const char* v=a+1<argc?argv[a+1]:"";
     if(!std::strcmp(s,"-epochs"))epochs=std::atoi(v);else if(!std::strcmp(s,"-pairs"))P=std::atoi(v);else if(!std::strcmp(s,"-H"))H=std::atoi(v);
     else if(!std::strcmp(s,"-L"))wp.L=std::atoi(v);else if(!std::strcmp(s,"-S"))wp.S=std::atoi(v);else if(!std::strcmp(s,"-founders"))founders=std::atoi(v);
@@ -183,7 +183,7 @@ int main(int argc,char** argv){
     else if(!std::strcmp(s,"-regrow"))wp.regrow=std::atoi(v);else if(!std::strcmp(s,"-base"))wp.base=std::atoi(v);else if(!std::strcmp(s,"-patches"))wp.patches=std::atoi(v);
     else if(!std::strcmp(s,"-lineages"))Kmax=std::atoi(v);else if(!std::strcmp(s,"-split_at"))split_at=std::atoi(v);else if(!std::strcmp(s,"-nact"))wp.nact=std::atoi(v);
     else if(!std::strcmp(s,"-hist_frac"))hist_frac=std::atoi(v);else if(!std::strcmp(s,"-hist_founders"))hist_founders=std::atoi(v);
-    else if(!std::strcmp(s,"-probe"))probef=v;else if(!std::strcmp(s,"-probe_games"))probe_games=std::atoi(v);else if(!std::strcmp(s,"-mask"))maskf=v;else if(!std::strcmp(s,"-mask_mode"))mask_mode=v;else if(!std::strcmp(s,"-obs_norm"))obs_norm=std::atoi(v);
+    else if(!std::strcmp(s,"-probe"))probef=v;else if(!std::strcmp(s,"-probe_games"))probe_games=std::atoi(v);else if(!std::strcmp(s,"-mask"))maskf=v;else if(!std::strcmp(s,"-mask_mode"))mask_mode=v;else if(!std::strcmp(s,"-obs_norm"))obs_norm=std::atoi(v);else if(!std::strcmp(s,"-ef"))ef=std::atoi(v);
     else if(!std::strcmp(s,"-ablate"))ablate=v;else if(!std::strcmp(s,"-arena_ck"))arena_ck=v;else if(!std::strcmp(s,"-ck"))ckf=v;
     else if(!std::strcmp(s,"-season"))wp.season=std::atoi(v);else if(!std::strcmp(s,"-view"))wp.view=std::atoi(v);
     else if(!std::strcmp(s,"-signals"))wp.signals=std::atoi(v);else if(!std::strcmp(s,"-rot"))wp.rot=std::atoi(v);
@@ -336,6 +336,8 @@ int main(int argc,char** argv){
   if(wp.farms&&!wp.farm_reset)fp2.push_back(9990000);
   if(wp.home_cue)fp2.push_back(9990100+wp.home_cue);
   if(obs_norm)fp2.push_back(9990200+obs_norm);
+  if(ef<0||ef>16){std::fprintf(stderr,"-ef: 0 (off) or the residual decay shift 1..16\n");return 2;}
+  if(ef)fp2.push_back(9990300+ef);
   const int Din=bc.Din;std::vector<std::int64_t> nacc((std::size_t)2*Din+1,0);Norm cur;cur.from(nacc,Din);  // -obs_norm: raw sums since the start, current normaliser
   const std::vector<const Norm*> nmv(K,&cur);
   if(cat_every){fp2.push_back(9200000+cat_every);fp2.push_back((std::int64_t)std::llround(cat_keep*1e6));}
@@ -344,7 +346,8 @@ int main(int argc,char** argv){
   auto save_ck=[&](int e){const std::string tmp=ckf+".tmp";std::FILE* f=std::fopen(tmp.c_str(),"wb");if(!f)return false;
     auto w=[&](std::int64_t x){std::fwrite(&x,8,1,f);};w(kCkMagic);w((std::int64_t)fp2.size());for(auto x:fp2)w(x);
     w(e);w(reseeds);w(splits);w(extinct);w((std::int64_t)next_lid);canon.save(f);w((std::int64_t)rc.state.size());std::fwrite(rc.state.data(),1,rc.state.size(),f);
-    for(auto& l:lin){w(l.active);w((std::int64_t)l.id);w(l.age);if(stress>0){std::int64_t b;std::memcpy(&b,&l.ema,8);w(b);}if(l.active)l.g->save(f,e);}
+    for(auto& l:lin){w(l.active);w((std::int64_t)l.id);w(l.age);if(stress>0){std::int64_t b;std::memcpy(&b,&l.ema,8);w(b);}if(l.active)l.g->save(f,e);
+      if(ef&&l.active){w((std::int64_t)l.res.size());std::fwrite(l.res.data(),4,l.res.size(),f);}}
     w((std::int64_t)anc.size());for(auto& a:anc)a->save(f,0);
     if(obs_norm){w((std::int64_t)nacc.size());for(auto x:nacc)w(x);}
     const bool ok=std::fflush(f)==0&&!std::ferror(f);std::fclose(f);return ok&&std::rename(tmp.c_str(),ckf.c_str())==0;};
@@ -357,7 +360,8 @@ int main(int argc,char** argv){
     if(!r(n)||n!=(std::int64_t)rc.state.size()||std::fread(rc.state.data(),1,rc.state.size(),f)!=rc.state.size())return -1;
     for(auto& l:lin){std::int64_t ac,id,ag;if(!r(ac)||!r(id)||!r(ag))return -1;l.active=ac!=0;l.id=(std::uint64_t)id;l.age=(int)ag;l.g.reset();
       if(stress>0){std::int64_t b;if(!r(b))return -1;std::memcpy(&l.ema,&b,8);}
-      if(l.active){l.g=std::make_unique<evo::Egg>(bc,1);l.g->load(f);}}
+      if(l.active){l.g=std::make_unique<evo::Egg>(bc,1);l.g->load(f);}
+      l.res.clear();if(ef&&l.active){std::int64_t m;if(!r(m)||m<0||m>(std::int64_t)1<<28)return -1;l.res.resize((std::size_t)m);if(m&&std::fread(l.res.data(),4,(std::size_t)m,f)!=(std::size_t)m)return -1;}}
     if(!r(n)||n<0||n>1024){return -1;}anc.clear();for(std::int64_t i=0;i<n;++i){anc.push_back(std::make_unique<evo::Egg>(bc,1));anc.back()->load(f);}
     if(obs_norm){if(!r(n)||n!=(std::int64_t)nacc.size())return -1;for(auto& x:nacc)if(!r(x))return -1;cur.from(nacc,Din);}
     return (int)e;};
@@ -387,6 +391,7 @@ int main(int argc,char** argv){
     if(split_age)std::fprintf(lg,"# W1b split_age %d (split lineages take the parent's age)\n",split_age);
     if(null_es)std::fprintf(lg,"# W1c null_es %d (random update signs: fitness ignored)\n",null_es);
     if(hist_pair)std::fprintf(lg,"# W1e hist_pair %d (an ancestor drawn for each fork pair)\n",hist_pair);
+    if(ef)std::fprintf(lg,"# ef %d (update with error feedback: residual decay 2^-%d, the top alpha of |residual| move)\n",ef,ef);
     if(obs_norm)std::fprintf(lg,"# obs_norm %d (input normalisation: running mean and SD of each observation entry, ARS V2)\n",obs_norm);
     if(!archive.empty()){lin[0].g->save(archive+"/egg_0.bin",0);if(obs_norm)cur.save(archive+"/egg_0.bin.nrm");}}
   else std::fprintf(lg,"# resumed at epoch %d, threads %d\n",e0,threads);
@@ -426,7 +431,7 @@ int main(int argc,char** argv){
       double al=std::max(alpha_floor,1.0/(0.015*lin[k].age+1));
       if(stress>0){double cur=0;for(long fv:fit[k])cur+=fv;cur/=F2;if(lin[k].ema<0)lin[k].ema=cur;  // more change when fitness falls below its own average
         const double st=std::max(0.0,(lin[k].ema-cur)/std::max(1.0,lin[k].ema));al=std::min(1.0,al*(1+stress*st));lin[k].ema=0.9*lin[k].ema+0.1*cur;}
-      if(k==k0)alpha=al;ch+=evo::egg_update(*lin[k].g,lin[k].nz,F,al);++lin[k].age;}
+      if(k==k0)alpha=al;ch+=ef?evo::egg_update_ef(*lin[k].g,lin[k].nz,F,al,lin[k].res,ef):evo::egg_update(*lin[k].g,lin[k].nz,F,al);++lin[k].age;}
     m/=F2;const double sd=std::sqrt(std::max(0.0,m2/F2-m*m));
     {std::vector<w::World> one{canon};std::vector<std::unique_ptr<evo::Stepper>> own;std::vector<evo::Stepper*> st(K,nullptr);
       for(int k=0;k<Kmax;++k)if(lin[k].active){own.push_back(std::make_unique<evo::Stepper>(*lin[k].g,nullptr,rc,k*wp.S,wp.S));st[k]=own.back().get();}
@@ -436,11 +441,12 @@ int main(int argc,char** argv){
     for(int k=0;k<Kmax;++k){if(!lin[k].active||canon.count(k)>0)continue;
       if(alive_l==0&&k==k0){canon.reseed_lineage(k,founders,(std::uint64_t)e+1);std::fill(rc.state.begin(),rc.state.end(),0);++reseeds;continue;}
       if(!archive.empty()){const std::string fn=archive+"/extinct_L"+std::to_string(lin[k].id)+"_e"+std::to_string(e+1)+".bin";lin[k].g->save(fn,e+1);if(obs_norm)cur.save(fn+".nrm");}
-      lin[k].active=false;lin[k].g.reset();++extinct;}
+      lin[k].active=false;lin[k].g.reset();lin[k].res.clear();++extinct;}
     for(int k=0;k<Kmax;++k){if(!lin[k].active||canon.count(k)<split_at)continue;int j=-1;for(int q=0;q<Kmax;++q)if(!lin[q].active){j=q;break;}if(j<0)break;
       lin[j].g=std::make_unique<evo::Egg>(bc,seed+next_lid);copy_weights(*lin[j].g,*lin[k].g);
       std::uint64_t c=0;for(auto* M:lin[j].g->mats)for(auto& x:M->w){const std::uint64_t h=mixu(mixu(seed^0x5b1ULL)+(next_lid<<40)+c++);if(h%10==0)x=(std::int8_t)std::clamp((int)x+((h>>8)&1?1:-1),-127,127);}
       lin[j].g->repack();
+      lin[j].res=lin[k].res;  // -ef: the split copy keeps the parent's residuals
       lin[j].active=true;lin[j].id=next_lid++;lin[j].age=split_age?lin[k].age:0;lin[j].ema=lin[k].ema;++splits;int moved=0,t=0;
       for(int s=0;s<wp.S;++s){if(!canon.ag[(std::size_t)k*wp.S+s].alive)continue;if((moved++)%2==0)continue;
         while(t<wp.S&&canon.ag[(std::size_t)j*wp.S+t].alive){++t;}

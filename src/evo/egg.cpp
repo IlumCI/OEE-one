@@ -316,4 +316,25 @@ long egg_update(Egg& g,const Noise& nz,const std::vector<int>& F,double alpha){
   g.repack();return changed;
 }
 
+long egg_update_ef(Egg& g,const Noise& nz,const std::vector<int>& F,double alpha,std::vector<std::int32_t>& res,int shift){
+  const int P=nz.P;const int Pp=(P+63)/64*64;const std::size_t N=(std::size_t)g.nparams();if(res.size()!=N)res.assign(N,0);
+  auto dec=[shift](std::int32_t r){return shift>0?r-(r>=0?(r>>shift):-((-r)>>shift)):r;};std::size_t o=0;
+  for(auto* M:g.mats){const int k=M->id,m=M->m,n=M->n;  // residual += correlation sum (as in egg_update)
+    std::vector<std::int8_t> Lt((std::size_t)m*Pp,0),Bt((std::size_t)Pp*n,0);
+    for(int p=0;p<P;++p){if(!F[p])continue;const std::int8_t* A=nz.A(k,p);for(int i=0;i<m;++i)Lt[(std::size_t)i*Pp+p]=(std::int8_t)(F[p]*A[i]);
+      std::memcpy(Bt.data()+(std::size_t)p*n,nz.B(k,p),n);}
+    auto Bp=pack_b(Bt.data(),Pp,n);std::vector<std::int32_t> E((std::size_t)m*n);gemm(Lt.data(),Pp,Bp.data(),E.data(),n,m,n,Pp);
+    for(std::size_t i=0;i<E.size();++i)res[o+i]=dec(res[o+i])+E[i];o+=E.size();}
+  for(auto* v:g.vecs){const int k=(int)g.mats.size()+v->id;
+    for(int i=0;i<v->n;++i){std::int64_t e=0;for(int p=0;p<P;++p)if(F[p])e+=F[p]*(int)nz.A(k,p)[i]*(int)nz.B(k,p)[i];res[o+i]=dec(res[o+i])+(std::int32_t)e;}o+=v->n;}
+  const std::size_t kk=std::min(N,(std::size_t)std::llround(std::max(0.0,alpha)*(double)N));if(kk==0)return 0;
+  std::vector<std::int32_t> a(N);for(std::size_t i=0;i<N;++i)a[i]=res[i]<0?-res[i]:res[i];
+  std::nth_element(a.begin(),a.begin()+(N-kk),a.end());const std::int32_t T=std::max<std::int32_t>(1,a[N-kk]);  // smallest |R| that moves
+  long changed=0;o=0;
+  auto mv=[&](std::int8_t& w,std::int32_t& r){if(r>=T||r<=-T){const int s=r>0?1:-1;const int x=std::clamp((int)w+s,-127,127);if(x!=w){w=(std::int8_t)x;++changed;}r-=s*T;}};
+  for(auto* M:g.mats){for(std::size_t i=0;i<M->w.size();++i)mv(M->w[i],res[o+i]);o+=M->w.size();}
+  for(auto* v:g.vecs){for(int i=0;i<v->n;++i)mv(v->w[i],res[o+i]);o+=v->n;}
+  g.repack();return changed;
+}
+
 }  // namespace oee::evo

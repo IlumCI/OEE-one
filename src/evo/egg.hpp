@@ -55,6 +55,13 @@ void run_rows(const Egg& g,const Noise* nz,Rows& rows,const std::uint8_t* tok,in
 // Integer EGGROLL update from per-pair shaped fitness F[p] in {-1,0,1}; alpha = fraction of parameters to move.
 // Returns the number of parameters changed.
 long egg_update(Egg& g,const Noise& nz,const std::vector<int>& F,double alpha);
+// The same update with error feedback (signSGD/top-k with memory: Karimireddy et al. 2019, arXiv:1901.09847; for ES on
+// integer weights, QES: Xu et al. 2026, arXiv:2602.03120, Eqs. 6-8). Each parameter keeps a residual R (res, one int32
+// per parameter: matrices, then vectors, in registry order; sized on first use): R decays by 2^-shift, the update's
+// correlation sum is added, and the fraction alpha of parameters with the largest |R| moves one step in the sign of
+// R, which then loses one threshold T (the smallest |R| that moved). As many parameters move as in egg_update, but
+// chosen by evidence accumulated over updates instead of one update's noise. Returns the number of parameters changed.
+long egg_update_ef(Egg& g,const Noise& nz,const std::vector<int>& F,double alpha,std::vector<std::int32_t>& res,int shift);
 
 // Single-threaded stepping over rows [r0, r0+n) of `rows`: one forward step per call, recurrent state kept in rows.state.
 // Construct after setting rows.sign / rows.pair (perturbed vector parameters are cached per row).
