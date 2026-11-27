@@ -122,9 +122,12 @@ Next:
 - If an arm passes, carry it to the W4f/W4g world (the main line), against W4f arm J.
 - Then evolve the rule's form (DiscoRL, Oh et al., Nature 2025: learning rules discovered by meta-learning).
 
-LL1 seeds: arms LR and LM stop at seeds 1 and 2. Their third seeds were not run, to free the cores for LL1c (owner's
-options, 2026-11-27; the decision timer expired with the recommendation applied). runs8/w1l_LM_s3 is paused at epoch 70
-and can resume.
+LL1 seeds: arms LR and LM stopped at seeds 1 and 2 to free the cores for LL1c (owner's options, 2026-11-27; the
+decision timer expired with the recommendation applied).
+- LM seed 2 then reversed the premise: freezing its champion is catastrophic (share 0.0007, t −1615). Seed 1 had
+  gone the other way (0.60, t +2.4).
+- So LM's verdict needs seed 3. runs8/w1l_LM_s3 (paused at epoch 70) resumes after the last LL1c run has started.
+- LR seed 3 stays unrun: its seed-1 champion loses to every non-learning W1b champion (share 0.001).
 
 ## LL2: an evolved reward (designed 2026-11-27; runs only if LL1 shows learning neutral or harmful)
 
