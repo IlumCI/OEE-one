@@ -141,6 +141,17 @@ int main(){
       w.irl[f]=1;for(int t2=0;t2<q14.irr_decay;++t2){bn.clear();w.tick(l14,bn);}const bool lapsed=w.irl[f]==0&&w.lown[f]==-1;
       if(!(owned&&seen&&shut&&fed&&kept&&lapsed))std::printf("  owned %d seen %d shut %d fed %d kept %d lapsed %d\n",owned,seen,shut,fed,kept,lapsed);
       CHECK(owned&&seen&&shut&&fed&&kept&&lapsed,"W4d land: a cell irrigated by a machine lineage 1 fed is 1's land; lineage 0 sees and eats no food there, 1 does; saved; lapses at irrigation 0");}
+    {WParams q15=q;q15.irr=8;q15.irr_decay=1;q15.K=2;q15.pass=1;q15.graze=1;q15.land=1;q15.farms=6;q15.farm_store=40;q15.farm_every=50;World w;w.init(q15,0);w.track=true;for(auto& r:w.res)r=0;
+      Agent& a=w.ag[q15.S];a=Agent{};a.x=1;a.y=1;a.dir=0;a.energy=500;a.lineage=1;a.alive=true;a.id=1;w.occ[1*L+1]=q15.S;
+      std::vector<std::int8_t> la((std::size_t)q15.S*32,(std::int8_t)-100),lb((std::size_t)q15.S*32,(std::int8_t)-100);la[0]=100;lb[0]=100;const std::int8_t* l15[2]={la.data(),lb.data()};
+      std::vector<int> bn;w.tick(l15,bn);bool placed=true,none0=true;
+      for(int i=0;i<6;++i){const int c=w.home_cell(1,i);placed=placed&&w.mat[c]==1&&w.mlin[c]==1&&w.lown[c]==1&&w.irl[c]>200&&w.tape[(std::size_t)c*16]==',';}
+      for(int i=0;i<6;++i)none0=none0&&w.lown[w.home_cell(0,i)]!=0;
+      const int c=w.home_cell(1,0);w.occ[1*L+1]=-1;a.x=c%L;a.y=c/L;w.occ[c]=q15.S;const long h0=w.stat[32+29];bn.clear();w.tick(l15,bn);const bool home=w.stat[32+29]==h0+1;
+      w.mst[c]=5;while(w.t%50!=0){bn.clear();w.tick(l15,bn);}bn.clear();w.tick(l15,bn);const bool topped=w.mst[c]>=38;
+      std::FILE* fl=std::tmpfile();w.save(fl);std::rewind(fl);World v;const bool ok=v.load(fl);std::fclose(fl);const bool kept=ok&&v.p.farms==6&&v.p.farm_store==40&&v.p.farm_every==50;
+      if(!(placed&&none0&&home&&topped&&kept))std::printf("  placed %d none0 %d home %d topped %d (mst %d) kept %d\n",placed,none0,home,topped,(int)w.mst[c],kept);
+      CHECK(placed&&none0&&home&&topped&&kept,"W4e homesteads: farms on a living lineage's own land (none for an absent one), counted as home, topped up every farm_every ticks, saved");}
     {WParams q3=q;q3.nodes=1;q3.node_per=50;q3.node_ripe=10;q3.view=1;World w;w.init(q3,0);for(auto& r:w.res)r=0;
       int nc=-1;for(int c=0;c<L*L;++c)if(w.mat[c]==3){nc=c;break;}w.mat[nc]=0;const int c=5*L+5;w.mat[c]=3;w.nph[c]=0;w.ncyc[c]=-1;  // one node at (5,5), ripe at t 0-9
       auto put2=[&](int slot,int x,int y,int dir){Agent& g=w.ag[slot];g=Agent{};g.x=x;g.y=y;g.dir=dir;g.energy=100;g.alive=true;g.id=slot+1;w.occ[y*L+x]=slot;};

@@ -986,14 +986,24 @@ W4d seed 3 at epoch 1000 (2026-11-27).
 - **Killed.** In every seed building and feeding are below random, and the no-feed ablation costs nothing.
 - Land ownership removed the commons booms. In E, accidental feeding of wild farms fed everyone. Here the land such
   feeding irrigates becomes private to the feeder. No seed boomed, and mean population fell in seeds 1 and 3.
-- On paper a private farm now pays. At full irrigation a farm cell regrows about 1 food per tick, against at most
-  0.37 for the best natural cell. Keeping it running costs about 0.26 store per tick (1 per 4 ticks to run, about
-  1 per 128 ticks for irrigation upkeep).
-  - Collecting that return takes a sequence of actions over hundreds of ticks: feed a farm repeatedly, stay near it,
-    and eat its land. Evolution never found the sequence.
 - Head-to-head against E's final champions is mixed (0.9996, 0.09, 0.25), with no consistent effect of land.
-- **Conclusion (as fixed in the protocol):** private returns were not enough. The limit is in the agents or the
-  learner, not in this world. Changes to this world stop here, and the next step is a re-plan.
+- **Conclusion as first written (withdrawn, see the correction):** private returns were not enough, so the limit is
+  in the agents or the learner.
+- **Correction (2026-11-27, W4e calibration; tools/w/farmcal.cpp).** An earlier version of this verdict said a
+  private farm pays on paper. Measured, it does not.
+  - Six farm machines (16 irrigation instructions each) on their owner's land, fed whenever their store falls below
+    20, against the same farms left unfed, with W4d's world settings and food counted as harvested every tick:
+
+    | Window | Extra food per unit of energy fed (seeds 1–3) |
+    |---|---|
+    | One epoch (600 ticks) | 0.00, 0.03, 0.03 |
+    | Five epochs (3,000 ticks) | 0.48, 0.85, 0.74 |
+
+  - Irrigated land decays slowly (1 level per 16 ticks), so an unfed farm's land stays fertile for the whole epoch.
+    Most of the energy fed goes to the machine's running cost (1 store per 4 ticks), and an irrigation step spends
+    a full store even when the land can take only 1 more level.
+  - So feeding a farm costs more than it returns, even when the land is private. The agents were right not to
+    farm, and the protocol's inference does not follow: what the world still runs out of is a return on investment.
 
 ### W4e protocol: homestead farms, a diagnostic (fixed 2026-11-27, before the code; approved by the owner)
 

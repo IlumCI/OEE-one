@@ -59,6 +59,10 @@ struct WParams{
   int claim=0;  // W4b: 1 = feeding a wild machine claims it for the feeder's lineage (homesteading)
   int land=0;   // W4d: 1 = a cell a machine irrigates becomes land of the lineage that last fed that machine; while it
                 // is irrigated only that lineage eats its food (needs irr); ownership lapses when irrigation decays to 0
+  // W4e homesteads (diagnostic; needs land): every farm_every ticks each lineage with living agents gets `farms` farm
+  // machines (16 irrigation instructions, owned and last fed by it) on fixed cells of its own land, at full irrigation,
+  // with farm_store store (a standing farm keeps its tape and is topped up)
+  int farms=0,farm_store=40,farm_every=600;
 };
 
 struct Agent{int x=0,y=0,dir=0,energy=0,age=0,lineage=0;bool alive=false;std::uint64_t id=0;int sig=0,wpos=0;};
@@ -83,7 +87,8 @@ struct World{
   std::uint32_t deaf_kin=0,deaf_other=0;  // analysis: lineages that hear no symbols from their own / from other lineages
   std::uint32_t nofeed=0;              // analysis: lineages whose feed action does nothing (not saved)
   // analysis: per-lineage counters when track is set (not saved): stat[k*32+a] actions a = 0..15, +16 kills made,
-  // +17 births, +18 starved, +19 died of age, +20 killed, +21 non-zero symbols, +22 agent-ticks, +23 joint harvests;
+  // +17 births, +18 starved, +19 died of age, +20 killed, +21 non-zero symbols, +22 agent-ticks, +23 joint harvests,
+  // +29 agent-ticks on own irrigated land (with land);
   // with irr (credit for irrigation, k = the credited lineage): +24 food from k-credited irrigated cells eaten by k,
   // +25 the same eaten by other lineages, +26 food from uncredited irrigated cells eaten by k, +27 energy k fed into
   // machines, +28 all food k took from cells
@@ -102,6 +107,8 @@ struct World{
   // extinction event (punctuated equilibrium; Lehman & Miikkulainen 2015): every agent outside a random square window
   // covering `keep` of the area dies (structures stay). Returns how many died.
   int catastrophe(std::uint64_t salt,double keep);
+  int home_cell(int k,int i) const;  // W4e: cell of lineage k's i-th homestead farm
+  void homestead();                  // W4e: place or top up every living lineage's homestead farms
   bool ripe(int c) const;
   int din() const{return (p.signals||p.matter)?128:64;}
   int nv() const{return p.matter?32:16;}
