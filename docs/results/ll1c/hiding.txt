@@ -1,0 +1,10 @@
+# Hiding-effect test (2026-11-27 23:45 UTC): each learning champion with its plasticity frozen (A, -ablate freeze)
+# against the E champion of the same seed (B, -life_b 0); fresh arenas, 16 seeds x 2; share of A (t).
+s1 L frozen vs E: 0.2239 (t -5.05)
+s1 LL2 frozen vs E: 0.0743 (t -18.48)
+s2 L frozen vs E: 0.0402 (t -120.68)
+s2 LL2 frozen vs E: 0.0447 (t -94.96)
+s3 L frozen vs E: 0.0714 (t -17.62)
+s3 LL2 frozen vs E: 0.0562 (t -14.07)
+s4 L frozen vs E: 0.0172 (t -72.41)
+s4 LL2 frozen vs E: 0.0219 (t -44.53)
