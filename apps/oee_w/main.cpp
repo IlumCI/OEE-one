@@ -50,6 +50,8 @@
 //          the living agents each tick: the values keep their distribution, the agent's own information is lost).
 //          -ablate gate_eat / gate_all (analysis): when an agent of A draws an eat that would take nothing (gate_all: any
 //          action that would have no effect), it draws again from the other actions with the same policy.
+//          -ablate sharp / greedy (analysis): A samples its actions with P(a) ~ 2^(logit/8) (twice as decisive) / takes
+//          the action with the highest logit.
 //          -probe FILE (analysis): one record per living agent of A per tick in the first -probe_games games (default 2;
 //          solo: lineage 0, i.e. B in odd games): what it saw, its logits, its recurrent state after the step, the action
 //          drawn, its effect and how the agent died (layout in tools/w/probe.py).
@@ -95,24 +97,42 @@ std::uint64_t mixu(std::uint64_t x){x+=0x9e3779b97f4a7c15ULL;x=(x^(x>>30))*0xbf5
 // Analysis of lineage k (tournaments): mask zeroes observation entries [a,b) before every step; rec appends a record
 // per living agent per tick to buf (header 24 bytes: tick u32, id u32, game, slot, x, y, dir, action (255 none), death,
 // 0, effect i16, energy before i16, energy after i16 (0 dead), age i16; then obs Din, logits V, state after the step)
+// Input normalisation (-obs_norm 1; state normalisation of ARS V2, Mania, Guy and Recht 2018, arXiv:1803.07055, §3.2;
+// sensor normalisation in OpenAI-ES): entry i becomes clamp(((x - mu_i) * k_i) >> 16, -127, 127) with k_i = 32*65536/sd_i
+// (1 SD = 32), from the running mean and SD (diagonal) of all raw observations in the run's forks since the start;
+// entries with SD < 1 (the bias, unused entries) pass unchanged. Integer arithmetic, so training and tournaments agree
+// exactly. Saved beside each archived genome (egg_E.bin.nrm); tournaments give each genome its own (none: raw inputs).
+struct Norm{std::vector<std::int32_t> mu,k;
+  void apply(std::int8_t* o) const{for(std::size_t i=0;i<k.size();++i)if(k[i])o[i]=(std::int8_t)std::clamp((int)(((std::int64_t)o[i]-mu[i])*k[i]>>16),-127,127);}
+  void from(const std::vector<std::int64_t>& a,int n){mu.assign(n,0);k.assign(n,0);const double c=(double)a[2*n];if(c<=0)return;
+    for(int i=0;i<n;++i){const double m=a[i]/c,v=std::max(0.0,a[n+i]/c-m*m),sd=std::sqrt(v);mu[i]=(std::int32_t)std::llround(m);k[i]=sd<1?0:(std::int32_t)std::llround(32*65536/sd);}}
+  bool save(const std::string& fn) const{std::FILE* f=std::fopen(fn.c_str(),"wb");if(!f)return false;const std::int32_t n=(std::int32_t)k.size();
+    std::fwrite("WNRM0001",1,8,f);std::fwrite(&n,4,1,f);std::fwrite(mu.data(),4,n,f);std::fwrite(k.data(),4,n,f);return std::fclose(f)==0;}
+  bool load(const std::string& fn){std::FILE* f=std::fopen(fn.c_str(),"rb");if(!f)return false;char m[8];std::int32_t n=0;
+    bool ok=std::fread(m,1,8,f)==8&&!std::memcmp(m,"WNRM0001",8)&&std::fread(&n,4,1,f)==1&&n>0&&n<=4096;
+    if(ok){mu.resize(n);k.resize(n);ok=std::fread(mu.data(),4,n,f)==(std::size_t)n&&std::fread(k.data(),4,n,f)==(std::size_t)n;}std::fclose(f);return ok;}};
 struct Probe{int k=-1,game=0;std::vector<std::pair<int,int>> mask;bool shuf=false,rec=false;std::vector<std::uint8_t> buf;};  // shuf: masked entries are
 // rotated among the lineage's agents (each sees another agent's values: same distribution, own information lost)
 void put16(std::uint8_t* r,int v){const std::uint16_t x=(std::uint16_t)(std::int16_t)std::clamp(v,-32768,32767);std::memcpy(r,&x,2);}
 void put32(std::uint8_t* r,std::uint32_t x){std::memcpy(r,&x,4);}
 void run_worlds(std::vector<w::World>& ws,evo::Rows& rows,const std::vector<evo::Stepper*>& st,int S,int H,std::vector<std::vector<long>>* integ,
-                const std::vector<char>* amn=nullptr,const std::vector<evo::Stepper*>* pf=nullptr,int kp=-1,Probe* pr=nullptr){
+                const std::vector<char>* amn=nullptr,const std::vector<evo::Stepper*>* pf=nullptr,int kp=-1,Probe* pr=nullptr,
+                const std::vector<const Norm*>* nm=nullptr,std::vector<std::int64_t>* acc=nullptr){  // nm: per-lineage input normalisation; acc: raw sums
   const int nw=(int)ws.size(),K=(int)st.size(),Din=ws[0].din(),V=ws[0].nv();const int L=(int)(rows.state.size()/rows.R);
   std::vector<std::int8_t> obs((std::size_t)nw*S*Din),lgt((std::size_t)K*nw*S*V,0);std::vector<int> idx,born;
   const std::vector<std::int8_t> zero((std::size_t)S*V,0);std::vector<const std::int8_t*> lp(K);
-  const int RS=24+Din+V+L;std::vector<std::uint8_t> pend;std::vector<int> pid;  // probe records waiting for the tick
+  const int RS=24+Din+V+L;std::vector<std::uint8_t> pend;std::vector<int> pid;std::vector<std::int8_t> raw;  // probe records waiting for the tick; raw obs
   for(int t=0;t<H;++t){pid.clear();
     for(int k=0;k<K;++k){if(!st[k])continue;idx.clear();
       if(pf&&k==kp){for(int i=0;i<nw;++i){if(!(*pf)[i])continue;idx.clear();  // one stepper per world
-          for(int s=0;s<S;++s)if(ws[i].ag[(std::size_t)k*S+s].alive){ws[i].observe(k*S+s,obs.data()+idx.size()*Din);idx.push_back(s);}
+          for(int s=0;s<S;++s)if(ws[i].ag[(std::size_t)k*S+s].alive){ws[i].observe(k*S+s,obs.data()+idx.size()*Din);if(nm&&(*nm)[k])(*nm)[k]->apply(obs.data()+idx.size()*Din);idx.push_back(s);}
           if(idx.empty())continue;const std::int8_t* o=(*pf)[i]->step(obs.data(),idx.data(),(int)idx.size());
           for(std::size_t j=0;j<idx.size();++j)std::memcpy(lgt.data()+(((std::size_t)k*nw+i)*S+idx[j])*V,o+j*V,V);}
         continue;}
+      const bool keep=pr&&pr->rec&&k==pr->k;if(keep)raw.clear();
       for(int i=0;i<nw;++i)for(int s=0;s<S;++s)if(ws[i].ag[(std::size_t)k*S+s].alive){std::int8_t* ob=obs.data()+idx.size()*Din;ws[i].observe(k*S+s,ob);
+        if(acc){for(int j=0;j<Din;++j){(*acc)[j]+=ob[j];(*acc)[Din+j]+=(int)ob[j]*ob[j];}++(*acc)[2*Din];}
+        if(keep)raw.insert(raw.end(),ob,ob+Din);if(nm&&(*nm)[k])(*nm)[k]->apply(ob);
         if(pr&&k==pr->k&&!pr->shuf)for(auto& m:pr->mask)std::fill(ob+m.first,ob+m.second,0);idx.push_back(i*S+s);}
       if(idx.empty())continue;
       if(pr&&k==pr->k&&pr->shuf&&idx.size()>1)for(auto& m:pr->mask){const int w=m.second-m.first;std::vector<std::int8_t> t0(obs.begin()+m.first,obs.begin()+m.second);
@@ -126,7 +146,7 @@ void run_worlds(std::vector<w::World>& ws,evo::Rows& rows,const std::vector<evo:
       if(pr&&pr->rec&&k==pr->k){pend.assign(idx.size()*RS,0);pid=idx;
         for(std::size_t j=0;j<idx.size();++j){std::uint8_t* r=pend.data()+j*RS;const int i=idx[j]/S,s=idx[j]%S;const w::Agent& a=ws[i].ag[(std::size_t)k*S+s];
           put32(r,(std::uint32_t)ws[i].t);put32(r+4,(std::uint32_t)a.id);r[8]=(std::uint8_t)pr->game;r[9]=(std::uint8_t)s;r[10]=(std::uint8_t)a.x;r[11]=(std::uint8_t)a.y;r[12]=(std::uint8_t)a.dir;
-          put16(r+18,a.energy);put16(r+22,a.age);std::memcpy(r+24,obs.data()+j*Din,Din);std::memcpy(r+24+Din,o+j*V,V);
+          put16(r+18,a.energy);put16(r+22,a.age);std::memcpy(r+24,raw.data()+j*Din,Din);std::memcpy(r+24+Din,o+j*V,V);
           std::memcpy(r+24+Din+V,rows.state.data()+((std::size_t)k*nw*S+idx[j])*L,L);}}}
     for(int i=0;i<nw;++i){for(int k=0;k<K;++k)lp[k]=st[k]?lgt.data()+((std::size_t)k*nw+i)*S*V:zero.data();born.clear();ws[i].tick(lp.data(),born);
       if(pr&&pr->rec&&!pid.empty())for(std::size_t j=0;j<pid.size();++j){if(pid[j]/S!=i)continue;std::uint8_t* r=pend.data()+j*RS;const int sl=pr->k*S+pid[j]%S;const w::World& Z=ws[i];
@@ -151,7 +171,7 @@ constexpr std::int64_t kCkMagic=0x3130574b43454f4fLL;  // "OEECKW01"
 int main(int argc,char** argv){
   int epochs=100,P=128,H=200,threads=4,layers=2,D=64,sig=4,archive_every=50,seeds=5,ticks=2000,Kmax=1,split_at=-1,hist_frac=0,hist_founders=8,ck_every=10,climate_every=5,climate_ticks=1000,stats=0,curve=0,skip=-1,split_age=0,null_es=0,hist_pair=0,gen=0,arena_progs=0,solo=0,swap_at=0,swap_win=500,cat_every=0;
   double prog_cont=0.7,cat_keep=0.1,stress=0;
-  double alpha_floor=0;std::uint64_t seed=1,seed0=1000;std::string logf,archive,ta,tb,ckf,ablate,arena_ck,probef,maskf,mask_mode="zero";int probe_games=2;w::WParams wp;int founders=16;
+  double alpha_floor=0;std::uint64_t seed=1,seed0=1000;std::string logf,archive,ta,tb,ckf,ablate,arena_ck,probef,maskf,mask_mode="zero";int probe_games=2,obs_norm=0;w::WParams wp;int founders=16;
   for(int a=1;a<argc;a+=2){const char* s=argv[a];const char* v=a+1<argc?argv[a+1]:"";
     if(!std::strcmp(s,"-epochs"))epochs=std::atoi(v);else if(!std::strcmp(s,"-pairs"))P=std::atoi(v);else if(!std::strcmp(s,"-H"))H=std::atoi(v);
     else if(!std::strcmp(s,"-L"))wp.L=std::atoi(v);else if(!std::strcmp(s,"-S"))wp.S=std::atoi(v);else if(!std::strcmp(s,"-founders"))founders=std::atoi(v);
@@ -163,7 +183,7 @@ int main(int argc,char** argv){
     else if(!std::strcmp(s,"-regrow"))wp.regrow=std::atoi(v);else if(!std::strcmp(s,"-base"))wp.base=std::atoi(v);else if(!std::strcmp(s,"-patches"))wp.patches=std::atoi(v);
     else if(!std::strcmp(s,"-lineages"))Kmax=std::atoi(v);else if(!std::strcmp(s,"-split_at"))split_at=std::atoi(v);else if(!std::strcmp(s,"-nact"))wp.nact=std::atoi(v);
     else if(!std::strcmp(s,"-hist_frac"))hist_frac=std::atoi(v);else if(!std::strcmp(s,"-hist_founders"))hist_founders=std::atoi(v);
-    else if(!std::strcmp(s,"-probe"))probef=v;else if(!std::strcmp(s,"-probe_games"))probe_games=std::atoi(v);else if(!std::strcmp(s,"-mask"))maskf=v;else if(!std::strcmp(s,"-mask_mode"))mask_mode=v;
+    else if(!std::strcmp(s,"-probe"))probef=v;else if(!std::strcmp(s,"-probe_games"))probe_games=std::atoi(v);else if(!std::strcmp(s,"-mask"))maskf=v;else if(!std::strcmp(s,"-mask_mode"))mask_mode=v;else if(!std::strcmp(s,"-obs_norm"))obs_norm=std::atoi(v);
     else if(!std::strcmp(s,"-ablate"))ablate=v;else if(!std::strcmp(s,"-arena_ck"))arena_ck=v;else if(!std::strcmp(s,"-ck"))ckf=v;
     else if(!std::strcmp(s,"-season"))wp.season=std::atoi(v);else if(!std::strcmp(s,"-view"))wp.view=std::atoi(v);
     else if(!std::strcmp(s,"-signals"))wp.signals=std::atoi(v);else if(!std::strcmp(s,"-rot"))wp.rot=std::atoi(v);
@@ -194,7 +214,7 @@ int main(int argc,char** argv){
   const bool w2=wp.season>0||wp.signals>0||wp.view!=2||wp.matter>0;
 
   if(!ta.empty()){  // tournament, mirrored: game 2k has A in slot 0, game 2k+1 has A in slot 1 (same arena seed)
-    if(!ablate.empty()&&ablate!="amnesia"&&ablate!="shuffle"&&ablate!="deaf"&&ablate!="deafkin"&&ablate!="deafother"&&ablate!="wipe"&&ablate!="nofeed"&&ablate!="nocue"&&ablate!="gate_eat"&&ablate!="gate_all"){std::fprintf(stderr,"unknown ablation %s\n",ablate.c_str());return 2;}
+    if(!ablate.empty()&&ablate!="amnesia"&&ablate!="shuffle"&&ablate!="deaf"&&ablate!="deafkin"&&ablate!="deafother"&&ablate!="wipe"&&ablate!="nofeed"&&ablate!="nocue"&&ablate!="gate_eat"&&ablate!="gate_all"&&ablate!="sharp"&&ablate!="greedy"){std::fprintf(stderr,"unknown ablation %s\n",ablate.c_str());return 2;}
     if(ablate=="nofeed"&&!wp.matter){std::fprintf(stderr,"-ablate nofeed needs -matter 1\n");return 2;}
     if(ablate=="wipe"&&!wp.matter){std::fprintf(stderr,"-ablate wipe needs -matter 1\n");return 2;}
     if(ablate.rfind("deaf",0)==0&&!wp.signals){std::fprintf(stderr,"-ablate deaf needs -signals 1\n");return 2;}
@@ -204,6 +224,8 @@ int main(int argc,char** argv){
       if(a<0||b<a||b>=bc.Din){std::fprintf(stderr,"-mask: bad range %s (entries 0..%d)\n",r.c_str(),bc.Din-1);return 2;}msk.push_back({a,b+1});}
     if(mask_mode!="zero"&&mask_mode!="shuffle"){std::fprintf(stderr,"-mask_mode zero|shuffle\n");return 2;}
     evo::Egg A(bc,1),B(bc,2);A.load(ta);B.load(tb);const int G=2*seeds;std::vector<std::vector<std::uint8_t>> pbuf(G);
+    Norm nA,nB;const bool hA=nA.load(ta+".nrm"),hB=nB.load(tb+".nrm");  // each genome's own input normalisation, if it has one
+    if((hA&&(int)nA.k.size()!=bc.Din)||(hB&&(int)nB.k.size()!=bc.Din)){std::fprintf(stderr,"normaliser size differs from the observation size\n");return 2;}
     std::vector<double> fs(G),is(G);std::vector<long> ba(G),bb(G);std::vector<int> na(G),nb(G);std::vector<std::vector<long>> gst(G);
     const int nc=curve>0?(ticks+curve-1)/curve:0;std::vector<std::vector<double>> cv(G,std::vector<double>(nc,0.5));
     const int sk=skip>=0?skip:wp.max_age;std::vector<double> ls(G,0.5);
@@ -225,14 +247,15 @@ int main(int argc,char** argv){
       if(!solo)s1=std::make_unique<evo::Stepper>(sw?A:B,nullptr,rows,q.S,q.S);
       std::vector<w::World> one{W};std::vector<evo::Stepper*> st{&s0};if(!solo)st.push_back(s1.get());st.resize(q.K,nullptr);std::vector<std::vector<long>> ig(q.K,std::vector<long>(1,0));
       const int sa=solo?0:sw;  // A's lineage slot (solo: the only slot, A in even games)
-      std::vector<char> amn(q.K,0);if(!solo||sw==0){amn[sa]=ablate=="amnesia"?1:ablate=="shuffle"?2:0;if(ablate=="deaf")one[0].deaf=1u<<sa;if(ablate=="deafkin")one[0].deaf_kin=1u<<sa;if(ablate=="deafother")one[0].deaf_other=1u<<sa;if(ablate=="nofeed")one[0].nofeed=1u<<sa;if(ablate=="nocue")one[0].nocue=1u<<sa;if(ablate=="gate_eat")one[0].gate_eat=1u<<sa;if(ablate=="gate_all")one[0].gate_all=1u<<sa;}one[0].track=stats>0;
+      std::vector<char> amn(q.K,0);if(!solo||sw==0){amn[sa]=ablate=="amnesia"?1:ablate=="shuffle"?2:0;if(ablate=="deaf")one[0].deaf=1u<<sa;if(ablate=="deafkin")one[0].deaf_kin=1u<<sa;if(ablate=="deafother")one[0].deaf_other=1u<<sa;if(ablate=="nofeed")one[0].nofeed=1u<<sa;if(ablate=="nocue")one[0].nocue=1u<<sa;if(ablate=="gate_eat")one[0].gate_eat=1u<<sa;if(ablate=="gate_all")one[0].gate_all=1u<<sa;if(ablate=="sharp")one[0].sharp=1u<<sa;if(ablate=="greedy")one[0].greedy=1u<<sa;}one[0].track=stats>0;
+      std::vector<const Norm*> nmv(q.K,nullptr);nmv[0]=sw?(hB?&nB:nullptr):(hA?&nA:nullptr);if(!solo)nmv[1]=sw?(hA?&nA:nullptr):(hB?&nB:nullptr);
       Probe pr;pr.k=sa;pr.game=gi;if(!solo||sw==0)pr.mask=msk;pr.shuf=mask_mode=="shuffle";pr.rec=!probef.empty()&&gi<probe_games;one[0].probe=pr.rec;
       int step=curve>0?std::min(curve,climate_ticks):climate_ticks;long la=-1,lb=-1;if(ablate=="wipe")step=std::min(step,100);  // wipe A's machines every 100 ticks
       long sp0=-1,sp1=-1,sp2=-1;  // swap test: integrated biomass at swap_at - swap_win, swap_at, swap_at + swap_win
       for(int t0=0;t0<ticks;){int n=std::min(step-t0%step,ticks-t0);if(t0<sk)n=std::min(n,sk-t0);  // segment ends at curve points, climate changes and skip
         if(swap_at>0)for(int b:{swap_at-swap_win,swap_at,swap_at+swap_win})if(t0<b)n=std::min(n,b-t0);
         if(t0>0&&t0%climate_ticks==0)one[0].set_climate((std::uint64_t)(t0/climate_ticks));
-        run_worlds(one,rows,st,q.S,n,&ig,&amn,nullptr,-1,&pr);t0+=n;if(t0==sk){la=ig[sa][0];lb=solo?0:ig[1-sw][0];}
+        run_worlds(one,rows,st,q.S,n,&ig,&amn,nullptr,-1,&pr,&nmv);t0+=n;if(t0==sk){la=ig[sa][0];lb=solo?0:ig[1-sw][0];}
         if(ablate=="wipe"&&t0%100==0&&(!solo||sw==0))one[0].wipe(sa);
         if(swap_at>0){if(t0==swap_at-swap_win)sp0=ig[0][0];if(t0==swap_at){sp1=ig[0][0];one[0].swap_programs(q.seed^0x5a5aULL,100,prog_cont);}if(t0==swap_at+swap_win)sp2=ig[0][0];}
         if(curve>0&&t0%curve==0&&!solo){const long x=one[0].biomass(sw),y=one[0].biomass(1-sw);cv[gi][t0/curve-1]=x+y>0?(double)x/(x+y):0.5;}}
@@ -312,6 +335,9 @@ int main(int argc,char** argv){
   if(wp.irr_full)fp2.push_back(9980000+wp.irr_full);
   if(wp.farms&&!wp.farm_reset)fp2.push_back(9990000);
   if(wp.home_cue)fp2.push_back(9990100+wp.home_cue);
+  if(obs_norm)fp2.push_back(9990200+obs_norm);
+  const int Din=bc.Din;std::vector<std::int64_t> nacc((std::size_t)2*Din+1,0);Norm cur;cur.from(nacc,Din);  // -obs_norm: raw sums since the start, current normaliser
+  const std::vector<const Norm*> nmv(K,&cur);
   if(cat_every){fp2.push_back(9200000+cat_every);fp2.push_back((std::int64_t)std::llround(cat_keep*1e6));}
   if(stress>0)fp2.push_back(9300000000LL+std::llround(stress*1e6));
   if(hist_pair&&!hist){std::fprintf(stderr,"-hist_pair needs -hist_frac > 0\n");return 2;}
@@ -320,6 +346,7 @@ int main(int argc,char** argv){
     w(e);w(reseeds);w(splits);w(extinct);w((std::int64_t)next_lid);canon.save(f);w((std::int64_t)rc.state.size());std::fwrite(rc.state.data(),1,rc.state.size(),f);
     for(auto& l:lin){w(l.active);w((std::int64_t)l.id);w(l.age);if(stress>0){std::int64_t b;std::memcpy(&b,&l.ema,8);w(b);}if(l.active)l.g->save(f,e);}
     w((std::int64_t)anc.size());for(auto& a:anc)a->save(f,0);
+    if(obs_norm){w((std::int64_t)nacc.size());for(auto x:nacc)w(x);}
     const bool ok=std::fflush(f)==0&&!std::ferror(f);std::fclose(f);return ok&&std::rename(tmp.c_str(),ckf.c_str())==0;};
   auto load_ck=[&](std::FILE* f)->int{  // epochs done, or -1
     auto r=[&](std::int64_t& x){return std::fread(&x,8,1,f)==1;};std::int64_t x=0,n=0;
@@ -332,6 +359,7 @@ int main(int argc,char** argv){
       if(stress>0){std::int64_t b;if(!r(b))return -1;std::memcpy(&l.ema,&b,8);}
       if(l.active){l.g=std::make_unique<evo::Egg>(bc,1);l.g->load(f);}}
     if(!r(n)||n<0||n>1024){return -1;}anc.clear();for(std::int64_t i=0;i<n;++i){anc.push_back(std::make_unique<evo::Egg>(bc,1));anc.back()->load(f);}
+    if(obs_norm){if(!r(n)||n!=(std::int64_t)nacc.size())return -1;for(auto& x:nacc)if(!r(x))return -1;cur.from(nacc,Din);}
     return (int)e;};
   if(!ckf.empty())if(std::FILE* f=std::fopen(ckf.c_str(),"rb")){int e=-1;try{e=load_ck(f);}catch(const std::exception&){e=-1;}std::fclose(f);
     if(e<0){std::fprintf(stderr,"cannot resume from %s\n",ckf.c_str());return 2;}e0=e;}
@@ -359,7 +387,8 @@ int main(int argc,char** argv){
     if(split_age)std::fprintf(lg,"# W1b split_age %d (split lineages take the parent's age)\n",split_age);
     if(null_es)std::fprintf(lg,"# W1c null_es %d (random update signs: fitness ignored)\n",null_es);
     if(hist_pair)std::fprintf(lg,"# W1e hist_pair %d (an ancestor drawn for each fork pair)\n",hist_pair);
-    if(!archive.empty())lin[0].g->save(archive+"/egg_0.bin",0);}
+    if(obs_norm)std::fprintf(lg,"# obs_norm %d (input normalisation: running mean and SD of each observation entry, ARS V2)\n",obs_norm);
+    if(!archive.empty()){lin[0].g->save(archive+"/egg_0.bin",0);if(obs_norm)cur.save(archive+"/egg_0.bin.nrm");}}
   else std::fprintf(lg,"# resumed at epoch %d, threads %d\n",e0,threads);
   for(int e=e0;e<epochs;++e){
     const auto t0=std::chrono::steady_clock::now();
@@ -371,9 +400,9 @@ int main(int argc,char** argv){
     for(int k=0;k<Kmax;++k)if(lin[k].active)lin[k].nz.gen(*lin[k].g,P,lin[k].id==0?seed:mixu(seed*31+lin[k].id),e);
     const int F2=2*P;std::vector<std::vector<long>> fit(Kmax,std::vector<long>(F2,0));
     const evo::Egg* an=(hist&&!anc.empty())?anc[mixu(seed^((std::uint64_t)e<<8))%anc.size()].get():nullptr;
-    const int T=std::max(1,std::min(threads,F2));std::vector<std::thread> th;
+    const int T=std::max(1,std::min(threads,F2));std::vector<std::thread> th;std::vector<std::vector<std::int64_t>> tacc(T,std::vector<std::int64_t>(obs_norm?nacc.size():0,0));
     for(int ti=0;ti<T;++ti){const int f0=F2*ti/T,f1=F2*(ti+1)/T;
-      th.emplace_back([&,f0,f1]{const int nw=f1-f0;std::vector<w::World> ws(nw,canon);evo::Rows r;r.init(*lin[k0].g,K*nw*wp.S);
+      th.emplace_back([&,f0,f1,ti]{const int nw=f1-f0;std::vector<w::World> ws(nw,canon);evo::Rows r;r.init(*lin[k0].g,K*nw*wp.S);
         const bool hp=hist_pair&&!anc.empty();std::vector<const evo::Egg*> anp(nw,nullptr);  // W1e: an ancestor per pair
         if(hp)for(int i=0;i<nw;++i){const int p=(f0+i)/2;anp[i]=anc[mixu(seed^((std::uint64_t)e<<8)^((std::uint64_t)p<<40))%anc.size()].get();}
         for(int i=0;i<nw;++i){const int f=f0+i,p=f/2;
@@ -385,9 +414,10 @@ int main(int argc,char** argv){
         std::vector<evo::Stepper*> pf;
         if(hp){pf.assign(nw,nullptr);for(int i=0;i<nw;++i){own.push_back(std::make_unique<evo::Stepper>(*anp[i],nullptr,r,(Kh*nw+i)*wp.S,wp.S));pf[i]=own.back().get();}st[Kh]=pf[0];}
         else if(an){own.push_back(std::make_unique<evo::Stepper>(*an,nullptr,r,Kh*nw*wp.S,nw*wp.S));st[Kh]=own.back().get();}
-        std::vector<std::vector<long>> integ(K,std::vector<long>(nw,0));run_worlds(ws,r,st,wp.S,H,&integ,nullptr,hp?&pf:nullptr,Kh);
+        std::vector<std::vector<long>> integ(K,std::vector<long>(nw,0));run_worlds(ws,r,st,wp.S,H,&integ,nullptr,hp?&pf:nullptr,Kh,nullptr,obs_norm?&nmv:nullptr,obs_norm?&tacc[ti]:nullptr);
         for(int k=0;k<Kmax;++k)for(int i=0;i<nw;++i)fit[k][f0+i]=integ[k][i]/H;});}
     for(auto& x:th)x.join();
+    if(obs_norm){for(auto& a:tacc)for(std::size_t j=0;j<a.size();++j)nacc[j]+=a[j];cur.from(nacc,Din);}  // integer sums: same for any thread count
     long ch=0;double alpha=0,m=0,m2=0;
     for(int f=0;f<F2;++f){long s=0;for(int k=0;k<Kmax;++k)if(lin[k].active)s+=fit[k][f];m+=s;m2+=(double)s*s;}
     for(int k=0;k<Kmax;++k){if(!lin[k].active)continue;std::vector<int> F(P);
@@ -400,12 +430,12 @@ int main(int argc,char** argv){
     m/=F2;const double sd=std::sqrt(std::max(0.0,m2/F2-m*m));
     {std::vector<w::World> one{canon};std::vector<std::unique_ptr<evo::Stepper>> own;std::vector<evo::Stepper*> st(K,nullptr);
       for(int k=0;k<Kmax;++k)if(lin[k].active){own.push_back(std::make_unique<evo::Stepper>(*lin[k].g,nullptr,rc,k*wp.S,wp.S));st[k]=own.back().get();}
-      run_worlds(one,rc,st,wp.S,H,nullptr);canon=one[0];}
+      run_worlds(one,rc,st,wp.S,H,nullptr,nullptr,nullptr,-1,nullptr,obs_norm?&nmv:nullptr);canon=one[0];}
     // lineage dynamics: extinction (or reseed of the first active lineage if nothing is left), then splits
     int alive_l=0;for(int k=0;k<Kmax;++k)if(lin[k].active&&canon.count(k)>0)++alive_l;
     for(int k=0;k<Kmax;++k){if(!lin[k].active||canon.count(k)>0)continue;
       if(alive_l==0&&k==k0){canon.reseed_lineage(k,founders,(std::uint64_t)e+1);std::fill(rc.state.begin(),rc.state.end(),0);++reseeds;continue;}
-      if(!archive.empty())lin[k].g->save(archive+"/extinct_L"+std::to_string(lin[k].id)+"_e"+std::to_string(e+1)+".bin",e+1);
+      if(!archive.empty()){const std::string fn=archive+"/extinct_L"+std::to_string(lin[k].id)+"_e"+std::to_string(e+1)+".bin";lin[k].g->save(fn,e+1);if(obs_norm)cur.save(fn+".nrm");}
       lin[k].active=false;lin[k].g.reset();++extinct;}
     for(int k=0;k<Kmax;++k){if(!lin[k].active||canon.count(k)<split_at)continue;int j=-1;for(int q=0;q<Kmax;++q)if(!lin[q].active){j=q;break;}if(j<0)break;
       lin[j].g=std::make_unique<evo::Egg>(bc,seed+next_lid);copy_weights(*lin[j].g,*lin[k].g);
@@ -427,7 +457,7 @@ int main(int argc,char** argv){
       else{int nm,nwl,nt,nc;canon.census(100,nm,nwl,nt,nc);  // W3: machines, walls, distinct tapes and effect classes (machines >= 100 ticks old)
         std::fprintf(lg,"%d\t%d\t%ld\t%.1f\t%.1f\t%ld\t%.4f\t%.2f\t%d\t%ld\t%d\t%d\t%d\t%s\t%d\t%d\t%d\t%d\n",e+1,cp,cb,m,sd,ch,alpha,sec,reseeds,canon.resources(),na,splits,extinct,cs.c_str(),nm,nwl,nt,nc);}}
     std::fflush(lg);
-    if(ck>=0&&!archive.empty()&&((e+1)%archive_every==0||e+1==epochs))lin[ck].g->save(archive+"/egg_"+std::to_string(e+1)+".bin",e+1);
+    if(ck>=0&&!archive.empty()&&((e+1)%archive_every==0||e+1==epochs)){const std::string fn=archive+"/egg_"+std::to_string(e+1)+".bin";lin[ck].g->save(fn,e+1);if(obs_norm)cur.save(fn+".nrm");}
     if(ck>=0&&hist&&(e+1)%archive_every==0){auto cpy=std::make_unique<evo::Egg>(bc,1);copy_weights(*cpy,*lin[ck].g);anc.push_back(std::move(cpy));if(anc.size()>32)anc.erase(anc.begin());}
     if(!ckf.empty()&&((e+1)%ck_every==0||e+1==epochs)&&!save_ck(e+1)){std::fprintf(stderr,"cannot write checkpoint %s\n",ckf.c_str());return 3;}
   }

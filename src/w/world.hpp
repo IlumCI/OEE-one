@@ -107,6 +107,7 @@ struct World{
   // analysis (not saved): lineages whose futile draws are drawn again from the other actions with the same policy
   // (gate_eat: an eat that would take nothing; gate_all: any action that would have no effect, see futile())
   std::uint32_t gate_eat=0,gate_all=0;
+  std::uint32_t sharp=0,greedy=0;  // analysis (not saved): lineages that sample with P(a) ~ 2^(logit/8) / take the argmax
   bool futile(int s,int a) const;  // analysis: action a of the agent in slot s would have no effect in the current state
   std::vector<std::int8_t> mfd,ilin;  // last feeder lineage per machine (world state with land, else analysis); lineage
                                       // credited for each cell's irrigation (analysis, track)

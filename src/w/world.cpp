@@ -20,6 +20,9 @@ const CodeIdx& code_idx(){static CodeIdx c;return c;}
 int act_of(const std::int8_t* l,int n){int b=0;for(int a=1;a<n;++a)if(l[a]>l[b])b=a;return b;}
 namespace {
 const std::int64_t* ew(){static std::int64_t E[256];static bool init=[]{for(int i=0;i<256;++i)E[i]=(std::int64_t)std::llround(16*std::exp2(i/16.0));return true;}();(void)init;return E;}
+const std::int64_t* ew8(){static std::int64_t E[256];static bool init=[]{for(int i=0;i<256;++i)E[i]=(std::int64_t)std::llround(16*std::exp2(i/8.0));return true;}();(void)init;return E;}
+int act_sample8(const std::int8_t* l,std::uint64_t bits,int n){const std::int64_t* E=ew8();std::int64_t w[32],tot=0;for(int a=0;a<n;++a){w[a]=E[(int)l[a]+128];tot+=w[a];}
+  std::int64_t u=(std::int64_t)(bits%(std::uint64_t)tot);for(int a=0;a<n;++a){if(u<w[a])return a;u-=w[a];}return n-1;}
 }  // namespace
 int act_sample(const std::int8_t* l,std::uint64_t bits,int n){
   const std::int64_t* E=ew();std::int64_t w[32],tot=0;for(int a=0;a<n;++a){w[a]=E[(int)l[a]+128];tot+=w[a];}
@@ -112,6 +115,7 @@ void World::tick(const std::int8_t* const* logits,std::vector<int>& born){
   std::vector<int> act(p.K*p.S,0),code;if(p.matter)code.assign(p.K*p.S,0);const int nv_=nv(),so=sig_off();
   for(int s:order){const int k=s/p.S;const std::int8_t* l=logits[k]+(std::size_t)(s%p.S)*nv_;
     act[s]=p.stoch?act_sample(l,mix(mix(p.seed^0xac7ULL)+((std::uint64_t)t<<24)+ag[s].id),p.nact):act_of(l,p.nact);  // same draws in mirrored forks
+    if((sharp>>k)&1u)act[s]=act_sample8(l,mix(mix(p.seed^0xac7ULL)+((std::uint64_t)t<<24)+ag[s].id),p.nact);else if((greedy>>k)&1u)act[s]=act_of(l,p.nact);  // analysis
     if(p.signals)ag[s].sig=act_sample(l+so,mix(mix(p.seed^0x5197ULL)+((std::uint64_t)t<<24)+ag[s].id),4);  // heard next tick
     if(p.matter)code[s]=p.stoch?act_sample(l+16,mix(mix(p.seed^0xc0deULL)+((std::uint64_t)t<<24)+ag[s].id),16):act_of(l+16,16);
     if(((gate_eat|gate_all)>>k)&1u){const bool all=(gate_all>>k)&1u;  // analysis: draw a futile choice again
