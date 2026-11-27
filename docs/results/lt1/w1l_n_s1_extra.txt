@@ -1,0 +1,6 @@
+# supplementary (not in the protocol): gates in each run's own final world (-arena_ck RUN/ck.bin), 16 seeds x 2; and self-play counts
+w1l_n_s1 own world gate_all 0.9999 0.0001 6520.54 16/16
+w1l_n_s1 own world gate_eat 0.6367 0.0819 1.67 12/16
+w1b_hist_s1 own world gate_all 1.0000 0.0000 0.00 16/16
+w1b_hist_s1 own world gate_eat 0.8749 0.0552 6.79 15/16
+# fresh arenas, self-play, 4 seeds x 2: w1l_n_s1 egg_2000 ends extinct in every game (eat 0.014, repro 0.374 of actions); w1b_hist_s1 egg_2000 survives (24-51 agents)
