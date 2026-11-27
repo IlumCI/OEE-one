@@ -1128,6 +1128,10 @@ Pass and kill:
 - Calibration before the runs: from the second epoch on (bare land), a fed homestead farm must return at least
   twice the energy fed as extra food on its land over an epoch; then seed 1 for 200 epochs for viability.
 
+W4f economics calibration (2026-11-27; tools/w/farmcal.cpp, ticks 600–1200, after the first epoch's land is bare):
+3.22, 3.91 and 3.67 extra food per unit of energy fed (seeds 1–3). Unfed land ends bare; fed land stays at about
+248. Passes.
+
 Interim observation (2026-11-26, W4b seed 1). F seed 1 boomed early, at epochs 80–115 (peak 198 agents at 100).
 - At epoch 100 one lineage owned 502 of the 541 machines, holding 10.6k store.
 - The other lineages still grew to their 64-slot caps, and the boom collapsed by epoch 135.

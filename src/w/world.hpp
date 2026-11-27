@@ -65,6 +65,8 @@ struct WParams{
   int farms=0,farm_store=40,farm_every=600;
   int farm_free=0;  // W4e: 1 = homestead farms pay no running cost (store is spent only on irrigation)
   int irr_full=0;   // 1 = an irrigation step spends store only when the whole +irr fits under the cap of 255
+  int farm_reset=1; // W4e 1: every placement tops farms up and re-irrigates their land; W4f 0: only the first placement
+                    // (t 0) does; later ones rebuild destroyed farms empty, and homestead farms never decay
 };
 
 struct Agent{int x=0,y=0,dir=0,energy=0,age=0,lineage=0;bool alive=false;std::uint64_t id=0;int sig=0,wpos=0;};
