@@ -44,7 +44,7 @@ void World::init(const WParams& pp,int founders){
   nph.clear();ncyc.clear();
   if(p.matter){mat.assign(N,0);tape.assign((std::size_t)N*16,0);mip.assign(N,0);mh0.assign(N,0);mh1.assign(N,0);mdir.assign(N,0);mst.assign(N,0);
     mhalt.assign(N,0);mlin.assign(N,-1);mbt.assign(N,0);mfx.assign((std::size_t)N*4,0);if(p.irr>0)irl.assign(N,0);else irl.clear();
-    if(p.land&&p.irr>0){lown.assign(N,-1);mfd.assign(N,-1);}else{lown.clear();mfd.clear();}ilin.clear();
+    if(p.land&&p.irr>0){lown.assign(N,-1);mfd.assign(N,-1);}else{lown.clear();mfd.clear();}ilin.clear();if(p.farms>0)hfm.assign(N,0);else hfm.clear();
     if(p.nodes>0){nph.assign(N,0);ncyc.assign(N,-1);const int nn=std::max(1,(int)std::lround((double)p.nodes*N/1024));int placed=0;
       for(std::uint64_t i=0;placed<nn&&i<(std::uint64_t)64*N;++i){const std::uint64_t h=mix(mix(p.seed^0x40deULL)+i);const int c=(int)(h%N);if(mat[c])continue;
         mat[c]=3;res[c]=0;nph[c]=(int)((h>>32)%(std::uint64_t)std::max(1,p.node_per));++placed;}}}
@@ -170,7 +170,7 @@ bool World::ripe(int c) const{if(p.nodes<=0||mat[c]!=3)return false;const long p
   return (t+nph[c])%per<p.node_ripe&&ncyc[c]!=(std::int32_t)cyc;}
 int World::front_of(int c,int dir) const{const int L=p.L,x=c%L,y=c/L;return ((y+FY[dir]+L)%L)*L+(x+FX[dir]+L)%L;}
 void World::make_machine(int c,int dir,int lin){mat[c]=1;std::fill(tape.begin()+(std::size_t)c*16,tape.begin()+(std::size_t)c*16+16,0);
-  mip[c]=mh0[c]=mh1[c]=0;mdir[c]=(std::uint8_t)dir;mst[c]=0;mhalt[c]=0;mlin[c]=(std::int8_t)lin;mbt[c]=t;std::fill(mfx.begin()+(std::size_t)c*4,mfx.begin()+(std::size_t)c*4+4,0);if(!mfd.empty())mfd[c]=-1;}
+  mip[c]=mh0[c]=mh1[c]=0;mdir[c]=(std::uint8_t)dir;mst[c]=0;mhalt[c]=0;mlin[c]=(std::int8_t)lin;mbt[c]=t;std::fill(mfx.begin()+(std::size_t)c*4,mfx.begin()+(std::size_t)c*4+4,0);if(!mfd.empty())mfd[c]=-1;if(!hfm.empty())hfm[c]=0;}
 int World::home_cell(int k,int i) const{const int L=p.L;const std::uint64_t h=mix(mix(p.seed^0x40e5ULL)+(std::uint64_t)k);
   const int cx=(int)(h%(std::uint64_t)L),cy=(int)((h>>20)%(std::uint64_t)L);return ((cy+i/3)%L)*L+(cx+i%3)%L;}
 void World::homestead(){
@@ -178,18 +178,18 @@ void World::homestead(){
     for(int i=0;i<p.farms;++i){const int c=home_cell(k,i);if(mat[c]>=2)continue;  // walls and nodes stay
       if(mat[c]==1&&mlin[c]==k)mst[c]=(std::int16_t)std::max<int>(mst[c],p.farm_store);
       else{make_machine(c,0,k);for(int j=0;j<16;++j)tape[(std::size_t)c*16+j]=(std::uint8_t)',';mst[c]=(std::int16_t)p.farm_store;}
-      mfd[c]=(std::int8_t)k;lown[c]=(std::int8_t)k;irl[c]=255;}}}
-void World::kill_machine(int c){mat[c]=0;mst[c]=0;mhalt[c]=0;mlin[c]=-1;std::fill(tape.begin()+(std::size_t)c*16,tape.begin()+(std::size_t)c*16+16,0);if(!mfd.empty())mfd[c]=-1;}
+      mfd[c]=(std::int8_t)k;lown[c]=(std::int8_t)k;irl[c]=255;if(!hfm.empty())hfm[c]=1;}}}
+void World::kill_machine(int c){mat[c]=0;mst[c]=0;mhalt[c]=0;mlin[c]=-1;std::fill(tape.begin()+(std::size_t)c*16,tape.begin()+(std::size_t)c*16+16,0);if(!mfd.empty())mfd[c]=-1;if(!hfm.empty())hfm[c]=0;}
 // Machines run in a rotated cell order (deterministic per tick); a machine made this tick starts next tick.
 void World::run_machines(){
   const int N=p.L*p.L;const int st=(int)(mix(mix(p.seed^0x3ac4ULL)+(std::uint64_t)t)%(std::uint64_t)N);
   for(int q=0;q<N;++q){const int c=(st+q)%N;if(mat[c]!=1||mbt[c]==t)continue;
     if(mst[c]<=0){if(++mhalt[c]>p.m_decay)kill_machine(c);continue;}
-    mhalt[c]=0;if(p.m_cost<=1||(t-mbt[c])%p.m_cost==0)--mst[c];std::uint8_t* tp=&tape[(std::size_t)c*16];int ip=mip[c],h0=mh0[c],h1=mh1[c];std::int32_t* fx=&mfx[(std::size_t)c*4];
+    mhalt[c]=0;if(!(p.farm_free&&!hfm.empty()&&hfm[c])&&(p.m_cost<=1||(t-mbt[c])%p.m_cost==0))--mst[c];std::uint8_t* tp=&tape[(std::size_t)c*16];int ip=mip[c],h0=mh0[c],h1=mh1[c];std::int32_t* fx=&mfx[(std::size_t)c*4];
     for(int n=0;n<p.m_steps;++n){
       switch(tp[ip]){
         case '<':h0=(h0+15)&15;break;case '>':h0=(h0+1)&15;break;case '{':h1=(h1+15)&15;break;case '}':h1=(h1+1)&15;break;
-        case '+':++tp[h0];break;case '-':--tp[h0];break;case '.':tp[h1]=tp[h0];break;case ',':if(p.irr>0){if(irl[c]<255&&mst[c]>=1){irl[c]=(std::uint8_t)std::min(255,irl[c]+p.irr);--mst[c];if(!ilin.empty())ilin[c]=mfd[c];if(!lown.empty())lown[c]=mfd[c];}}else tp[h0]=tp[h1];break;
+        case '+':++tp[h0];break;case '-':--tp[h0];break;case '.':tp[h1]=tp[h0];break;case ',':if(p.irr>0){if((p.irr_full?irl[c]+p.irr<=255:irl[c]<255)&&mst[c]>=1){irl[c]=(std::uint8_t)std::min(255,irl[c]+p.irr);--mst[c];if(!ilin.empty())ilin[c]=mfd[c];if(!lown.empty())lown[c]=mfd[c];}}else tp[h0]=tp[h1];break;
         case '[':if(tp[h0]==0){int d=1,j=ip;for(int k=0;k<16&&d>0;++k){j=(j+1)&15;if(tp[j]=='[')++d;else if(tp[j]==']')--d;}if(d==0)ip=j;}break;
         case ']':if(tp[h0]!=0){int d=1,j=ip;for(int k=0;k<16&&d>0;++k){j=(j+15)&15;if(tp[j]==']')++d;else if(tp[j]=='[')--d;}if(d==0)ip=j;}break;
         case 'E':{const int take=std::min<int>({(int)res[c],8,1000-mst[c]});res[c]=(std::uint8_t)(res[c]-take);mst[c]=(std::int16_t)(mst[c]+take);fx[0]+=take;break;}
@@ -274,7 +274,7 @@ void World::save(std::FILE* f) const{
   if(p.matter&&p.irr>0){wr(f,kExt8);wr(f,p.irr);wr(f,p.irr_decay);wv(f,irl);}
   if(p.matter&&p.claim){wr(f,kExt9);wr(f,p.claim);}
   if(p.matter&&p.land){wr(f,kExt10);wr(f,p.land);wv(f,lown);wv(f,mfd);}
-  if(p.matter&&p.farms){wr(f,kExt11);wr(f,p.farms);wr(f,p.farm_store);wr(f,p.farm_every);}
+  if(p.matter&&p.farms){wr(f,kExt11);wr(f,p.farms);wr(f,p.farm_store);wr(f,p.farm_every);wr(f,p.farm_free);wr(f,p.irr_full);wv(f,hfm);}
   wv(f,res);wv(f,fert);wv(f,racc);wv(f,occ);wr(f,(std::int64_t)ag.size());
   for(auto& a:ag){const std::int64_t r[]={a.x,a.y,a.dir,a.energy,a.age,a.lineage,a.alive,(std::int64_t)a.id};for(auto x:r)wr(f,x);}
   if(ext())for(auto& a:ag){wr(f,a.sig);}
@@ -319,9 +319,9 @@ bool World::load(std::FILE* f){
   {std::int64_t m=0;const long pos=std::ftell(f);if(!rd(f,m))return false;
     if(m==kExt10){std::int64_t a=0;if(!rd(f,a)||!rv(f,lown)||!rv(f,mfd))return false;p.land=(int)a;}
     else if(std::fseek(f,pos,SEEK_SET)!=0)return false;}  // no land block
-  p.farms=0;p.farm_store=40;p.farm_every=600;
+  p.farms=0;p.farm_store=40;p.farm_every=600;p.farm_free=0;p.irr_full=0;hfm.clear();
   {std::int64_t m=0;const long pos=std::ftell(f);if(!rd(f,m))return false;
-    if(m==kExt11){std::int64_t a=0,b=0,c=0;if(!rd(f,a)||!rd(f,b)||!rd(f,c))return false;p.farms=(int)a;p.farm_store=(int)b;p.farm_every=(int)c;}
+    if(m==kExt11){std::int64_t a=0,b=0,c=0,d=0,e=0;if(!rd(f,a)||!rd(f,b)||!rd(f,c)||!rd(f,d)||!rd(f,e)||!rv(f,hfm))return false;p.farms=(int)a;p.farm_store=(int)b;p.farm_every=(int)c;p.farm_free=(int)d;p.irr_full=(int)e;}
     else if(std::fseek(f,pos,SEEK_SET)!=0)return false;}  // no homestead block
   if(!rv(f,res)||!rv(f,fert)||!rv(f,racc)||!rv(f,occ)){return false;}std::int64_t n=0;if(!rd(f,n)||n<0||n>(1<<24)){return false;}ag.assign((std::size_t)n,Agent{});
   for(auto& a:ag){std::int64_t r[8];for(auto& x:r)if(!rd(f,x))return false;

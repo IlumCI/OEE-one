@@ -146,7 +146,7 @@ int main(int argc,char** argv){
     else if(!std::strcmp(s,"-wr_cost"))wp.wr_cost=std::atoi(v);else if(!std::strcmp(s,"-feed_amt"))wp.feed_amt=std::atoi(v);
     else if(!std::strcmp(s,"-rep_cost"))wp.rep_cost=std::atoi(v);else if(!std::strcmp(s,"-wall_cost"))wp.wall_cost=std::atoi(v);
     else if(!std::strcmp(s,"-spawn"))wp.spawn=std::atoi(v);else if(!std::strcmp(s,"-mut"))wp.mut=std::atoi(v);else if(!std::strcmp(s,"-own"))wp.own=std::atoi(v);
-    else if(!std::strcmp(s,"-wall_decay"))wp.wall_decay=std::atoi(v);else if(!std::strcmp(s,"-m_cost"))wp.m_cost=std::max(1,std::atoi(v));else if(!std::strcmp(s,"-m_give"))wp.m_give=std::max(0,std::atoi(v));else if(!std::strcmp(s,"-graze"))wp.graze=std::atoi(v);else if(!std::strcmp(s,"-pass"))wp.pass=std::atoi(v);else if(!std::strcmp(s,"-irr"))wp.irr=std::max(0,std::atoi(v));else if(!std::strcmp(s,"-irr_decay"))wp.irr_decay=std::max(1,std::atoi(v));else if(!std::strcmp(s,"-claim"))wp.claim=std::atoi(v);else if(!std::strcmp(s,"-land"))wp.land=std::atoi(v);else if(!std::strcmp(s,"-farms"))wp.farms=std::max(0,std::min(9,std::atoi(v)));else if(!std::strcmp(s,"-farm_store"))wp.farm_store=std::max(0,std::min(1000,std::atoi(v)));else if(!std::strcmp(s,"-farm_every"))wp.farm_every=std::max(1,std::atoi(v));else if(!std::strcmp(s,"-kin_sig"))wp.kin_sig=std::atoi(v);else if(!std::strcmp(s,"-lamarck"))wp.lamarck=std::atoi(v);
+    else if(!std::strcmp(s,"-wall_decay"))wp.wall_decay=std::atoi(v);else if(!std::strcmp(s,"-m_cost"))wp.m_cost=std::max(1,std::atoi(v));else if(!std::strcmp(s,"-m_give"))wp.m_give=std::max(0,std::atoi(v));else if(!std::strcmp(s,"-graze"))wp.graze=std::atoi(v);else if(!std::strcmp(s,"-pass"))wp.pass=std::atoi(v);else if(!std::strcmp(s,"-irr"))wp.irr=std::max(0,std::atoi(v));else if(!std::strcmp(s,"-irr_decay"))wp.irr_decay=std::max(1,std::atoi(v));else if(!std::strcmp(s,"-claim"))wp.claim=std::atoi(v);else if(!std::strcmp(s,"-land"))wp.land=std::atoi(v);else if(!std::strcmp(s,"-farms"))wp.farms=std::max(0,std::min(9,std::atoi(v)));else if(!std::strcmp(s,"-farm_store"))wp.farm_store=std::max(0,std::min(1000,std::atoi(v)));else if(!std::strcmp(s,"-farm_every"))wp.farm_every=std::max(1,std::atoi(v));else if(!std::strcmp(s,"-farm_free"))wp.farm_free=std::atoi(v);else if(!std::strcmp(s,"-irr_full"))wp.irr_full=std::atoi(v);else if(!std::strcmp(s,"-kin_sig"))wp.kin_sig=std::atoi(v);else if(!std::strcmp(s,"-lamarck"))wp.lamarck=std::atoi(v);
     else if(!std::strcmp(s,"-cat_every"))cat_every=std::atoi(v);else if(!std::strcmp(s,"-cat_keep"))cat_keep=std::atof(v);else if(!std::strcmp(s,"-stress"))stress=std::atof(v);
     else if(!std::strcmp(s,"-nodes"))wp.nodes=std::atoi(v);else if(!std::strcmp(s,"-node_pay"))wp.node_pay=std::atoi(v);
     else if(!std::strcmp(s,"-node_per"))wp.node_per=std::atoi(v);else if(!std::strcmp(s,"-node_ripe"))wp.node_ripe=std::atoi(v);else if(!std::strcmp(s,"-stats"))stats=std::atoi(v);else if(!std::strcmp(s,"-curve"))curve=std::max(0,std::atoi(v));else if(!std::strcmp(s,"-skip"))skip=std::max(0,std::atoi(v));else if(!std::strcmp(s,"-split_age"))split_age=std::atoi(v);else if(!std::strcmp(s,"-null_es"))null_es=std::atoi(v);else if(!std::strcmp(s,"-hist_pair"))hist_pair=std::atoi(v);
@@ -160,6 +160,7 @@ int main(int argc,char** argv){
   if(wp.matter&&wp.nact<10){std::fprintf(stderr,"-matter 1 needs -nact 10 (write, make/unmake, feed)\n");return 2;}
   if(wp.land&&(!wp.matter||wp.irr<=0)){std::fprintf(stderr,"-land 1 needs -matter 1 and -irr > 0\n");return 2;}
   if(wp.farms&&!wp.land){std::fprintf(stderr,"-farms needs -land 1\n");return 2;}
+  if(wp.irr_full&&!wp.farms){std::fprintf(stderr,"-irr_full is saved with the homestead block: use it with -farms\n");return 2;}
   const evo::EggCfg bc=brain_cfg(layers,D,sig,(wp.signals||wp.matter)?128:w::World::kDin,wp.matter?32:w::World::kV);
   const bool w2=wp.season>0||wp.signals>0||wp.view!=2||wp.matter>0;
 
@@ -268,7 +269,8 @@ int main(int argc,char** argv){
   if(wp.irr){fp2.push_back(9900000+wp.irr);fp2.push_back(9910000+wp.irr_decay);}
   if(wp.claim)fp2.push_back(9920000+wp.claim);
   if(wp.land)fp2.push_back(9930000+wp.land);
-  if(wp.farms){fp2.push_back(9940000+wp.farms);fp2.push_back(9950000+wp.farm_store);fp2.push_back(9960000+wp.farm_every);}
+  if(wp.farms){fp2.push_back(9940000+wp.farms);fp2.push_back(9950000+wp.farm_store);fp2.push_back(9960000+wp.farm_every);fp2.push_back(9970000+wp.farm_free);}
+  if(wp.irr_full)fp2.push_back(9980000+wp.irr_full);
   if(cat_every){fp2.push_back(9200000+cat_every);fp2.push_back((std::int64_t)std::llround(cat_keep*1e6));}
   if(stress>0)fp2.push_back(9300000000LL+std::llround(stress*1e6));
   if(hist_pair&&!hist){std::fprintf(stderr,"-hist_pair needs -hist_frac > 0\n");return 2;}
@@ -307,7 +309,7 @@ int main(int argc,char** argv){
     if(wp.matter&&(wp.m_cost!=1||wp.m_give||wp.graze||wp.pass))std::fprintf(lg,"# machine economy m_cost %d m_give %d graze %d pass %d (1 store per m_cost ticks of running; copies get m_give; eat grazes machine stores; agents walk over machines)\n",wp.m_cost,wp.m_give,wp.graze,wp.pass);
     if(wp.matter&&wp.irr)std::fprintf(lg,"# W4a irr %d (\x27,\x27 is I: +irr irrigation on the own cell for 1 store; capacity + irrigation; decay 1 per %d ticks)\n",wp.irr,wp.irr_decay);
     if(wp.matter&&wp.claim)std::fprintf(lg,"# W4b claim %d (feeding a wild machine claims it for the feeder\x27s lineage)\n",wp.claim);
-    if(wp.matter&&wp.farms)std::fprintf(lg,"# W4e homesteads: %d farms per lineage, store %d, every %d ticks\n",wp.farms,wp.farm_store,wp.farm_every);
+    if(wp.matter&&wp.farms)std::fprintf(lg,"# W4e homesteads: %d farms per lineage, store %d, every %d ticks, free running %d; irr_full %d\n",wp.farms,wp.farm_store,wp.farm_every,wp.farm_free,wp.irr_full);
     if(wp.matter&&wp.land)std::fprintf(lg,"# W4d land %d (a cell a machine irrigates is land of the lineage that last fed it; only that lineage eats there)\n",wp.land);
     if(wp.own)std::fprintf(lg,"# W3.2 own %d (machines owned by the maker's lineage; owners eat from their stores)\n",wp.own);
     if(wp.nodes)std::fprintf(lg,"# W3.3 nodes %d node_pay %d node_per %d node_ripe %d (joint harvest; ripeness visible only within view)\n",wp.nodes,wp.node_pay,wp.node_per,wp.node_ripe);

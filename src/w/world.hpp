@@ -63,6 +63,8 @@ struct WParams{
   // machines (16 irrigation instructions, owned and last fed by it) on fixed cells of its own land, at full irrigation,
   // with farm_store store (a standing farm keeps its tape and is topped up)
   int farms=0,farm_store=40,farm_every=600;
+  int farm_free=0;  // W4e: 1 = homestead farms pay no running cost (store is spent only on irrigation)
+  int irr_full=0;   // 1 = an irrigation step spends store only when the whole +irr fits under the cap of 255
 };
 
 struct Agent{int x=0,y=0,dir=0,energy=0,age=0,lineage=0;bool alive=false;std::uint64_t id=0;int sig=0,wpos=0;};
@@ -96,6 +98,7 @@ struct World{
   std::vector<std::int8_t> mfd,ilin;  // last feeder lineage per machine (world state with land, else analysis); lineage
                                       // credited for each cell's irrigation (analysis, track)
   std::vector<std::int8_t> lown;      // W4d: owner lineage of each cell's land, -1 common (with land; saved)
+  std::vector<std::uint8_t> hfm;      // W4e: 1 = the machine on this cell is a homestead farm (with farms; saved)
   // W3 matter, per cell (allocated when p.matter): material 0 empty, 1 machine, 2 wall; machine tape (16 bytes),
   // instruction pointer, heads, direction, store, halted ticks, creator lineage, birth tick, effect counters
   // (4 per cell: resource harvested, resource delivered, copies made, walls changed)

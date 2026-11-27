@@ -1049,6 +1049,19 @@ Pass and kill:
     runs and record the change here;
   - viability: seed 1 for 200 epochs.
 
+W4e economics calibration (2026-11-27; tools/w/farmcal.cpp; food counted as harvested every tick).
+- **Settings as written fail.** With 40 store and `-irr_decay 1`, a fed homestead farm returned 0.42–0.53 extra
+  food per unit of energy over an epoch (seeds 1–3), against the 2 required.
+  - An irrigation step spent a full store even when the land could take only 1 more level. With decay 1 per tick
+    that cost about 1 store per tick, on top of the running cost of 1 store per 4 ticks.
+- **Change, recorded before the runs** (the protocol allows raising the yield):
+  - `-irr_full 1`: an irrigation step spends store only when the whole +8 fits under the cap;
+  - `-farm_free 1`: homestead farms pay no running cost, so their store goes only to irrigation;
+  - `-farm_store 10` in place of 40, so an unfed farm stops sooner.
+- **Result: 2.72, 3.48 and 3.28 extra food per unit of energy fed** (seeds 1–3). An unfed farm's land is bare
+  (irrigation 0) by the end of the epoch; a fed farm's land stays at about 247.
+- This calibration also corrected the W4d verdict (above): in W4d's world, feeding a farm never paid.
+
 Interim observation (2026-11-26, W4b seed 1). F seed 1 boomed early, at epochs 80–115 (peak 198 agents at 100).
 - At epoch 100 one lineage owned 502 of the 541 machines, holding 10.6k store.
 - The other lineages still grew to their 64-slot caps, and the boom collapsed by epoch 135.
