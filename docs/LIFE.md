@@ -288,3 +288,71 @@ Viability rule withdrawn (2026-11-27 19:08 UTC; owner's decision timer expired w
 
 Runs: runs8/w1k_{E,L,LM,LL2}_s{1,2,3}, queued in that order by seed once the viability check passes. Scored by
 tools/w/ll1c_eval.sh into docs/results/ll1c/.
+
+## LL1c verdict (2026-11-27 21:45 UTC; all 12 runs at epoch 2,000; docs/results/ll1c/)
+
+Fresh held-out arenas, 16 seeds × 2. "Freeze": the champion with its plasticity frozen against an intact copy.
+"Against E": the champion against the E champion of the same seed. Toxic share by eater age, born in the current
+era. Reseeds: in the run's 2,000 epochs.
+
+| Run | Freeze: frozen share (t) | Against E (t) | Toxic share intact / frozen | Intact toxic, age 0-99 -> 400+ | Against epoch 1000 (t) | Reseeds |
+|---|---|---|---|---|---|---|
+| E s1 | - | - | 0.254 / - | 0.246 -> 0.248 | 0.844 (8.60) | 10 |
+| E s2 | - | - | 0.248 / - | 0.231 -> 0.263 | 0.549 (0.73) | 0 |
+| E s3 | - | - | 0.251 / - | 0.232 -> 0.261 | 0.778 (6.30) | 15 |
+| L s1 | 0.042 (-52.33) | 0.797 (5.91) | 0.186 / 0.291 | 0.210 -> 0.114 | 0.719 (4.26) | 18 |
+| L s2 | 0.233 (-8.64) | 0.279 (-3.13) | 0.175 / 0.271 | 0.192 -> 0.116 | 0.593 (2.65) | 28 |
+| L s3 | 0.199 (-9.21) | 0.294 (-3.26) | 0.156 / 0.262 | 0.191 -> 0.090 | 0.549 (1.14) | 48 |
+| LM s1 | 0.038 (-74.22) | 0.584 (1.01) | 0.167 / 0.285 | 0.180 -> 0.102 | 0.478 (-0.59) | 133 |
+| LM s2 | 0.122 (-11.08) | 0.617 (1.48) | 0.150 / 0.270 | 0.189 -> 0.058 | 0.546 (0.84) | 38 |
+| LM s3 | 0.078 (-28.06) | 0.341 (-2.30) | 0.162 / 0.272 | 0.194 -> 0.089 | 0.574 (1.64) | 44 |
+| LL2 s1 | 0.153 (-8.44) | 0.647 (1.96) | 0.174 / 0.277 | 0.199 -> 0.102 | 0.699 (5.72) | 90 |
+| LL2 s2 | 0.067 (-33.53) | 0.665 (2.18) | 0.170 / 0.265 | 0.197 -> 0.106 | 0.649 (2.78) | 111 |
+| LL2 s3 | 0.061 (-26.62) | 0.662 (2.80) | 0.174 / 0.271 | 0.203 -> 0.091 | 0.603 (1.98) | 15 |
+
+By the protocol:
+- **L fails.** Freezing costs in 3 of 3 seeds, but it beats E in 1 of 3 (seed 1, t 5.9; seeds 2 and 3 lose,
+  t −3.1 and −3.3).
+- **LM fails.** Freezing costs in 3 of 3, but it beats E in 0 of 3 (t 1.0, 1.5, −2.3).
+- **LL2 passes the main criteria:** freezing costs in 3 of 3, and it beats E in 2 of 3 (t 2.2 and 2.8; seed 1 has
+  t 1.96).
+  - It fails its own criterion: `norew` costs nothing in any seed (t 0.7, +2.05, −1.5).
+  - So the evolved reward is not shown to be why it pays.
+- **The kill is not met.** Freezing collapses every learning champion (frozen share 0.04–0.23, t −8 to −74).
+
+What holds in every learning run:
+1. **Learning is used.** Without it, every learning champion loses to its own intact copy.
+2. **Agents learn the food law during life.** The toxic share of eats falls from 0.18–0.21 at ages 0–99 to
+   0.06–0.12 at 400+. Frozen copies stay at 0.26–0.29 and the E lineages at 0.25–0.26, flat with age.
+   - Learning lineages learn while E lineages never do: the recurrent state alone did not find the law.
+   - Frozen learners eat more poison than chance. Their genomes now expect learning to correct them.
+3. **The contrast with the static world is the predicted one.** In LL1 (W1b, no change), freezing the L arm helps
+   in 3 of 3 seeds (frozen share 0.68, 0.68, 0.82). Here it is fatal.
+
+Why learning does not reliably beat evolution alone (head to head, seeds 1 and 3; L against E):
+
+| Per thousand agent-ticks | Seed 1: L / E (L wins 0.80) | Seed 3: L / E (L loses 0.29) |
+|---|---|---|
+| Toxic share of eats | 0.165 / 0.280 | 0.157 / 0.262 |
+| Starved | 3.75 / 6.80 | 3.65 / 5.44 |
+| Died of age | 1.42 / 0.69 | 1.29 / 0.88 |
+| Births | 5.08 / 7.22 | 4.47 / 6.37 |
+| Reproduce actions (share of all actions) | 0.019 / 0.025 | 0.012 / **0.093** |
+
+- Learning does its job in both seeds: less poison, about half the starvation, more agents reaching old age.
+- The E lineage of seed 3 instead evolved to breed fast. It makes almost 8 times as many reproduce attempts, starves
+  more and wins the biomass.
+- Reproduction is innate (not plastic), so this is a lineage's evolved strategy, an r against K trade-off. Learning
+  pays with long lives; fast breeding is the alternative.
+- With 3 seeds, which strategy a lineage happens to evolve decides much of "against E".
+- Learning lineages are also less stable: 15–133 reseeds against 0–15 for E.
+
+Conclusions:
+- The question this test was built for, whether our evolved agents can use lifetime learning where it pays, has a
+  yes. Learning is evolved into dependence, and the food law is learned within lives.
+- The stronger claim, that learning makes better lineages than evolution alone, holds only for LL2 (2 of 3) and is
+  fragile. With n = 3 it can be decided by unrelated evolved strategies.
+- The evolved neuromodulator (LM) and the evolved reward (LL2) are not shown to help. LM is least stable (38–133
+  reseeds). LL2's reward ablation is neutral.
+- The SL1 gate (SOCIAL.md: learning used, and freezing it costs fitness) is met in the LL1c world.
+
