@@ -1,0 +1,105 @@
+                                                   egg_0     egg_500    egg_1000
+records                                            24253      333719      386878
+games                                                  4           4           4
+share noop                                        0.1008      0.0169      0.0058
+share fwd                                         0.1449      0.2583      0.2904
+share left                                        0.0600      0.0085      0.0023
+share right                                       0.0410      0.1592      0.1576
+share eat                                         0.1241      0.5167      0.4829
+share repro                                       0.1217      0.0153      0.0171
+share attack                                      0.1138      0.0121      0.0339
+share write                                       0.1056      0.0054      0.0063
+share make                                        0.1178      0.0019      0.0008
+share feed                                        0.0704      0.0058      0.0029
+entropy bits (max 3.32)                           2.9415      1.5606      1.5186
+steps with max P > 0.9                            0.0000      0.0031      0.0070
+futile fwd blocked                                0.2777      0.0879      0.0899
+futile eat nothing                                0.2399      0.5681      0.5677
+futile repro failed                               0.9041      0.7466      0.7550
+futile attack no target                           0.7941      0.8561      0.8662
+futile write no machine                           0.6376      0.8389      0.8875
+futile make/unmake nothing                        0.1845      0.1154      0.1200
+futile feed nothing                               0.7693      0.9286      0.9514
+futile per agent-tick                             0.4136      0.3481      0.3510
+P(eat | food underfoot >= 32)                     0.1145      0.5630      0.5393
+  n food                                           10524       14949       16126
+P(eat | no food underfoot)                        0.1406      0.5230      0.4935
+  n nofood                                          7572      248837      282919
+P(eat | food underfoot 2-30)                      0.1200      0.4846      0.4384
+  n little food                                     6157       69933       87833
+mean logit eat - fwd | food 0                     2.2031     18.8684     13.4969
+mean logit eat - fwd | food 2-30                 -3.5027     15.3757      8.6570
+mean logit eat - fwd | food >= 32                -7.4147     22.3326     20.9655
+mean logit fwd - right | front free              30.9152     24.1064     27.9382
+mean logit fwd - right | front blocked           39.0589      3.1320      0.3073
+P(fwd | agent/wall/node in front)                 0.1585      0.2003      0.2375
+  n blocked                                         6270       38045       43451
+P(repro | energy >= 120, front free)              0.1125      0.0142      0.0174
+  n can repro                                       1965      177745      194651
+P(attack | other lineage in front)                0.1526      0.0262      0.0665
+  n other                                            957       14832       15150
+P(attack | kin in front)                          0.0881      0.0080      0.0303
+  n kin                                             5006       22885       27559
+P(feed | machine in front)                        0.0620      0.0075      0.0036
+  n machine                                         6369       18623       15100
+P(feed | farm in front)                           0.0000      0.0281      0.0025
+  n farm                                              32        2025        3632
+P(feed | farm in front, store < 4)                0.0000      0.0258      0.0022
+  n farm empty                                        32        1939        3616
+P(eat | farm in front, store >= 40)                  nan         nan         nan
+  n farm full                                          0           0           0
+P(make | front empty)                             0.1132      0.0017      0.0007
+  n empty                                          12257      281318      330880
+share on own land                                 0.0038      0.0061      0.0026
+share on other land                               0.0056      0.0006      0.0003
+mean energy                                      78.6668    268.6715    228.7843
+share energy < 20                                 0.1015      0.0491      0.0554
+cue ahead: P(fwd)                                 0.1284      0.2907      0.2923
+cue ahead: P(left)                                0.0608      0.0052      0.0019
+cue ahead: P(right)                               0.0422      0.1489      0.1416
+cue behind: P(fwd)                                0.1855      0.2404      0.2851
+cue behind: P(left)                               0.0783      0.0094      0.0019
+cue behind: P(right)                              0.0725      0.1774      0.1841
+cue right: P(fwd)                                 0.1369      0.2604      0.2989
+cue right: P(left)                                0.0682      0.0067      0.0020
+cue right: P(right)                               0.0557      0.1442      0.1524
+cue left: P(fwd)                                  0.1499      0.2544      0.2828
+cue left: P(left)                                 0.0539      0.0112      0.0027
+cue left: P(right)                                0.0301      0.1806      0.1625
+cue index right-turn (P(right|R)-P(right|L))      0.0255     -0.0365     -0.0101
+cue index left-turn (P(left|L)-P(left|R))        -0.0143      0.0045      0.0006
+cue index fwd (P(fwd|ahead)-P(fwd|behind))       -0.0571      0.0503      0.0073
+farm distance mean                               16.4233     10.7893     10.7713
+farm distance mean if random                     14.5312     14.5312     14.5312
+share within 2 of farm                            0.0119      0.0666      0.0698
+share within 2 if random                          0.0293      0.0293      0.0293
+L0 share of values saturated                      0.0000      0.0005      0.0022
+L0 units saturated > 90%                               0           0           0
+L0 units constant                                      0           0           0
+L0 units tau-dormant (0.1)                             0           0           0
+L0 mean |h|                                      14.4910     33.3136     37.6587
+L0 srank (of 64)                                      61          62          62
+L1 share of values saturated                      0.0000      0.0059      0.0103
+L1 units saturated > 90%                               0           0           0
+L1 units constant                                      0           0           0
+L1 units tau-dormant (0.1)                             0           0           0
+L1 mean |h|                                      17.6688     39.4946     44.2312
+L1 srank (of 64)                                      61          62          62
+median unit lag-1 correlation                     0.9229      0.8952      0.8980
+units lag-1 corr > 0.99                                0           0           2
+action logits constant                                 0           0           0
+action logit values at int8 limit                 0.0000      0.0002      0.0019
+actions with mean P < 0.001                            -           -        make
+agents                                               347        1358        1689
+median life (ticks seen)                         52.0000    181.5000    157.0000
+died starved                                      0.8444      0.5817      0.6169
+died aged                                         0.0000      0.3012      0.2285
+died killed                                       0.1556      0.0199      0.0639
+alive at end                                      0.0000      0.0972      0.0906
+births per agent                                  0.8156      0.9529      0.9621
+share agents with no birth (life >= 50)           0.4056      0.4927      0.5683
+food per agent-tick                               2.0599      1.9106      1.7741
+fed per agent-tick                                0.3036      0.0083      0.0028
+share agents never moving (life >= 50)            0.0056      0.0000      0.0000
+share agents turning > 50% (life >= 50)           0.0000      0.0000      0.0000
+share agents feeding at all (life >= 50)          0.7556      0.0901      0.0369

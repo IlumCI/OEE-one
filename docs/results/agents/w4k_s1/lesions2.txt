@@ -1,0 +1,14 @@
+# epoch 1000 (16 seeds x 2): test entries mean_lshareA se t wins
+shuffle_food	0-24	0.3401	0.0319	-5.01	0/16
+shuffle_agents	25-49	0.4655	0.0212	-1.63	6/16
+shuffle_energy	50	0.5388	0.0172	2.25	11/16
+shuffle_age	51	0.4658	0.0120	-2.85	3/16
+shuffle_symbols	53-78	0.3516	0.0295	-5.04	0/16
+shuffle_material	79-103	0.4942	0.0133	-0.43	9/16
+shuffle_tape	104-120	0.5038	0.0135	0.28	11/16
+shuffle_wpos	121	0.5133	0.0111	1.20	10/16
+shuffle_land	122	0.4911	0.0105	-0.84	5/16
+shuffle_cue	123-126	0.6782	0.0428	4.16	13/16
+shuffle_blind	0-51,53-127	0.1836	0.0315	-10.06	0/16
+gate_eat	-	0.6386	0.0290	4.78	16/16
+gate_all	-	0.7923	0.0239	12.25	16/16
