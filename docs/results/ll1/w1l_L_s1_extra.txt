@@ -1,0 +1,8 @@
+# supplementary (interim analysis, not in the protocol): freeze ablation of runs8/w1l_L_s1 champions, 16 seeds x 2
+L s1 freeze 2000 own world (-arena_ck ck.bin): frozen share 0.4921 se 0.0771 t -0.10 wins 5/16
+L s1 freeze 1000 fresh: frozen share 0.4902 se 0.0283 t -0.35 wins 7/16
+L s1 freeze  500 fresh: frozen share 0.5263 se 0.0331 t 0.79 wins 9/16
+# self-play stats at 2000 (8 seeds x 2), A learning vs A frozen (B learns in both):
+learning: agent_ticks 1022875 eat 0.426 attack 0.186 repro 0.013 kills/kt 2.05 births/kt 3.80 killed/kt 2.05
+frozen:   agent_ticks 1395295 eat 0.472 attack 0.130 repro 0.013 kills/kt 1.43 births/kt 3.40 killed/kt 1.28
+# reading: learning raises attacks (0.19 vs 0.13) because a hit pays 20 energy at once; mutual aggression costs agents
