@@ -1077,6 +1077,26 @@ W4e seed 1 at epoch 1000 (2026-11-27; docs/results/w4e/eval_1000.txt).
 - Deafness costs a great deal here: 0.17 (t −7.9). The wipe: 0.45 (t −1.2).
 - Seed 1 meets the kill condition. The verdict waits for seeds 2 and 3.
 
+### W4e verdict: agents do not keep a given farm going (2026-11-27; docs/results/w4e/eval_1000.txt)
+
+| Seed | No-feed copy, fresh / own world | Feed, champion / random | Time on own land, champion / random | Deaf |
+|---|---|---|---|---|
+| 1 | 0.41 (t −1.3) / 0.50 (t 0.0) | 0.2% / 7.0% | 2.0% / 0.3% | 0.17 (t −7.9) |
+| 2 | 0.61 (t +2.2) / 0.50 (t 0.0) | 0.1% / 9.5% | 0.6% / 0.4% | 0.52 (t +0.3) |
+| 3 | 0.50 (t −0.0) / 0.50 (t 0.0) | 0.5% / 12.4% | 0.6% / 0.9% | 0.48 (t −0.9) |
+
+- **Killed.** In every seed blocking feeding costs nothing, and feeding stays far below random.
+- Seed 1's champion harvests its farms (7 times random's time on its own land) without keeping them going. Seeds 2
+  and 3 do not even favour their land.
+- No booms in any seed; mean population 62–65 (W4d's H: 62–69).
+- The protocol names agent-side changes next. A literature search during the runs (docs/results/w4e/next_lit.md)
+  found that the design carried two incentives against feeding:
+  - every epoch handed each lineage fresh, fully irrigated land with free store, and abundant easy food is the trap
+    in which agriculture failed to emerge among learning agents (Hamon et al. 2026, arXiv:2605.22256);
+  - the reset each epoch erased the consequences of neglect, which cuts the feedback that sustainable foraging
+    needed in non-episodic neuroevolution (Hamon, Nisioti and Moulin-Frier 2023, arXiv:2302.09334).
+- So this kill does not yet separate a missing incentive from a missing capability.
+
 Interim observation (2026-11-26, W4b seed 1). F seed 1 boomed early, at epochs 80–115 (peak 198 agents at 100).
 - At epoch 100 one lineage owned 502 of the 541 machines, holding 10.6k store.
 - The other lineages still grew to their 64-slot caps, and the boom collapsed by epoch 135.
