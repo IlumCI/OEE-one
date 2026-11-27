@@ -64,3 +64,12 @@ top tapes (count owner tape):
 agents by lineage slot: 32 0 32 0 0
 nofeed	world fresh	0.5067	0.0102	0.66	9/16
 nofeed	world own	0.5170	0.0451	0.38	4/16
+nocue	world fresh	0.6823	0.0837	2.18	10/16
+nocue	world own	0.6880	0.0772	2.43	10/16
+== land and irrigation in the final world
+machines 21 running 3 withI 16 withE 5 withIE 4 withC 1 | irrigated cells 0 mean irr 0.0
+agents 64
+land (irrigated cells by owner lineage; common first): common 0 L0 0 L1 0 L2 0 L3 0 L4 0
+run	epochs	boom_time	mean_pop	booms	largest_share_in_booms	peak	largest_share_all
+runs8/w4k_s2	801	0.000	66.0	0	-	127	0.49
+runs8/w4j_s2	801	0.000	65.7	0	-	128	0.49

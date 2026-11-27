@@ -1203,6 +1203,25 @@ W4g viability (2026-11-27; runs8/w4k_s1 at epoch 200).
   on its own land, and eats 2.2 food from its own land per unit of energy fed.
 - Seeds 2 and 3 started (runs8/w4k_s2, w4k_s3; binary runs8/oee_w_v25).
 
+### W4g verdict: the cue to the farm does not make agents feed, and it harms them (2026-11-27; docs/results/w4g/)
+
+| Seed | No-feed copy, fresh / own world | No-cue copy, fresh / own world | Feed, champion / random | Mean population K / J | Champion against e−500 |
+|---|---|---|---|---|---|
+| 1 | 0.50 (t +0.2) / 0.49 (t −0.5) | 0.74 (t +6.5) / 0.67 (t +3.1) | 0.3% / 8.6% | 69.4 / 78.5 | 0.56 (t 4.4) |
+| 2 | 0.51 (t +0.7) / 0.52 (t +0.4) | 0.68 (t +2.2) / 0.69 (t +2.4) | 0.1% / 7.0% | 66.0 / 65.7 | 0.63 (t 3.2) |
+| 3 | 0.51 (t +0.4) / 0.53 (t +0.6) | 0.70 (t +2.3) / 0.66 (t +2.1) | 0.1% / 9.6% | 63.1 / 67.5 | 0.82 (t 13.2) |
+
+- **Killed.** In every seed, blocking feeding costs nothing. Feeding stays far below random.
+- **The cue harms the agents.** In every seed, a copy that sees zeros instead of the cue beats the intact champion.
+  In seed 1, a copy that sees another agent's cue also wins (0.68, t +4.2; docs/results/agents/w4k_s1/).
+  - The champion does not home: turning and moving do not depend on where the farm is.
+  - It does spend 7% of its time within 2 cells of its farm, against 3% for random positions.
+  - The cue mainly shifts how often it eats or moves, depending on where home is. These shifts are arbitrary
+    and costly.
+- **Reading.** A new input with large values that the learner does not learn to use or to ignore acts as harmful
+  noise. This is one more symptom of the learner limit found by the agent study, below.
+- As the protocol fixed, the next step is the learner (LT1, below).
+
 ### Agent study: are the agents themselves flawed? (2026-11-27; docs/results/agents/)
 
 Question (owner): are the agents flawed, or carrying broken mutations? Protocol and reading rules fixed before the
