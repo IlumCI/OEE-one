@@ -356,3 +356,28 @@ Conclusions:
   reseeds). LL2's reward ablation is neutral.
 - The SL1 gate (SOCIAL.md: learning used, and freezing it costs fitness) is met in the LL1c world.
 
+
+## LL1c replication (protocol fixed 2026-11-27 22:03 UTC, before the runs)
+
+Chosen when the owner's decision timer expired with the recommended option applied. Reason: "learning beats
+evolution alone" rests on 3 seeds and is partly decided by unrelated evolved strategies (breeding rate).
+
+Runs: arms E, L and LL2, seeds 4–6 (runs8/w1k_{E,L,LL2}_s{4,5,6}). Same flags and binary (runs8/oee_w_v29) as seeds
+1–3. LM is not repeated: it beat E in 0 of 3.
+
+Measures: as LL1c, scored by tools/w/ll1c_eval.sh, plus:
+- **LL2 against L** head to head in each of the 6 seeds (both learning).
+- **Pooled share against E** for each arm: the mean over its 6 seeds of the per-seed share, with a one-sample t over
+  seeds against 0.5.
+
+Pass, per arm, over seeds 1–6:
+- freezing costs (t < −3) in at least 4 of 6 seeds;
+- and it beats E (t > 2) in at least 4 of 6.
+
+Secondary: the pooled share against E is above 0.5, with t > 2 over seeds.
+
+LL2 is better than L if it wins the head to head (t > 2) in at least 4 of 6 seeds.
+
+Kill of "learning beats evolution alone": both L and LL2 beat E in at most 2 of 6 seeds.
+
+Viability: reported, not an exclusion (as decided for LL1c at 19:08).
