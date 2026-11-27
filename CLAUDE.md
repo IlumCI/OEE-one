@@ -33,6 +33,8 @@
   (runs8: World v1 runs are not supervised. After a restart resume them all, 4 at a time (bit-exact from ck.bin;
    finished runs exit at once): setsid nohup tools/w/queue.sh 4 runs8/w1_* runs8/w1b_* runs8/w1c_* runs8/w1d_* runs8/w1e_* runs8/w2_* runs8/w3* runs8/w4* >> runs8/queue.log 2>&1 &)
 - Keep working between events; do not idle.
+- When a decision from the owner is needed and there is a recommended choice: ask, start a 20-minute timer
+  (send_later), and if no answer has come when it fires, go ahead with the recommendation and say so.
 
 ## Commits
 - Author: ilumCI <ilumbackup@gmail.com>. No trailers, no co-author lines, no tool mentions.
