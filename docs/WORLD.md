@@ -1150,6 +1150,22 @@ W4f seed 1 at epoch 1000 (2026-11-27; docs/results/w4f/eval_1000.txt).
   champion, and 0.61 (t 5.7) head-to-head. Deafness costs: 0.45 (t −3.5).
 - Seed 1 meets the kill condition. The verdict waits for seeds 2 and 3.
 
+### W4f verdict: a lasting incentive does not make agents feed (2026-11-27; docs/results/w4f/eval_1000.txt)
+
+| Seed | No-feed copy, fresh / own world | Feed, champion / random | Time on own land, champion / random | Mean population J / I | Solo vs e−500 |
+|---|---|---|---|---|---|
+| 1 | 0.51 (t +0.2) / 0.46 (t −1.4) | 0.2% / 7.9% | 0.8% / 0.4% | 78.5 / 61.8 | +0.75 (t 3.5) |
+| 2 | 0.44 (t −1.1) / 0.56 (t +1.5) | 0.2% / 9.3% | 0.4% / 0.5% | 65.7 / 65.1 | +0.34 (t 1.0) |
+| 3 | 0.62 (t +1.9) / 0.44 (t −1.1) | 0.9% / 12.2% | 0.2% / 0.6% | 67.5 / 64.1 | −0.13 (t −0.5) |
+
+- **Killed.** In every seed blocking feeding costs nothing, and feeding stays far below random.
+- A few homestead cells stay irrigated and owned in every final world (1–4 cells), so some feeding happens, but not
+  enough to matter for fitness.
+- With fresh land and free store removed (W4e's confounds), the incentive is not the bottleneck. Feeding pays 3–4
+  times its cost when the farm's food is harvested (calibration), yet evolution does not take it up.
+- As fixed in the protocol, the next step is agent-side: a cue giving the direction to the agent's own farms and a
+  visible sign that a farm is running dry, tested A/B against W4f without the cue.
+
 Interim observation (2026-11-26, W4b seed 1). F seed 1 boomed early, at epochs 80–115 (peak 198 agents at 100).
 - At epoch 100 one lineage owned 502 of the 541 machines, holding 10.6k store.
 - The other lineages still grew to their 64-slot caps, and the boom collapsed by epoch 135.
