@@ -327,7 +327,8 @@ int main(int argc,char** argv){
 
       const w::World& Z=one[0];const int a=sw,b=1-sw;  // lineage slots of A and B
       ba[gi]=Z.biomass(a);bb[gi]=Z.biomass(b);na[gi]=Z.count(a);nb[gi]=Z.count(b);
-      if(stats){gst[gi].assign(114,0);if(!Z.kstat.empty())for(int j=0;j<3;++j){gst[gi][108+j]=Z.kstat[(std::size_t)a*3+j];gst[gi][111+j]=Z.kstat[(std::size_t)b*3+j];}if(!Z.aage.empty())for(int j=0;j<18;++j){gst[gi][72+j]=Z.aage[(std::size_t)a*18+j];gst[gi][90+j]=Z.aage[(std::size_t)b*18+j];}for(int j=0;j<32;++j){gst[gi][j]=Z.stat[(std::size_t)a*32+j];gst[gi][32+j]=Z.stat[(std::size_t)b*32+j];}
+      if(stats){gst[gi].assign(138,0);if(!Z.kstat.empty())for(int j=0;j<3;++j){gst[gi][108+j]=Z.kstat[(std::size_t)a*3+j];gst[gi][111+j]=Z.kstat[(std::size_t)b*3+j];}
+        if(!Z.kage.empty())for(int j=0;j<12;++j){gst[gi][114+j]=Z.kage[(std::size_t)a*12+j];gst[gi][126+j]=Z.kage[(std::size_t)b*12+j];}if(!Z.aage.empty())for(int j=0;j<18;++j){gst[gi][72+j]=Z.aage[(std::size_t)a*18+j];gst[gi][90+j]=Z.aage[(std::size_t)b*18+j];}for(int j=0;j<32;++j){gst[gi][j]=Z.stat[(std::size_t)a*32+j];gst[gi][32+j]=Z.stat[(std::size_t)b*32+j];}
         if(!Z.astat.empty())for(int j=0;j<4;++j){gst[gi][64+j]=Z.astat[(std::size_t)a*4+j];gst[gi][68+j]=Z.astat[(std::size_t)b*4+j];}}
       fs[gi]=ba[gi]+bb[gi]>0?(double)ba[gi]/(ba[gi]+bb[gi]):0.5;is[gi]=ig[a][0]+ig[b][0]>0?(double)ig[a][0]/(ig[a][0]+ig[b][0]):0.5;};
     const int T=std::max(1,std::min(threads,G));std::vector<std::thread> th;
@@ -361,7 +362,9 @@ int main(int argc,char** argv){
         if(wp.irr>0)std::printf(" fed %ld food %ld irr_own %ld irr_other %ld irr_wild %ld",tot[27],tot[28],tot[24],tot[25],tot[26]);
         if(wp.land)std::printf(" home %.3f",tot[29]/T);
         if(wp.kinds){long kz[3]={0};for(int gi=0;gi<G;++gi)for(int j=0;j<3;++j)kz[j]+=gst[gi][108+3*g+j];
-          std::printf(" eats_good/kt %.1f eats_toxic/kt %.1f toxic_share %.3f toxic_loss/kt %.1f",1e3*kz[0]/T,1e3*kz[1]/T,kz[0]+kz[1]?(double)kz[1]/(kz[0]+kz[1]):0.0,1e3*kz[2]/T);}if(wp.give)std::printf(" given/kt %.1f",1e3*tot[30]/T);
+          std::printf(" eats_good/kt %.1f eats_toxic/kt %.1f toxic_share %.3f toxic_loss/kt %.1f",1e3*kz[0]/T,1e3*kz[1]/T,kz[0]+kz[1]?(double)kz[1]/(kz[0]+kz[1]):0.0,1e3*kz[2]/T);
+          long kb[12]={0};for(int gi=0;gi<G;++gi)for(int j=0;j<12;++j)kb[j]+=gst[gi][114+12*g+j];  // toxic share of eats by eater age (born this era) and born earlier
+          std::printf(" toxic_by_age");for(int b=0;b<6;++b){const long n=kb[2*b]+kb[2*b+1];std::printf(" %s:%.3f/%ld",b<5?std::to_string(100*b).c_str():"old_era",n?(double)kb[2*b+1]/n:0.0,n);}}if(wp.give)std::printf(" given/kt %.1f",1e3*tot[30]/T);
         if(wp.art){long ar[4]={0};for(int gi=0;gi<G;++gi)for(int j=0;j<4;++j)ar[j]+=gst[gi][64+4*g+j];
           std::printf(" art_tokens/kt %.1f art_openings/kt %.2f art_resets/kt %.1f art_energy/kt %.1f tokens_per_opening %.1f",1e3*ar[0]/T,1e3*ar[1]/T,1e3*ar[2]/T,1e3*ar[3]/T,ar[1]?(double)ar[0]/ar[1]:0.0);
           long ab[18]={0};for(int gi=0;gi<G;++gi)for(int j=0;j<18;++j)ab[j]+=gst[gi][72+18*g+j];  // by speaker age (born this era) and born earlier

@@ -171,7 +171,9 @@ void World::tick(const std::int8_t* const* logits,std::vector<int>& born){
         if(p.pass&&p.matter&&take<p.bite&&mat[c]==1&&(p.graze?(!p.own||mlin[c]<0||mlin[c]==a.lineage):(p.own&&mlin[c]==a.lineage))){const int t2=std::min<int>(p.bite-take,mst[c]);mst[c]=(std::int16_t)(mst[c]-t2);take+=t2;}  // underfoot
         if(p.matter&&take<p.bite&&mat[fc]==1&&(p.graze?(!p.own||mlin[fc]<0||mlin[fc]==a.lineage):(p.own&&mlin[fc]==a.lineage))){const int t2=std::min<int>(p.bite-take,mst[fc]);mst[fc]=(std::int16_t)(mst[fc]-t2);take+=t2;}  // granary or grazing
         int gain=take;if(p.kinds>0&&take>0){const bool tx=ktox(fkind[c],p.kind_era>0?t/p.kind_era:0);if(tx)gain=-p.kind_tox*take;  // LL1c
-          if(track){if(kstat.size()!=(std::size_t)p.K*3)kstat.assign((std::size_t)p.K*3,0);const std::size_t k=(std::size_t)a.lineage*3;++kstat[k+(tx?1:0)];if(tx)kstat[k+2]+=p.kind_tox*take;}
+          if(track){if(kstat.size()!=(std::size_t)p.K*3)kstat.assign((std::size_t)p.K*3,0);const std::size_t k=(std::size_t)a.lineage*3;++kstat[k+(tx?1:0)];if(tx)kstat[k+2]+=p.kind_tox*take;
+            if(kage.size()!=(std::size_t)p.K*12)kage.assign((std::size_t)p.K*12,0);const long era=p.kind_era>0?t/p.kind_era:0,born=(long)t-a.age;
+            const int bin=p.kind_era>0&&born<era*(long)p.kind_era?5:std::min(4,a.age/100);++kage[(std::size_t)a.lineage*12+2*bin+(tx?1:0)];}
           if(((kindmemo|kindmemol)>>a.lineage)&1u)kmrow(s)[fkind[c]]=(std::int8_t)(tx?2:1);}
         a.energy=std::min(p.ecap,a.energy+gain);if(probe)peff[s]=(std::int16_t)take;break;}
       case 5:if(a.energy>=p.repro_min&&occ[fc]<0&&!is_art(fc)&&(!p.matter||!mat[fc]||(p.pass&&mat[fc]==1))){const int k=a.lineage;int j=-1;

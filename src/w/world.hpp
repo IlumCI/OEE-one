@@ -140,7 +140,9 @@ struct World{
   // toxic food, energy lost to toxic food. Value of information (analysis, not saved): kindoracle lineages never eat
   // toxic food; kindmemo agents refuse a kind their own last eat of it found toxic (retesting 1 time in 16); kindmemol
   // the same with one memory per lineage
-  std::vector<std::uint8_t> fkind;std::vector<long> kstat;std::uint32_t kindoracle=0,kindmemo=0,kindmemol=0;std::vector<std::int8_t> kmem;std::vector<std::uint64_t> kmid;
+  // kage (analysis, track): per lineage 6 bins x (nutritious eats, toxic eats); bins 0-4 eaters born in the current
+  // kind era by age/100, bin 5 eaters born in an earlier era (the learning curve, and relearning after a change)
+  std::vector<std::uint8_t> fkind;std::vector<long> kstat,kage;std::uint32_t kindoracle=0,kindmemo=0,kindmemol=0;std::vector<std::int8_t> kmem;std::vector<std::uint64_t> kmid;
   bool ktox(int kind,long era) const;  // LL1c: kind is toxic in era
   std::int8_t* kmrow(int s);           // LL1c analysis: the memory row (per kind: 0 unknown, 1 nutritious, 2 toxic) of slot s
   // analysis (track, not saved): per lineage 6 bins x (tokens, openings, resets): bins 0-4 speakers born in the current
