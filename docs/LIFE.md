@@ -272,5 +272,19 @@ Viability (stated 2026-11-27 18:00 UTC, before any learning arm was scored; the 
 - LL2 seed 1 tripped it at epoch 912: 6 reseeds by epoch 400, 49 by epoch 900. It was stopped at 919
   (runs8/w1k_LL2_s1/NONVIABLE).
 
+Viability rule withdrawn (2026-11-27 19:08 UTC; owner's decision timer expired with the recommended option applied):
+- The 18:00 rule rested on the world being viable. That premise failed at 18:45, when the E arm's seed 3 tripped the
+  guard (13 reseeds by epoch 830). Then L seed 2 tripped it too (20 by epoch 467).
+- Collapses come after epoch 250, beyond the viability check, and in every arm.
+- So for LL1c the guard is a reported measure, not an exclusion. All 12 runs go to epoch 2,000 and are scored by the
+  pass/kill above. Reseeds per run are reported beside the scores.
+- The stopped runs resume from their checkpoints: E s3 at 830, L s2 at 467, LM s1 at 747, LL2 s1 at 919. The
+  runs8/RUN/VIAB_NOTE files record the trips.
+- The scores are fresh-arena tournaments from founders, so a champion's score does not depend on its run's
+  population history.
+- This change comes after one learning result (L seed 1 passed). Its cause, the control collapsing, is independent of
+  that result.
+- Lesson for later worlds: check viability over at least 1,000 epochs, not 250.
+
 Runs: runs8/w1k_{E,L,LM,LL2}_s{1,2,3}, queued in that order by seed once the viability check passes. Scored by
 tools/w/ll1c_eval.sh into docs/results/ll1c/.
