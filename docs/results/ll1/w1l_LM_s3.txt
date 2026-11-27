@@ -1,0 +1,40 @@
+== runs8/w1l_LM_s3 (-S 64 -regrow 2 -nact 7 -life 1 -life_eta 12 -life_lam 230 -life_beta 7 -life_mod 1)
+freeze	2000	0.4644	0.0598	-0.60	8/16
+gate_all	1000	0.9965	0.0010	518.02	16/16
+gate_all	1250	0.9975	0.0008	652.67	16/16
+gate_all	1500	0.9989	0.0005	956.68	16/16
+gate_all	1750	0.9937	0.0019	256.53	16/16
+gate_all	2000	0.9885	0.0028	174.02	16/16
+gate_all	mean	0.9950
+gate_all	own_world	0.9990	0.0006	877.09	16/16
+gate_eat	1000	0.9641	0.0071	65.10	16/16
+gate_eat	1250	0.9536	0.0080	56.48	16/16
+gate_eat	1500	0.9564	0.0097	47.05	16/16
+gate_eat	1750	0.9438	0.0112	39.69	16/16
+gate_eat	2000	0.9628	0.0069	67.13	16/16
+gate_eat	mean	0.9561
+gate_eat	own_world	0.9054	0.0494	8.21	14/16
+vs	runs8/w1b_hist_s1	0.8885	0.0149	26.00	16/16
+vs	runs8/w1b_hist_s2	0.0274	0.0050	-93.73	0/16
+vs	runs8/w1b_hist_s3	0.0522	0.0071	-63.18	0/16
+vs	runs8/w1b_hist_s4	0.8759	0.0523	7.19	16/16
+vs	runs8/w1b_hist_s5	0.6818	0.0761	2.39	11/16
+vs_own	1000	0.4540	0.0637	-0.72	7/16
+records                                       216668
+entropy bits (max 2.81)                       1.2292
+futile fwd blocked                            0.0585
+futile eat nothing                            0.5055
+futile repro failed                           0.7768
+futile attack no target                       0.3923
+futile per agent-tick                         0.2854
+futile, age 0-49                              0.2148
+  n age 0-49                                   32316
+futile, age 50-199                            0.2591
+  n age 50-199                                 76207
+futile, age 200-499                           0.3248
+  n age 200-499                               107857
+P(eat | food underfoot >= 32)                 0.4399
+P(eat | no food underfoot)                    0.4644
+P(eat | food underfoot 2-30)                  0.3922
+P(attack | other lineage in front)            0.7731
+P(attack | kin in front)                      0.0104
