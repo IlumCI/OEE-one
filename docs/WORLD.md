@@ -967,6 +967,14 @@ W4d seed 1 at epoch 1000 (2026-11-26; docs/results/w4d/eval_1000.txt).
   own ancestors after its booms (W4a verdict), so this does not show an effect of land.
 - Seed 1 meets the kill condition. The verdict waits for seeds 2 and 3.
 
+W4d seed 3 at epoch 1000 (2026-11-27).
+- Building below random: write 0.2%, make 0.0%, feed 0.3%, against 26.1%, 6.1% and 12.1%.
+- No-feed ablation: 0.41 (t −1.9) in fresh arenas, 0.47 (t −0.4) in its own final world. Wipe: 0.58 (t +1.9).
+- No boom (E seed 3: 6.4% boom time, three booms). Mean population 63 against 76. One of 10 irrigated cells owned.
+- Against E's final champion: 0.25 (t −3.9) in both worlds.
+- Seed 3 meets the kill condition. With seeds 1 and 3 failing, H can no longer pass; seed 2 decides between kill
+  and no verdict.
+
 Interim observation (2026-11-26, W4b seed 1). F seed 1 boomed early, at epochs 80–115 (peak 198 agents at 100).
 - At epoch 100 one lineage owned 502 of the 541 machines, holding 10.6k store.
 - The other lineages still grew to their 64-slot caps, and the boom collapsed by epoch 135.
