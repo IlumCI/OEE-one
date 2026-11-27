@@ -995,6 +995,50 @@ W4d seed 3 at epoch 1000 (2026-11-27).
 - **Conclusion (as fixed in the protocol):** private returns were not enough. The limit is in the agents or the
   learner, not in this world. Changes to this world stop here, and the next step is a re-plan.
 
+### W4e protocol: homestead farms, a diagnostic (fixed 2026-11-27, before the code; approved by the owner)
+
+Why. Farming pays on paper under land ownership, but evolution never found it (W4d). Two explanations remain:
+- discovery: agents could run a farm, but never stumble on the long action sequence that starts one;
+- capacity: agents cannot run a farm even when they have one (they cannot keep feeding it, or find their way back).
+
+This diagnostic gives every lineage working farms and asks whether evolution learns to keep them going. It is a
+test of the agents and the learner, not a new world for the main line. Once farming takes hold among learning
+agents, it can lock in (Hamon et al. 2026, arXiv:2605.22256).
+
+Change (`-farms 6 -farm_store 40 -irr_decay 1`, on top of W4d arm H):
+- Every 600 ticks (one epoch), each lineage gets 6 farm machines on fixed homestead cells of its own land.
+  - A farm is a tape of 16 irrigation instructions, owned and last fed by that lineage, with 40 store. Its land
+    starts at full irrigation.
+  - A farm already standing there keeps its tape and is topped up to 40 store.
+- A farm left unfed runs about 100 ticks. Its land then loses fertility within 255 ticks (`-irr_decay 1`).
+- A fed farm keeps its land at full yield, about 1 food per tick per cell. Land ownership is as in W4d, so only the
+  owner's lineage eats there.
+- One analysis counter: agent-ticks on the agent's own land.
+
+Arms (3 seeds × 1000 epochs at H 600; the same seeds as W4a):
+- I: W4d arm H with the change above.
+- The main comparisons are within I: the champion against copies of itself with feeding disabled.
+
+Measures at epoch 1000:
+- the no-feed ablation in homestead arenas, fresh and from the run's final world;
+- feed and building rates against random agents;
+- the share of agent-ticks on own land, champion against random agents (use of the farms);
+- era progress, and the W4d measures where they apply.
+
+Pass and kill:
+- **Pass (agents can run a farm):** the no-feed ablation costs fitness (share < 0.5, t < −3) in at least 2 of 3
+  seeds. Then the failure in W4a–W4d was discovery. Next: stepping stones, for example homesteads that become rarer
+  over time.
+- **Kill (agents cannot run a farm):** the no-feed ablation costs nothing in every seed. Then the limit is in the
+  agents themselves. Next: agent-side changes, such as memory of places or a sense of direction home.
+- Otherwise there is no verdict; report it.
+- Viability guard as in W4d (in ticks, startup excluded).
+- Calibration before the runs:
+  - economics: a scripted agent that feeds one homestead farm must gain at least twice the energy it feeds, as
+    extra food on that land over an epoch, against the same farm left unfed. If not, raise the yield before the
+    runs and record the change here;
+  - viability: seed 1 for 200 epochs.
+
 Interim observation (2026-11-26, W4b seed 1). F seed 1 boomed early, at epochs 80–115 (peak 198 agents at 100).
 - At epoch 100 one lineage owned 502 of the 541 machines, holding 10.6k store.
 - The other lineages still grew to their 64-slot caps, and the boom collapsed by epoch 135.
