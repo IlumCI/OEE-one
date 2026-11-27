@@ -1140,6 +1140,16 @@ W4f viability (2026-11-27; runs8/w4j_s1 at epoch 200).
   on its own land, and eats 0.89 food from its own land per unit of energy fed.
 - Seeds 2 and 3 started (runs8/w4j_s2, w4j_s3; binary runs8/oee_w_v24).
 
+W4f seed 1 at epoch 1000 (2026-11-27; docs/results/w4f/eval_1000.txt).
+- **The no-feed ablation costs nothing:** 0.51 (t +0.2) in fresh homestead arenas, 0.46 (t −1.4) in its own final
+  world. Feeding is below random (0.2% of actions, random 7.9%).
+- The champion spends 0.8% of agent-ticks on its own land (random 0.4%) and eats 4.0 food from it per unit fed. At
+  the end 4 homestead cells are still irrigated and owned, so some feeding goes on in the canonical world.
+- Mean population over epochs 200–1000 is 78.5, against 61.8 in W4e seed 1, with two short booms (peak 155).
+- Later champions are better alone in unfamiliar generated arenas: solo +0.75 (t 3.5) against the epoch-500
+  champion, and 0.61 (t 5.7) head-to-head. Deafness costs: 0.45 (t −3.5).
+- Seed 1 meets the kill condition. The verdict waits for seeds 2 and 3.
+
 Interim observation (2026-11-26, W4b seed 1). F seed 1 boomed early, at epochs 80–115 (peak 198 agents at 100).
 - At epoch 100 one lineage owned 502 of the 541 machines, holding 10.6k store.
 - The other lineages still grew to their 64-slot caps, and the boom collapsed by epoch 135.
