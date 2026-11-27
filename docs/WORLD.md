@@ -1132,6 +1132,14 @@ W4f economics calibration (2026-11-27; tools/w/farmcal.cpp, ticks 600–1200, af
 3.22, 3.91 and 3.67 extra food per unit of energy fed (seeds 1–3). Unfed land ends bare; fed land stays at about
 248. Passes.
 
+W4f viability (2026-11-27; runs8/w4j_s1 at epoch 200).
+- Viable: one reseed at startup, none after. Mean population 55, peak 127, no boom.
+- At the epoch-200 boundary 10 homestead cells are irrigated and owned (lineages 0, 1 and 3). Under W4f only
+  feeding keeps land irrigated past 255 ticks, so these lineages are feeding their farms.
+- The epoch-200 champion in its own world (4 seeds, interim): feeds on 1.4% of actions, spends 0.8% of agent-ticks
+  on its own land, and eats 0.89 food from its own land per unit of energy fed.
+- Seeds 2 and 3 started (runs8/w4j_s2, w4j_s3; binary runs8/oee_w_v24).
+
 Interim observation (2026-11-26, W4b seed 1). F seed 1 boomed early, at epochs 80–115 (peak 198 agents at 100).
 - At epoch 100 one lineage owned 502 of the 541 machines, holding 10.6k store.
 - The other lineages still grew to their 64-slot caps, and the boom collapsed by epoch 135.
