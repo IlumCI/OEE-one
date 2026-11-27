@@ -200,6 +200,21 @@ int main(){
       std::FILE* f=std::tmpfile();a.save(f);std::rewind(f);World c;const bool ok=c.load(f);std::fclose(f);
       CHECK(ok&&c.mat==a.mat&&c.tape==a.tape&&c.mst==a.mst&&c.mfx==a.mfx&&c.p.matter==1,"W3 save/load: same matter state");
       drive3(a,50);drive3(c,50);CHECK(hash(a)==hash(c)&&a.tape==c.tape,"W3 save/load: same future");
-      const int n0=a.wipe(0);int left=0;for(int x=0;x<q.L*q.L;++x)left+=a.mat[x]==1&&a.mlin[x]==0;CHECK(n0>0&&left==0,"W3: wipe removes a lineage's machines");}}
+      const int n0=a.wipe(0);int left=0;for(int x=0;x<q.L*q.L;++x)left+=a.mat[x]==1&&a.mlin[x]==0;CHECK(n0>0&&left==0,"W3: wipe removes a lineage's machines");}
+    {World a,b;a.init(q,5);b.init(q,5);b.probe=true;std::vector<std::int8_t> rl((std::size_t)q.S*32);
+      for(int t=0;t<120;++t){for(std::size_t i=0;i<rl.size();++i)rl[i]=(std::int8_t)((i*41+t*13)%29-14);const std::int8_t* l[1]={rl.data()};born.clear();a.tick(l,born);born.clear();b.tick(l,born);}
+      World w;w.init(q,0);w.probe=true;for(auto& r:w.res)r=0;auto pt=[&](int slot,int x,int y,int e){Agent& g=w.ag[slot];g=Agent{};g.x=x;g.y=y;g.dir=0;g.energy=e;g.alive=true;g.id=slot+1;w.occ[y*L+x]=slot;};
+      pt(0,5,5,100);w.res[5*L+5]=50;pt(1,8,8,100);w.mat[7*L+8]=2;pt(2,11,11,1);  // 0 eats 32 of 50; 1 walks into a wall; 2 starves
+      std::vector<std::int8_t> lp((std::size_t)q.S*32,(std::int8_t)-100);lp[4]=100;lp[32+1]=100;lp[64]=100;const std::int8_t* l2[1]={lp.data()};born.clear();w.tick(l2,born);
+      CHECK(hash(a)==hash(b)&&w.pact[0]==4&&w.peff[0]==32&&w.ag[0].energy==100+32-q.base&&w.pact[1]==1&&w.peff[1]==0&&w.pdie[2]==1&&w.pdie[0]==0&&w.pact[3]==-1,
+        "probe: recording leaves the world unchanged; actions, effects (bite, blocked move) and deaths recorded");
+      auto gt=[&](int ge,int ga,int food){World v;v.init(q,0);v.probe=true;for(auto& r:v.res)r=0;Agent& g=v.ag[0];g=Agent{};g.x=5;g.y=5;g.dir=0;g.energy=100;g.alive=true;g.id=1;v.occ[5*L+5]=0;
+        v.res[5*L+5]=(std::uint8_t)food;v.gate_eat=ge;v.gate_all=ga;std::vector<std::int8_t> lq((std::size_t)q.S*32,(std::int8_t)-128);lq[4]=100;lq[1]=127;lq[9]=110;
+        const std::int8_t* l3[1]={lq.data()};born.clear();v.tick(l3,born);return (int)v.pact[0];};
+      CHECK(gt(0,0,0)==1&&gt(1,0,0)==1&&gt(0,1,0)==1,"(setup) fwd has the top logit");
+      auto gt2=[&](int ge,int ga,int food){World v;v.init(q,0);v.probe=true;for(auto& r:v.res)r=0;Agent& g=v.ag[0];g=Agent{};g.x=5;g.y=5;g.dir=0;g.energy=100;g.alive=true;g.id=1;v.occ[5*L+5]=0;
+        v.res[5*L+5]=(std::uint8_t)food;v.gate_eat=ge;v.gate_all=ga;std::vector<std::int8_t> lq((std::size_t)q.S*32,(std::int8_t)-128);lq[4]=127;lq[1]=100;lq[9]=110;
+        const std::int8_t* l3[1]={lq.data()};born.clear();v.tick(l3,born);return (int)v.pact[0];};
+      CHECK(gt2(0,0,0)==4&&gt2(1,0,0)==9&&gt2(0,1,0)==1&&gt2(1,0,50)==4,"gates: an eat that would take nothing is drawn again (gate_eat: feed next; gate_all: feed is futile too, so fwd); with food it stays");}}
   std::printf(fails?"%d FAILED\n":"all passed\n",fails);return fails?1:0;
 }

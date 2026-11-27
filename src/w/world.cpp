@@ -18,9 +18,11 @@ const CodeIdx& code_idx(){static CodeIdx c;return c;}
 }  // namespace
 
 int act_of(const std::int8_t* l,int n){int b=0;for(int a=1;a<n;++a)if(l[a]>l[b])b=a;return b;}
+namespace {
+const std::int64_t* ew(){static std::int64_t E[256];static bool init=[]{for(int i=0;i<256;++i)E[i]=(std::int64_t)std::llround(16*std::exp2(i/16.0));return true;}();(void)init;return E;}
+}  // namespace
 int act_sample(const std::int8_t* l,std::uint64_t bits,int n){
-  static std::int64_t E[256];static bool init=[]{for(int i=0;i<256;++i)E[i]=(std::int64_t)std::llround(16*std::exp2(i/16.0));return true;}();(void)init;
-  std::int64_t w[32],tot=0;for(int a=0;a<n;++a){w[a]=E[(int)l[a]+128];tot+=w[a];}
+  const std::int64_t* E=ew();std::int64_t w[32],tot=0;for(int a=0;a<n;++a){w[a]=E[(int)l[a]+128];tot+=w[a];}
   std::int64_t u=(std::int64_t)(bits%(std::uint64_t)tot);for(int a=0;a<n;++a){if(u<w[a])return a;u-=w[a];}return n-1;
 }
 
@@ -111,8 +113,13 @@ void World::tick(const std::int8_t* const* logits,std::vector<int>& born){
   for(int s:order){const int k=s/p.S;const std::int8_t* l=logits[k]+(std::size_t)(s%p.S)*nv_;
     act[s]=p.stoch?act_sample(l,mix(mix(p.seed^0xac7ULL)+((std::uint64_t)t<<24)+ag[s].id),p.nact):act_of(l,p.nact);  // same draws in mirrored forks
     if(p.signals)ag[s].sig=act_sample(l+so,mix(mix(p.seed^0x5197ULL)+((std::uint64_t)t<<24)+ag[s].id),4);  // heard next tick
-    if(p.matter)code[s]=p.stoch?act_sample(l+16,mix(mix(p.seed^0xc0deULL)+((std::uint64_t)t<<24)+ag[s].id),16):act_of(l+16,16);}
+    if(p.matter)code[s]=p.stoch?act_sample(l+16,mix(mix(p.seed^0xc0deULL)+((std::uint64_t)t<<24)+ag[s].id),16):act_of(l+16,16);
+    if(((gate_eat|gate_all)>>k)&1u){const bool all=(gate_all>>k)&1u;  // analysis: draw a futile choice again
+      if((all||act[s]==4)&&futile(s,act[s])){const std::int64_t* E=ew();std::int64_t w[32],tot=0;
+        for(int a=0;a<p.nact;++a){w[a]=(a==act[s]||(all&&futile(s,a)))?0:E[(int)l[a]+128];tot+=w[a];}
+        if(tot>0){std::uint64_t u=mix(mix(p.seed^0x9a7eULL)+((std::uint64_t)t<<24)+ag[s].id)%(std::uint64_t)tot;for(int a=0;a<p.nact;++a){if(u<(std::uint64_t)w[a]){act[s]=a;break;}u-=(std::uint64_t)w[a];}}}}}
   if(track&&stat.size()<(std::size_t)p.K*32)stat.assign((std::size_t)p.K*32,0);
+  if(probe){const int n=p.K*p.S;pact.assign(n,-1);peff.assign(n,0);pdie.assign(n,0);for(int s:order)pact[s]=(std::int16_t)act[s];}
   if(p.farms>0&&p.land&&!lown.empty()&&t%std::max(1,p.farm_every)==0)homestead();
   if(track&&p.matter&&p.irr>0&&ilin.size()!=(std::size_t)N){ilin.assign(N,-1);if(mfd.size()!=(std::size_t)N)mfd.assign(N,-1);}
   if(track)for(int s:order){const int k=ag[s].lineage;++stat[(std::size_t)k*32+act[s]];++stat[(std::size_t)k*32+22];if(ag[s].sig>0)++stat[(std::size_t)k*32+21];
@@ -121,9 +128,9 @@ void World::tick(const std::int8_t* const* logits,std::vector<int>& born){
   for(int s:order){Agent& a=ag[s];if(!a.alive)continue;const int c=a.y*p.L+a.x;
     const int fc=((a.y+FY[a.dir]+p.L)%p.L)*p.L+(a.x+FX[a.dir]+p.L)%p.L;
     switch(act[s]){
-      case 1:if(occ[fc]<0&&(!p.matter||!mat[fc]||(p.pass&&mat[fc]==1))){occ[c]=-1;a.x=fc%p.L;a.y=fc/p.L;occ[fc]=s;}a.energy-=p.move;break;
-      case 2:a.dir=(a.dir+3)&3;a.energy-=p.turn;break;
-      case 3:a.dir=(a.dir+1)&3;a.energy-=p.turn;break;
+      case 1:if(occ[fc]<0&&(!p.matter||!mat[fc]||(p.pass&&mat[fc]==1))){occ[c]=-1;a.x=fc%p.L;a.y=fc/p.L;occ[fc]=s;if(probe)peff[s]=1;}a.energy-=p.move;break;
+      case 2:a.dir=(a.dir+3)&3;a.energy-=p.turn;if(probe)peff[s]=1;break;
+      case 3:a.dir=(a.dir+1)&3;a.energy-=p.turn;if(probe)peff[s]=1;break;
       case 4:{if(p.nodes>0&&p.matter&&mat[fc]==3)neat.push_back({fc,s});
         const bool fen=p.land&&!lown.empty()&&lown[c]>=0&&lown[c]!=a.lineage&&irl[c]>0;  // W4d: another lineage's land
         int take=fen?0:std::min<int>(res[c],p.bite);res[c]-=(std::uint8_t)take;
@@ -131,23 +138,23 @@ void World::tick(const std::int8_t* const* logits,std::vector<int>& born){
           if(!ilin.empty()&&irl[c]>0){const int L=ilin[c];if(L==a.lineage)stat[k*32+24]+=take;else if(L>=0)stat[(std::size_t)L*32+25]+=take;else stat[k*32+26]+=take;}}
         if(p.pass&&p.matter&&take<p.bite&&mat[c]==1&&(p.graze?(!p.own||mlin[c]<0||mlin[c]==a.lineage):(p.own&&mlin[c]==a.lineage))){const int t2=std::min<int>(p.bite-take,mst[c]);mst[c]=(std::int16_t)(mst[c]-t2);take+=t2;}  // underfoot
         if(p.matter&&take<p.bite&&mat[fc]==1&&(p.graze?(!p.own||mlin[fc]<0||mlin[fc]==a.lineage):(p.own&&mlin[fc]==a.lineage))){const int t2=std::min<int>(p.bite-take,mst[fc]);mst[fc]=(std::int16_t)(mst[fc]-t2);take+=t2;}  // granary or grazing
-        a.energy=std::min(p.ecap,a.energy+take);break;}
+        a.energy=std::min(p.ecap,a.energy+take);if(probe)peff[s]=(std::int16_t)take;break;}
       case 5:if(a.energy>=p.repro_min&&occ[fc]<0&&(!p.matter||!mat[fc]||(p.pass&&mat[fc]==1))){const int k=a.lineage;int j=-1;
           for(int q=0;q<p.S;++q)if(!ag[(std::size_t)k*p.S+q].alive){j=q;break;}
           if(j>=0){const int cs=k*p.S+j;Agent& b=ag[cs];b=Agent{};b.x=fc%p.L;b.y=fc/p.L;b.dir=a.dir;b.energy=p.repro_give;b.lineage=k;b.alive=true;b.id=next_id++;
-            occ[fc]=cs;a.energy-=p.repro_give+p.repro_cost;born.push_back(cs);parents.push_back(s);if(track)++stat[(std::size_t)k*32+17];}}
+            occ[fc]=cs;a.energy-=p.repro_give+p.repro_cost;born.push_back(cs);parents.push_back(s);if(track)++stat[(std::size_t)k*32+17];if(probe)peff[s]=1;}}
         break;
       case 6:{const int q=occ[fc];a.energy-=p.atk_cost;
-        if(q>=0&&ag[q].alive){Agent& v=ag[q];const int take=std::min(v.energy,p.atk_take);v.energy-=take;a.energy=std::min(p.ecap,a.energy+take);
-          if(v.energy<=0){v.alive=false;occ[fc]=-1;if(track){++stat[(std::size_t)a.lineage*32+16];++stat[(std::size_t)v.lineage*32+20];}}}
+        if(q>=0&&ag[q].alive){Agent& v=ag[q];const int take=std::min(v.energy,p.atk_take);v.energy-=take;a.energy=std::min(p.ecap,a.energy+take);if(probe)peff[s]=(std::int16_t)take;
+          if(v.energy<=0){v.alive=false;occ[fc]=-1;if(probe)pdie[q]=3;if(track){++stat[(std::size_t)a.lineage*32+16];++stat[(std::size_t)v.lineage*32+20];}}}
         break;}
-      case 7:if(p.matter){if(mat[fc]==1){tape[(std::size_t)fc*16+a.wpos]=kCode[code[s]];a.wpos=(a.wpos+1)&15;}a.energy-=p.wr_cost;}break;  // write
-      case 8:if(p.matter){if(mat[fc]==0&&occ[fc]<0){make_machine(fc,a.dir,a.lineage);a.wpos=0;a.energy-=p.mk_cost;}  // make or unmake
-          else if(mat[fc]==1){if(!p.own||mlin[fc]<0||mlin[fc]==a.lineage){a.energy=std::min(p.ecap,a.energy+mst[fc]);kill_machine(fc);a.energy-=p.move;}
-            else{kill_machine(fc);a.energy-=2*p.mk_cost;}}}  // W3.2: someone else's machine can only be destroyed
+      case 7:if(p.matter){if(mat[fc]==1){tape[(std::size_t)fc*16+a.wpos]=kCode[code[s]];a.wpos=(a.wpos+1)&15;if(probe)peff[s]=1;}a.energy-=p.wr_cost;}break;  // write
+      case 8:if(p.matter){if(mat[fc]==0&&occ[fc]<0){make_machine(fc,a.dir,a.lineage);a.wpos=0;a.energy-=p.mk_cost;if(probe)peff[s]=1;}  // make or unmake
+          else if(mat[fc]==1){if(!p.own||mlin[fc]<0||mlin[fc]==a.lineage){a.energy=std::min(p.ecap,a.energy+mst[fc]);kill_machine(fc);a.energy-=p.move;if(probe)peff[s]=2;}
+            else{kill_machine(fc);a.energy-=2*p.mk_cost;if(probe)peff[s]=3;}}}  // W3.2: someone else's machine can only be destroyed
         break;
       case 9:if(p.matter&&mat[fc]==1&&!(nofeed>>a.lineage&1u)){const int amt=std::min(p.feed_amt,std::max(0,a.energy-1));a.energy-=amt;mst[fc]=(std::int16_t)std::min(1000,mst[fc]+amt);if(p.claim&&mlin[fc]<0)mlin[fc]=(std::int8_t)a.lineage;
-        if(amt>0){if(!mfd.empty())mfd[fc]=(std::int8_t)a.lineage;if(track)stat[(std::size_t)a.lineage*32+27]+=amt;}}break;  // feed (claim: a wild machine becomes the feeder's)
+        if(amt>0){if(!mfd.empty())mfd[fc]=(std::int8_t)a.lineage;if(track)stat[(std::size_t)a.lineage*32+27]+=amt;}if(probe)peff[s]=(std::int16_t)amt;}break;  // feed (claim: a wild machine becomes the feeder's)
       default:break;}
   }
   if(!neat.empty()){std::sort(neat.begin(),neat.end());  // joint harvests: at least two eaters on a ripe node in the same tick
@@ -156,7 +163,7 @@ void World::tick(const std::int8_t* const* logits,std::vector<int>& born){
         ncyc[nc]=(std::int32_t)((t+nph[nc])/std::max(1,p.node_per));if(track)stat[(std::size_t)ag[neat[i].second].lineage*32+23]+=(long)(j-i);}
       i=j;}}
   for(int s=0;s<p.K*p.S;++s){Agent& a=ag[s];if(!a.alive)continue;a.energy-=p.base+(a.sig>0?p.sig_cost:0);++a.age;
-    if(a.energy<=0||a.age>p.max_age){a.alive=false;occ[a.y*p.L+a.x]=-1;if(track)++stat[(std::size_t)a.lineage*32+(a.energy<=0?18:19)];}}
+    if(a.energy<=0||a.age>p.max_age){a.alive=false;occ[a.y*p.L+a.x]=-1;if(track)++stat[(std::size_t)a.lineage*32+(a.energy<=0?18:19)];if(probe)pdie[s]=a.energy<=0?1:2;}}
   if(p.matter)run_machines();
   if(p.matter&&p.irr>0&&t%std::max(1,p.irr_decay)==std::max(1,p.irr_decay)-1)for(int c=0;c<N;++c)if(irl[c]&&!--irl[c]&&!lown.empty())lown[c]=-1;  // irrigation decays; land lapses at 0
   if(p.matter&&p.wall_decay>0)for(int c=0;c<N;++c)if(mat[c]==2&&(int)(mix(mix(p.seed^0xe40dULL)+((std::uint64_t)t<<24)+c)&0xffff)<p.wall_decay)mat[c]=0;  // erosion
@@ -171,6 +178,19 @@ void World::tick(const std::int8_t* const* logits,std::vector<int>& born){
   ++t;
 }
 
+bool World::futile(int s,int a) const{const Agent& g=ag[s];const int L=p.L,c=g.y*L+g.x,fc=((g.y+FY[g.dir]+L)%L)*L+(g.x+FX[g.dir]+L)%L;
+  const bool fb=occ[fc]>=0||(p.matter&&mat[fc]&&!(p.pass&&mat[fc]==1));  // front blocked (moves, births)
+  auto gr=[&](int x){return p.matter&&mat[x]==1&&mst[x]>0&&(p.graze?(!p.own||mlin[x]<0||mlin[x]==g.lineage):(p.own&&mlin[x]==g.lineage));};
+  switch(a){
+    case 1:return fb;
+    case 4:{const bool fen=p.land&&!lown.empty()&&lown[c]>=0&&lown[c]!=g.lineage&&irl[c]>0;
+      return (fen||res[c]==0)&&!(p.pass&&gr(c))&&!gr(fc)&&!(p.nodes>0&&p.matter&&mat[fc]==3);}
+    case 5:{if(g.energy<p.repro_min||fb)return true;for(int q=0;q<p.S;++q)if(!ag[(std::size_t)g.lineage*p.S+q].alive)return false;return true;}
+    case 6:return occ[fc]<0;
+    case 7:return !p.matter||mat[fc]!=1;
+    case 8:return !p.matter||!((mat[fc]==0&&occ[fc]<0)||mat[fc]==1);
+    case 9:return !p.matter||mat[fc]!=1||g.energy<=1||((nofeed>>g.lineage)&1u);
+    default:return false;}}
 bool World::ripe(int c) const{if(p.nodes<=0||mat[c]!=3)return false;const long per=std::max(1,p.node_per),cyc=(t+nph[c])/per;
   return (t+nph[c])%per<p.node_ripe&&ncyc[c]!=(std::int32_t)cyc;}
 int World::front_of(int c,int dir) const{const int L=p.L,x=c%L,y=c/L;return ((y+FY[dir]+L)%L)*L+(x+FX[dir]+L)%L;}

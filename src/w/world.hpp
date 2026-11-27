@@ -100,6 +100,14 @@ struct World{
   // +25 the same eaten by other lineages, +26 food from uncredited irrigated cells eaten by k, +27 energy k fed into
   // machines, +28 all food k took from cells
   bool track=false;std::vector<long> stat;
+  // analysis (probe; not saved), per slot for the last tick: pact the action drawn (-1: not alive at the start), peff
+  // its effect (0 none; fwd 1 moved; turns 1; eat food taken; repro 1 born; attack energy taken; write 1; make/unmake
+  // 1 made, 2 unmade, 3 destroyed; feed energy fed), pdie how the agent died in the tick (0 no, 1 starved, 2 age, 3 killed)
+  bool probe=false;std::vector<std::int16_t> pact,peff;std::vector<std::uint8_t> pdie;
+  // analysis (not saved): lineages whose futile draws are drawn again from the other actions with the same policy
+  // (gate_eat: an eat that would take nothing; gate_all: any action that would have no effect, see futile())
+  std::uint32_t gate_eat=0,gate_all=0;
+  bool futile(int s,int a) const;  // analysis: action a of the agent in slot s would have no effect in the current state
   std::vector<std::int8_t> mfd,ilin;  // last feeder lineage per machine (world state with land, else analysis); lineage
                                       // credited for each cell's irrigation (analysis, track)
   std::vector<std::int8_t> lown;      // W4d: owner lineage of each cell's land, -1 common (with land; saved)
