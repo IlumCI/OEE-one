@@ -129,6 +129,21 @@ decision timer expired with the recommendation applied).
 - So LM's verdict needs seed 3. runs8/w1l_LM_s3 (paused at epoch 70) resumes after the last LL1c run has started.
 - LR seed 3 stays unrun: its seed-1 champion loses to every non-learning W1b champion (share 0.001).
 
+## LL1 verdict (2026-11-27 23:05 UTC; static W1b; docs/results/ll1/)
+
+| Arm | Freeze: frozen copy's share (t), seeds 1, 2, 3 | Learning used (t < −3) |
+|---|---|---|
+| L | 0.68 (+3.0), 0.68 (+3.4), 0.82 (+6.8) | 0 of 3: freezing helps in all 3 |
+| LR | 0.43 (−2.4), 0.64 (+2.2), seed 3 not run | 0 of 2 |
+| LM | 0.60 (+2.4), 0.0007 (−1615), 0.46 (−0.6) | 1 of 3 |
+
+- **LL1 fails.** No arm uses learning in 2 of 3 seeds.
+- In the static world, lifetime learning is neutral or harmful. The L arm is clearly harmful: the frozen copy wins
+  in every seed.
+- One lineage (LM seed 2) evolved into dependence on learning. It is the exception.
+- This is what the literature predicts for a world without change (LL1c, Why). It is the control for LL1c. There,
+  in a world whose food values change between generations, freezing is fatal in all 9 learning runs.
+
 ## LL2: an evolved reward (designed 2026-11-27; runs only if LL1 shows learning neutral or harmful)
 
 Why:
