@@ -22,3 +22,10 @@ land (irrigated cells by owner lineage; common first): common 15 L0 1 L1 2 L2 0 
 run	epochs	boom_time	mean_pop	booms	largest_share_in_booms	peak	largest_share_all
 runs8/w4h_s1	801	0.000	62.0	0	-	99	0.52
 runs8/w4e_s1	801	0.081	77.4	2	0.28	256	0.50
+# runs8/w4h_s3 e 1000 world: -S 64 -regrow 16 -nact 10 -matter 1 -spawn 20 -mut 1024 -season 300 -view 1 -signals 1 -wall_decay 4 -m_cost 4 -m_give 0 -graze 1 -pass 1 -irr 8 -irr_decay 16 -own 2 -land 1 -climate_ticks 1200
+champion agent_ticks 3947531 noop 0.002 fwd 0.359 left 0.133 right 0.010 eat 0.375 repro 0.091 attack 0.025 write 0.002 make 0.000 feed 0.003 kills/kt 0.16 births/kt 3.95 starved/kt 2.38 aged/kt 1.18 killed/kt 0.01 symbol 0.754 joint_harvests/kt 0.00 fed 16312 food 8472211 irr_own 21858 irr_other 0 irr_wild 155763
+random agent_ticks 33296 noop 0.059 fwd 0.047 left 0.084 right 0.142 eat 0.085 repro 0.056 attack 0.084 write 0.261 make 0.061 feed 0.121 kills/kt 0.90 births/kt 12.46 starved/kt 9.61 aged/kt 0.00 killed/kt 18.23 symbol 0.847 joint_harvests/kt 0.00 fed 10933 food 26504 irr_own 243 irr_other 0 irr_wild 55
+wipe	0.5778	0.0404	1.93	0.5947	0.0499	1.90
+deaf	0.4092	0.0548	-1.66	0.4075	0.0659	-1.40
+== generality (e vs e-500)
+e	e_prev	solo_log_ratio	t	median	surviveA	surviveB	lshareA	lt	swap_recovery	swap_t
