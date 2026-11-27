@@ -1062,6 +1062,12 @@ W4e economics calibration (2026-11-27; tools/w/farmcal.cpp; food counted as harv
   (irrigation 0) by the end of the epoch; a fed farm's land stays at about 247.
 - This calibration also corrected the W4d verdict (above): in W4d's world, feeding a farm never paid.
 
+W4e viability (2026-11-27; runs8/w4i_s1 at epoch 200).
+- Viable: no reseeds. Mean population 55 over epochs 0–200, peak 112, no boom.
+- The epoch-200 champion in homestead arenas (4 seeds, interim): feeds on 1.1% of actions, spends 1.5% of
+  agent-ticks on its own land, and eats 3.6 food from its own credited land per unit of energy it feeds.
+- Seeds 2 and 3 started (runs8/w4i_s2, w4i_s3; binary runs8/oee_w_v23).
+
 Interim observation (2026-11-26, W4b seed 1). F seed 1 boomed early, at epochs 80–115 (peak 198 agents at 100).
 - At epoch 100 one lineage owned 502 of the 541 machines, holding 10.6k store.
 - The other lineages still grew to their 64-slot caps, and the boom collapsed by epoch 135.
