@@ -1299,6 +1299,14 @@ Results.
      uncontrolled growth of the size of the connection weights", which matches the growth in result 1.
    - The W4g champion (seed 1, epoch 500) does not respond to the cue either, even though its direction entries
      have a large spread (SD 51). There, input scale is not the reason.
+8. **No individual agent is broken; the waste is shared** (W4f seed 1, epoch 1000; 1,143 agents that lived at least
+   100 ticks).
+   - Every agent wastes: the futile share per agent runs from 0.18 to 0.60 (median 0.36; 10th to 90th percentile
+     0.29–0.44).
+   - None is stuck in a loop: the longest run of one action is at most 25 ticks (median 9). Only 0.4% of agents
+     ever have 20 or more futile actions in a row.
+   - The most wasteful tenth starve far more often (89% against 50% of all agents). All agents of a lineage share one
+     genome, though, so this within-world selection cannot remove the waste. Only the learner can.
 
 Reading.
 - The agents are not broken. They are crude, and evolution has not made them less so.
