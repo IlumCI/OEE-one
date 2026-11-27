@@ -116,3 +116,24 @@ Kill: giving costs nothing in every seed, or the index is at the null everywhere
   its members.
 - Kept for later to respect the bootstrap rule: memory pays only once members can learn, teach and depend on each
   other.
+
+## Implementation (2026-11-27; off by default, existing runs unchanged)
+
+| Flag | What it does | Ablation (tournaments, agent A) |
+|---|---|---|
+| `-life_teach 1` | SL1 V: a newborn's synapses start at half its parent's (Life::inherit) | `-ablate noteach` |
+| `-life_obs 1` | SL1 O: after its own update, each agent learns at half rate, without a trace, from the nearest kin agent in its 5×5 window that acted this tick: that agent's action and reward prediction error, applied to its own features and policy (Life::learn_obs) | `-ablate noobs` |
+| `-give 1 [-give_amt 20]` | IN1: action give (index 7 without matter, so `-nact 8`; 10 with matter, `-nact 11`) passes up to 20 energy to the kin agent in front, keeping 1. Observation entry 63 (din 64) or 127 (din 128) shows the energy/8 of the agent in front if it is kin (a cue of need). Giving is innate (not plastic); for the giver's learning it counts as kept (inclusive accounting) | `-ablate nogive` |
+
+- **Measures:**
+  - tools/w/probe.py reports the division-of-labour index (I(agent; action)/H(action)) and its shuffle null;
+  - `-stats 1` reports energy given per thousand agent-ticks.
+- **Tests:**
+  - test_w_world: teaching halves the parent's synapses; observing a paying action raises it; give reaches kin
+    only; the need cue.
+  - ctest w_social: bit-exact resume for any thread count, mirror 0.5, the three ablations run.
+- **Runs** (after LL1 passes, on its best arm A; W1b, seeds 1–3, 2000 epochs):
+  - SL1 V: `-life 1 <arm A> -life_teach 1`.
+  - SL1 O: `-life 1 <arm A> -life_obs 1`.
+  - IN1: `-life 1 <arm A> -give 1 -nact 8`.
+

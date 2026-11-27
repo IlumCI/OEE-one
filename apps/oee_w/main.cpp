@@ -55,6 +55,8 @@
 //          -life 1 [-life_repro 1] [-life_mod 1] [-life_eta 10 -life_lam 230 -life_beta 4] (training and tournaments):
 //          lifetime learning, docs/LIFE.md; -ablate freeze: A's plastic synapses stay zero (A without learning);
 //          -life_b 0: B does not learn (to play a genome evolved without learning).
+//          -life_teach 1 / -life_obs 1 / -give 1 (docs/SOCIAL.md); -ablate noteach / noobs / nogive: A without teaching at
+//          birth / observational learning / giving.
 //          -probe FILE (analysis): one record per living agent of A per tick in the first -probe_games games (default 2;
 //          solo: lineage 0, i.e. B in odd games): what it saw, its logits, its recurrent state after the step, the action
 //          drawn, its effect and how the agent died (layout in tools/w/probe.py).
@@ -128,7 +130,12 @@ void run_worlds(std::vector<w::World>& ws,evo::Rows& rows,const std::vector<evo:
   const std::vector<std::int8_t> zero((std::size_t)S*V,0);std::vector<const std::int8_t*> lp(K);
   const int RS=24+Din+V+L;std::vector<std::uint8_t> pend;std::vector<int> pid;std::vector<std::int8_t> raw;  // probe records waiting for the tick; raw obs
   const bool lrn=lc&&lf;const int Dh=lf?lf->D:0;std::vector<std::uint32_t> lmask(K,0);std::vector<int> le0,lrows;std::vector<std::uint64_t> lid0;  // learning: energy and id before the tick, rows stepped
-  if(lrn){for(int k=0;k<K;++k)if((*lc)[k].on)lmask[k]=(*lc)[k].mask(ws[0].p.nact,ws[0].p.matter>0);le0.assign((std::size_t)K*nw*S,0);lid0.assign((std::size_t)K*nw*S,0);for(auto& w:ws)w.probe=true;}
+  std::vector<int> lact,ldE;std::vector<std::int64_t> ldl;std::vector<char> lok;  // per row this tick: action, reward, prediction error before the update, valid
+  static const std::vector<std::pair<int,int>> nb=[]{std::vector<std::pair<int,int>> v;for(int dy=-2;dy<=2;++dy)for(int dx=-2;dx<=2;++dx)if(dx||dy)v.push_back({dx,dy});
+    std::stable_sort(v.begin(),v.end(),[](auto a,auto b){const int ca=std::max(std::abs(a.first),std::abs(a.second)),cb=std::max(std::abs(b.first),std::abs(b.second));
+      return ca!=cb?ca<cb:std::abs(a.first)+std::abs(a.second)<std::abs(b.first)+std::abs(b.second);});return v;}();  // SL1 O: neighbours, nearest first
+  if(lrn){for(int k=0;k<K;++k)if((*lc)[k].on)lmask[k]=(*lc)[k].mask(ws[0].p.nact,ws[0].p.matter>0);le0.assign((std::size_t)K*nw*S,0);lid0.assign((std::size_t)K*nw*S,0);for(auto& w:ws)w.probe=true;
+    lact.assign((std::size_t)K*nw*S,-1);ldE.assign((std::size_t)K*nw*S,0);ldl.assign((std::size_t)K*nw*S,0);lok.assign((std::size_t)K*nw*S,0);}
   for(int t=0;t<H;++t){pid.clear();lrows.clear();
     for(int k=0;k<K;++k){if(!st[k])continue;idx.clear();
       if(pf&&k==kp){for(int i=0;i<nw;++i){if(!(*pf)[i])continue;idx.clear();  // one stepper per world
@@ -162,11 +169,19 @@ void run_worlds(std::vector<w::World>& ws,evo::Rows& rows,const std::vector<evo:
       if(pr&&pr->rec&&!pid.empty())for(std::size_t j=0;j<pid.size();++j){if(pid[j]/S!=i)continue;std::uint8_t* r=pend.data()+j*RS;const int sl=pr->k*S+pid[j]%S;const w::World& Z=ws[i];
         std::uint32_t id;std::memcpy(&id,r+4,4);r[13]=Z.pact.empty()||Z.pact[sl]<0?255:(std::uint8_t)Z.pact[sl];r[14]=Z.pdie.empty()?0:Z.pdie[sl];put16(r+16,Z.peff.empty()?0:Z.peff[sl]);
         put16(r+20,Z.ag[sl].alive&&(std::uint32_t)Z.ag[sl].id==id?Z.ag[sl].energy:0);pr->buf.insert(pr->buf.end(),r,r+RS);}
-      if(lrn)for(int row:lrows){const int k=row/(nw*S),q=row%(nw*S);if(q/S!=i)continue;const int sl=k*S+q%S;const w::Agent& ag=ws[i].ag[sl];  // learn from the tick
-        if(!ag.alive||ag.id!=lid0[row]||ws[i].pact.empty()||ws[i].pact[sl]<0)continue;const int act=ws[i].pact[sl];int dE=ag.energy-le0[row];
-        if((*lc)[k].repro&&act==5&&ws[i].peff[sl]==1)dE+=ws[i].p.repro_give;  // inclusive: the newborn's energy counts as kept
-        lf->learn((*lc)[k],lmask[k],row,rows.state.data()+(std::size_t)row*L+L-Dh,lgt.data()+(std::size_t)row*V,act,dE);}
-      for(std::size_t bi=0;bi<born.size();++bi){const int b=born[bi],k=b/S,s=b%S;auto dst=rows.state.begin()+((std::size_t)(k*nw+i)*S+s)*L;if(lf)lf->reset((k*nw+i)*S+s);
+      if(lrn){for(int row:lrows){const int k=row/(nw*S),q=row%(nw*S);if(q/S!=i)continue;const int sl=k*S+q%S;const w::Agent& ag=ws[i].ag[sl];  // rewards of the tick
+          lok[row]=0;if(!ag.alive||ag.id!=lid0[row]||ws[i].pact.empty()||ws[i].pact[sl]<0)continue;const int act=ws[i].pact[sl];int dE=ag.energy-le0[row];
+          if((*lc)[k].repro&&act==5&&ws[i].peff[sl]==1)dE+=ws[i].p.repro_give;  // inclusive: the newborn's energy counts as kept
+          if(ws[i].p.give&&act==ws[i].give_act()&&ws[i].peff[sl]>0)dE+=ws[i].peff[sl];  // inclusive: energy given to kin counts as kept
+          lok[row]=1;lact[row]=act;ldE[row]=dE;ldl[row]=(std::int64_t)dE*256-lf->b[row];}
+        for(int row:lrows){const int k=row/(nw*S);if((row%(nw*S))/S!=i||!lok[row])continue;  // own learning
+          lf->learn((*lc)[k],lmask[k],row,rows.state.data()+(std::size_t)row*L+L-Dh,lgt.data()+(std::size_t)row*V,lact[row],ldE[row]);}
+        for(int row:lrows){const int k=row/(nw*S),q=row%(nw*S);if(q/S!=i||!lok[row]||!(*lc)[k].obs)continue;  // SL1 O: learn from the nearest kin
+          const w::Agent& ag=ws[i].ag[(std::size_t)k*S+q%S];const int Lw=ws[i].p.L;
+          for(auto [dx,dy]:nb){const int c=((ag.y+dy+Lw)%Lw)*Lw+(ag.x+dx+Lw)%Lw,o=ws[i].occ[c];if(o<0||o/S!=k)continue;const int rn=(k*nw+i)*S+o%S;if(!lok[rn])continue;
+            lf->learn_obs((*lc)[k],lmask[k],row,rows.state.data()+(std::size_t)row*L+L-Dh,lgt.data()+(std::size_t)row*V,lact[rn],ldl[rn]);break;}}}
+      for(std::size_t bi=0;bi<born.size();++bi){const int b=born[bi],k=b/S,s=b%S;auto dst=rows.state.begin()+((std::size_t)(k*nw+i)*S+s)*L;
+        if(lf){lf->reset((k*nw+i)*S+s);if(lrn&&(*lc)[k].teach&&bi<ws[i].parents.size())lf->inherit((k*nw+i)*S+s,(k*nw+i)*S+ws[i].parents[bi]%S);}  // SL1 V: taught at birth
         if(ws[i].p.lamarck&&bi<ws[i].parents.size()){const int q=ws[i].parents[bi];std::copy(rows.state.begin()+((std::size_t)(k*nw+i)*S+q%S)*L,rows.state.begin()+((std::size_t)(k*nw+i)*S+q%S+1)*L,dst);}
         else std::fill(dst,dst+L,0);}
       if(integ)for(int k=0;k<K;++k)if(st[k])(*integ)[k][i]+=ws[i].biomass(k);}
@@ -200,6 +215,8 @@ int main(int argc,char** argv){
     else if(!std::strcmp(s,"-probe"))probef=v;else if(!std::strcmp(s,"-probe_games"))probe_games=std::atoi(v);else if(!std::strcmp(s,"-mask"))maskf=v;else if(!std::strcmp(s,"-mask_mode"))mask_mode=v;else if(!std::strcmp(s,"-obs_norm"))obs_norm=std::atoi(v);else if(!std::strcmp(s,"-ef"))ef=std::atoi(v);
     else if(!std::strcmp(s,"-life"))lcfg.on=std::atoi(v);else if(!std::strcmp(s,"-life_repro"))lcfg.repro=std::atoi(v);else if(!std::strcmp(s,"-life_mod"))lcfg.mod=std::atoi(v);
     else if(!std::strcmp(s,"-life_eta"))lcfg.eta=std::atoi(v);else if(!std::strcmp(s,"-life_lam"))lcfg.lam=std::atoi(v);else if(!std::strcmp(s,"-life_beta"))lcfg.beta=std::atoi(v);else if(!std::strcmp(s,"-life_b"))life_b=std::atoi(v);
+    else if(!std::strcmp(s,"-life_teach"))lcfg.teach=std::atoi(v);else if(!std::strcmp(s,"-life_obs"))lcfg.obs=std::atoi(v);
+    else if(!std::strcmp(s,"-give"))wp.give=std::atoi(v);else if(!std::strcmp(s,"-give_amt"))wp.give_amt=std::atoi(v);
     else if(!std::strcmp(s,"-ablate"))ablate=v;else if(!std::strcmp(s,"-arena_ck"))arena_ck=v;else if(!std::strcmp(s,"-ck"))ckf=v;
     else if(!std::strcmp(s,"-season"))wp.season=std::atoi(v);else if(!std::strcmp(s,"-view"))wp.view=std::atoi(v);
     else if(!std::strcmp(s,"-signals"))wp.signals=std::atoi(v);else if(!std::strcmp(s,"-rot"))wp.rot=std::atoi(v);
@@ -229,12 +246,15 @@ int main(int argc,char** argv){
   const evo::EggCfg bc=brain_cfg(layers,D,sig,(wp.signals||wp.matter)?128:w::World::kDin,wp.matter?32:w::World::kV);
   lcfg.mlog=wp.matter?11:15;  // an output no action, symbol or write code uses
   if(lcfg.on<0||lcfg.on>1||lcfg.eta<0||lcfg.eta>40||lcfg.lam<0||lcfg.lam>255||lcfg.beta<0||lcfg.beta>16){std::fprintf(stderr,"-life 0|1, -life_eta 0..40, -life_lam 0..255, -life_beta 0..16\n");return 2;}
-  if((lcfg.repro||lcfg.mod)&&!lcfg.on){std::fprintf(stderr,"-life_repro and -life_mod need -life 1\n");return 2;}
+  if((lcfg.repro||lcfg.mod||lcfg.teach||lcfg.obs)&&!lcfg.on){std::fprintf(stderr,"-life_repro, -life_mod, -life_teach and -life_obs need -life 1\n");return 2;}
+  if(wp.give&&wp.nact!=(wp.matter?11:8)){std::fprintf(stderr,"-give 1 needs -nact %d (give is action %d)\n",wp.matter?11:8,wp.matter?10:7);return 2;}
+  if(!wp.give&&wp.nact>(wp.matter?10:7)){std::fprintf(stderr,"-nact above %d needs -give 1\n",wp.matter?10:7);return 2;}
   const bool w2=wp.season>0||wp.signals>0||wp.view!=2||wp.matter>0;
 
   if(!ta.empty()){  // tournament, mirrored: game 2k has A in slot 0, game 2k+1 has A in slot 1 (same arena seed)
-    if(!ablate.empty()&&ablate!="amnesia"&&ablate!="shuffle"&&ablate!="deaf"&&ablate!="deafkin"&&ablate!="deafother"&&ablate!="wipe"&&ablate!="nofeed"&&ablate!="nocue"&&ablate!="gate_eat"&&ablate!="gate_all"&&ablate!="sharp"&&ablate!="greedy"&&ablate!="freeze"){std::fprintf(stderr,"unknown ablation %s\n",ablate.c_str());return 2;}
+    if(!ablate.empty()&&ablate!="amnesia"&&ablate!="shuffle"&&ablate!="deaf"&&ablate!="deafkin"&&ablate!="deafother"&&ablate!="wipe"&&ablate!="nofeed"&&ablate!="nocue"&&ablate!="gate_eat"&&ablate!="gate_all"&&ablate!="sharp"&&ablate!="greedy"&&ablate!="freeze"&&ablate!="noteach"&&ablate!="noobs"&&ablate!="nogive"){std::fprintf(stderr,"unknown ablation %s\n",ablate.c_str());return 2;}
     if(ablate=="freeze"&&!lcfg.on){std::fprintf(stderr,"-ablate freeze needs -life 1\n");return 2;}
+    if((ablate=="noteach"&&!lcfg.teach)||(ablate=="noobs"&&!lcfg.obs)||(ablate=="nogive"&&!wp.give)){std::fprintf(stderr,"-ablate %s needs the mechanism on\n",ablate.c_str());return 2;}
     if(ablate=="nofeed"&&!wp.matter){std::fprintf(stderr,"-ablate nofeed needs -matter 1\n");return 2;}
     if(ablate=="wipe"&&!wp.matter){std::fprintf(stderr,"-ablate wipe needs -matter 1\n");return 2;}
     if(ablate.rfind("deaf",0)==0&&!wp.signals){std::fprintf(stderr,"-ablate deaf needs -signals 1\n");return 2;}
@@ -267,9 +287,9 @@ int main(int argc,char** argv){
       if(!solo)s1=std::make_unique<evo::Stepper>(sw?A:B,nullptr,rows,q.S,q.S);
       std::vector<w::World> one{W};std::vector<evo::Stepper*> st{&s0};if(!solo)st.push_back(s1.get());st.resize(q.K,nullptr);std::vector<std::vector<long>> ig(q.K,std::vector<long>(1,0));
       const int sa=solo?0:sw;  // A's lineage slot (solo: the only slot, A in even games)
-      std::vector<char> amn(q.K,0);if(!solo||sw==0){amn[sa]=ablate=="amnesia"?1:ablate=="shuffle"?2:0;if(ablate=="deaf")one[0].deaf=1u<<sa;if(ablate=="deafkin")one[0].deaf_kin=1u<<sa;if(ablate=="deafother")one[0].deaf_other=1u<<sa;if(ablate=="nofeed")one[0].nofeed=1u<<sa;if(ablate=="nocue")one[0].nocue=1u<<sa;if(ablate=="gate_eat")one[0].gate_eat=1u<<sa;if(ablate=="gate_all")one[0].gate_all=1u<<sa;if(ablate=="sharp")one[0].sharp=1u<<sa;if(ablate=="greedy")one[0].greedy=1u<<sa;}one[0].track=stats>0;
+      std::vector<char> amn(q.K,0);if(!solo||sw==0){amn[sa]=ablate=="amnesia"?1:ablate=="shuffle"?2:0;if(ablate=="deaf")one[0].deaf=1u<<sa;if(ablate=="deafkin")one[0].deaf_kin=1u<<sa;if(ablate=="deafother")one[0].deaf_other=1u<<sa;if(ablate=="nofeed")one[0].nofeed=1u<<sa;if(ablate=="nocue")one[0].nocue=1u<<sa;if(ablate=="gate_eat")one[0].gate_eat=1u<<sa;if(ablate=="gate_all")one[0].gate_all=1u<<sa;if(ablate=="sharp")one[0].sharp=1u<<sa;if(ablate=="greedy")one[0].greedy=1u<<sa;if(ablate=="nogive")one[0].nogive=1u<<sa;}one[0].track=stats>0;
       std::vector<const Norm*> nmv(q.K,nullptr);nmv[0]=sw?(hB?&nB:nullptr):(hA?&nA:nullptr);if(!solo)nmv[1]=sw?(hA?&nA:nullptr):(hB?&nB:nullptr);
-      w::Life lfg;std::vector<w::LifeCfg> lcv(q.K,lcfg);if(lcfg.on){lfg.init(q.K*q.S,bc.D,q.nact);if(ablate=="freeze"&&(!solo||sw==0))lcv[sa].on=0;  // freeze: A learns nothing
+      w::Life lfg;std::vector<w::LifeCfg> lcv(q.K,lcfg);if(lcfg.on){lfg.init(q.K*q.S,bc.D,q.nact);if(!solo||sw==0){if(ablate=="freeze")lcv[sa].on=0;if(ablate=="noteach")lcv[sa].teach=0;if(ablate=="noobs")lcv[sa].obs=0;}  // A without learning / teaching / observing
         if(life_b==0)for(int k=0;k<q.K;++k)if(solo?sw==1:k!=sa)lcv[k].on=0;}  // -life_b 0: B learns nothing (a genome evolved without learning)
       Probe pr;pr.k=sa;pr.game=gi;if(!solo||sw==0)pr.mask=msk;pr.shuf=mask_mode=="shuffle";pr.rec=!probef.empty()&&gi<probe_games;one[0].probe=pr.rec;
       int step=curve>0?std::min(curve,climate_ticks):climate_ticks;long la=-1,lb=-1;if(ablate=="wipe")step=std::min(step,100);  // wipe A's machines every 100 ticks
@@ -314,12 +334,12 @@ int main(int argc,char** argv){
       (unsigned long long)(seed0+gi/2),gi%2,fs[gi],is[gi],ba[gi],bb[gi],na[gi],nb[gi]);}
     for(int k=0;k<seeds;++k){const double d=(is[2*k]+is[2*k+1])/2;si+=d;si2+=d*d;wins+=d>0.5+1e-9;}
     const double mi=si/seeds,se=seeds>1?std::sqrt(std::max(0.0,(si2-seeds*mi*mi)/(seeds-1))/seeds):0;
-    if(stats){static const char* nm[]={"noop","fwd","left","right","eat","repro","attack","write","make","feed"};
+    if(stats){static const char* nm[]={"noop","fwd","left","right","eat","repro","attack","write","make","feed","give"};
       for(int g=0;g<2;++g){long tot[32]={0};for(int gi=0;gi<G;++gi)for(int j=0;j<32;++j)tot[j]+=gst[gi][32*g+j];const double T=std::max(1L,tot[22]);
-        std::printf("stats %s agent_ticks %ld",g?"B":"A",tot[22]);for(int j=0;j<wp.nact&&j<10;++j)std::printf(" %s %.3f",nm[j],tot[j]/T);
+        std::printf("stats %s agent_ticks %ld",g?"B":"A",tot[22]);for(int j=0;j<wp.nact&&j<11;++j)std::printf(" %s %.3f",(wp.give&&!wp.matter&&j==7)?"give":nm[j],tot[j]/T);
         std::printf(" kills/kt %.2f births/kt %.2f starved/kt %.2f aged/kt %.2f killed/kt %.2f symbol %.3f joint_harvests/kt %.2f",1e3*tot[16]/T,1e3*tot[17]/T,1e3*tot[18]/T,1e3*tot[19]/T,1e3*tot[20]/T,tot[21]/T,1e3*tot[23]/T);
         if(wp.irr>0)std::printf(" fed %ld food %ld irr_own %ld irr_other %ld irr_wild %ld",tot[27],tot[28],tot[24],tot[25],tot[26]);
-        if(wp.land)std::printf(" home %.3f",tot[29]/T);std::printf("\n");}}
+        if(wp.land)std::printf(" home %.3f",tot[29]/T);if(wp.give)std::printf(" given/kt %.1f",1e3*tot[30]/T);std::printf("\n");}}
     if(curve>0){std::printf("curve");for(int c=0;c<nc;++c){double m=0;for(int gi=0;gi<G;++gi)m+=cv[gi][c];std::printf(" %d:%.3f",(c+1)*curve,m/G);}std::printf("\n");}
     std::printf("mean_shareA %.4f\n",sf/G);
     std::printf("mean_ishareA %.4f\tse %.4f\tt %.2f\twins %d/%d\n",mi,se,se>1e-9?(mi-0.5)/se:0.0,wins,seeds);
@@ -360,6 +380,8 @@ int main(int argc,char** argv){
   if(obs_norm)fp2.push_back(9990200+obs_norm);
   if(ef<0||ef>16){std::fprintf(stderr,"-ef: 0 (off) or the residual decay shift 1..16\n");return 2;}
   if(ef)fp2.push_back(9990300+ef);
+  if(lcfg.teach||lcfg.obs)fp2.push_back(9991000+lcfg.teach+2*lcfg.obs);
+  if(wp.give){fp2.push_back(9991100+wp.give);fp2.push_back(9991200+wp.give_amt);}
   if(lcfg.on){fp2.push_back(9990400+lcfg.on+2*lcfg.repro+4*lcfg.mod);fp2.push_back(9990500+lcfg.eta);fp2.push_back(9990600+lcfg.lam);fp2.push_back(9990900+lcfg.beta);}
   const int Din=bc.Din;std::vector<std::int64_t> nacc((std::size_t)2*Din+1,0);Norm cur;cur.from(nacc,Din);  // -obs_norm: raw sums since the start, current normaliser
   const std::vector<const Norm*> nmv(K,&cur);
@@ -417,7 +439,8 @@ int main(int argc,char** argv){
     if(split_age)std::fprintf(lg,"# W1b split_age %d (split lineages take the parent's age)\n",split_age);
     if(null_es)std::fprintf(lg,"# W1c null_es %d (random update signs: fitness ignored)\n",null_es);
     if(hist_pair)std::fprintf(lg,"# W1e hist_pair %d (an ancestor drawn for each fork pair)\n",hist_pair);
-    if(lcfg.on)std::fprintf(lg,"# life %d repro %d mod %d eta %d lam %d beta %d (lifetime learning, docs/LIFE.md)\n",lcfg.on,lcfg.repro,lcfg.mod,lcfg.eta,lcfg.lam,lcfg.beta);
+    if(lcfg.on)std::fprintf(lg,"# life %d repro %d mod %d eta %d lam %d beta %d teach %d obs %d (lifetime and social learning, docs/LIFE.md, SOCIAL.md)\n",lcfg.on,lcfg.repro,lcfg.mod,lcfg.eta,lcfg.lam,lcfg.beta,lcfg.teach,lcfg.obs);
+    if(wp.give)std::fprintf(lg,"# IN1 give %d give_amt %d (energy to the kin agent in front, action %d)\n",wp.give,wp.give_amt,wp.matter?10:7);
     if(ef)std::fprintf(lg,"# ef %d (update with error feedback: residual decay 2^-%d, the top alpha of |residual| move)\n",ef,ef);
     if(obs_norm)std::fprintf(lg,"# obs_norm %d (input normalisation: running mean and SD of each observation entry, ARS V2)\n",obs_norm);
     if(!archive.empty()){lin[0].g->save(archive+"/egg_0.bin",0);if(obs_norm)cur.save(archive+"/egg_0.bin.nrm");}}

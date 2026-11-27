@@ -93,6 +93,7 @@ void World::observe(int slot,std::int8_t* o) const{
       if(q>=0&&q!=slot){o[25+i]=(std::int8_t)(ag[q].lineage==lin?64:-64);if(hear&&(!p.kin_sig||ag[q].lineage==lin)&&(ag[q].lineage==lin?hk:ho))o[53+i]=(std::int8_t)(32*ag[q].sig);}}}
   o[50]=(std::int8_t)std::min(127,a.energy/8);o[51]=(std::int8_t)std::min(127,a.age/4);o[52]=64;
   if(p.signals)o[78]=(std::int8_t)(32*a.sig);
+  if(p.give){const int q=occ[wr(a.y+fy)*L+wr(a.x+fx)];if(q>=0&&q!=slot&&ag[q].lineage==lin)o[din()-1]=(std::int8_t)std::min(127,ag[q].energy/8);}  // IN1: need of the kin in front
   if(p.matter){i=0;
     for(int v=2;v>=-2;--v){const int bx=a.x+v*fx,by=a.y+v*fy;
       for(int u=-2;u<=2;++u,++i){const int c=wr(by+u*ry)*L+wr(bx+u*rx);o[79+i]=(std::int8_t)(mat[c]==1?48:mat[c]==2?-48:mat[c]==3?96:0);
@@ -130,6 +131,9 @@ void World::tick(const std::int8_t* const* logits,std::vector<int>& born){
   if(track)for(int s:order){const int k=ag[s].lineage;++stat[(std::size_t)k*32+act[s]];++stat[(std::size_t)k*32+22];if(ag[s].sig>0)++stat[(std::size_t)k*32+21];
     if(!lown.empty()){const int c=ag[s].y*p.L+ag[s].x;if(lown[c]==k&&irl[c]>0)++stat[(std::size_t)k*32+29];}}
   std::vector<std::pair<int,int>> neat;  // W3.3: (node cell, eater slot) this tick
+  auto giv=[&](Agent& a,int s,int fc){const int q=occ[fc];  // IN1: energy to the kin agent in front
+    if(q>=0&&ag[q].alive&&ag[q].lineage==a.lineage&&!((nogive>>a.lineage)&1u)){const int amt=std::min(p.give_amt,std::max(0,a.energy-1));a.energy-=amt;
+      ag[q].energy=std::min(p.ecap,ag[q].energy+amt);if(probe)peff[s]=(std::int16_t)amt;if(track)stat[(std::size_t)a.lineage*32+30]+=amt;}};
   for(int s:order){Agent& a=ag[s];if(!a.alive)continue;const int c=a.y*p.L+a.x;
     const int fc=((a.y+FY[a.dir]+p.L)%p.L)*p.L+(a.x+FX[a.dir]+p.L)%p.L;
     switch(act[s]){
@@ -153,7 +157,9 @@ void World::tick(const std::int8_t* const* logits,std::vector<int>& born){
         if(q>=0&&ag[q].alive){Agent& v=ag[q];const int take=std::min(v.energy,p.atk_take);v.energy-=take;a.energy=std::min(p.ecap,a.energy+take);if(probe)peff[s]=(std::int16_t)take;
           if(v.energy<=0){v.alive=false;occ[fc]=-1;if(probe)pdie[q]=3;if(track){++stat[(std::size_t)a.lineage*32+16];++stat[(std::size_t)v.lineage*32+20];}}}
         break;}
-      case 7:if(p.matter){if(mat[fc]==1){tape[(std::size_t)fc*16+a.wpos]=kCode[code[s]];a.wpos=(a.wpos+1)&15;if(probe)peff[s]=1;}a.energy-=p.wr_cost;}break;  // write
+      case 7:if(p.matter){if(mat[fc]==1){tape[(std::size_t)fc*16+a.wpos]=kCode[code[s]];a.wpos=(a.wpos+1)&15;if(probe)peff[s]=1;}a.energy-=p.wr_cost;}  // write
+        else if(p.give)giv(a,s,fc);break;  // IN1 without matter: give
+      case 10:if(p.give&&p.matter)giv(a,s,fc);break;  // IN1 with matter: give
       case 8:if(p.matter){if(mat[fc]==0&&occ[fc]<0){make_machine(fc,a.dir,a.lineage);a.wpos=0;a.energy-=p.mk_cost;if(probe)peff[s]=1;}  // make or unmake
           else if(mat[fc]==1){if(!p.own||mlin[fc]<0||mlin[fc]==a.lineage){a.energy=std::min(p.ecap,a.energy+mst[fc]);kill_machine(fc);a.energy-=p.move;if(probe)peff[s]=2;}
             else{kill_machine(fc);a.energy-=2*p.mk_cost;if(probe)peff[s]=3;}}}  // W3.2: someone else's machine can only be destroyed
@@ -192,7 +198,8 @@ bool World::futile(int s,int a) const{const Agent& g=ag[s];const int L=p.L,c=g.y
       return (fen||res[c]==0)&&!(p.pass&&gr(c))&&!gr(fc)&&!(p.nodes>0&&p.matter&&mat[fc]==3);}
     case 5:{if(g.energy<p.repro_min||fb)return true;for(int q=0;q<p.S;++q)if(!ag[(std::size_t)g.lineage*p.S+q].alive)return false;return true;}
     case 6:return occ[fc]<0;
-    case 7:return !p.matter||mat[fc]!=1;
+    case 7:if(!p.matter)return !(p.give&&occ[fc]>=0&&ag[occ[fc]].lineage==g.lineage&&g.energy>1&&!((nogive>>g.lineage)&1u));return mat[fc]!=1;
+    case 10:return !(p.give&&p.matter&&occ[fc]>=0&&ag[occ[fc]].lineage==g.lineage&&g.energy>1&&!((nogive>>g.lineage)&1u));
     case 8:return !p.matter||!((mat[fc]==0&&occ[fc]<0)||mat[fc]==1);
     case 9:return !p.matter||mat[fc]!=1||g.energy<=1||((nofeed>>g.lineage)&1u);
     default:return false;}}
@@ -289,6 +296,7 @@ constexpr std::int64_t kExt10=0x4145564157LL;  // W4d land (land, per-cell owner
 constexpr std::int64_t kExt11=0x4245564157LL;  // W4e homesteads (farms, farm_store, farm_every, farm_free, irr_full, hfm)
 constexpr std::int64_t kExt12=0x4345564157LL;  // W4f homesteads (kExt11 + farm_reset)
 constexpr std::int64_t kExt13=0x4445564157LL;  // W4g homesteads (kExt12 + home_cue)
+constexpr std::int64_t kExt14=0x4545564157LL;  // IN1 give (give, give_amt)
 template<class T> void wv(std::FILE* f,const std::vector<T>& v){wr(f,(std::int64_t)v.size());if(!v.empty())std::fwrite(v.data(),sizeof(T),v.size(),f);}
 template<class T> bool rv(std::FILE* f,std::vector<T>& v){std::int64_t n=0;if(!rd(f,n)||n<0||n>(1<<26))return false;v.resize((std::size_t)n);
   return n==0||std::fread(v.data(),sizeof(T),(std::size_t)n,f)==(std::size_t)n;}
@@ -309,6 +317,7 @@ void World::save(std::FILE* f) const{
   if(p.matter&&p.claim){wr(f,kExt9);wr(f,p.claim);}
   if(p.matter&&p.land){wr(f,kExt10);wr(f,p.land);wv(f,lown);wv(f,mfd);}
   if(p.matter&&p.farms){wr(f,kExt13);wr(f,p.farms);wr(f,p.farm_store);wr(f,p.farm_every);wr(f,p.farm_free);wr(f,p.irr_full);wv(f,hfm);wr(f,p.farm_reset);wr(f,p.home_cue);}
+  if(p.give){wr(f,kExt14);wr(f,p.give);wr(f,p.give_amt);}
   wv(f,res);wv(f,fert);wv(f,racc);wv(f,occ);wr(f,(std::int64_t)ag.size());
   for(auto& a:ag){const std::int64_t r[]={a.x,a.y,a.dir,a.energy,a.age,a.lineage,a.alive,(std::int64_t)a.id};for(auto x:r)wr(f,x);}
   if(ext())for(auto& a:ag){wr(f,a.sig);}
@@ -358,6 +367,10 @@ bool World::load(std::FILE* f){
     if(m==kExt11||m==kExt12||m==kExt13){std::int64_t a=0,b=0,c=0,d=0,e=0,g=1,h=0;if(!rd(f,a)||!rd(f,b)||!rd(f,c)||!rd(f,d)||!rd(f,e)||!rv(f,hfm)||(m!=kExt11&&!rd(f,g))||(m==kExt13&&!rd(f,h)))return false;
       p.farms=(int)a;p.farm_store=(int)b;p.farm_every=(int)c;p.farm_free=(int)d;p.irr_full=(int)e;p.farm_reset=(int)g;p.home_cue=(int)h;}
     else if(std::fseek(f,pos,SEEK_SET)!=0)return false;}  // no homestead block
+  p.give=0;p.give_amt=20;
+  {std::int64_t m=0;const long pos=std::ftell(f);if(!rd(f,m))return false;
+    if(m==kExt14){std::int64_t a=0,b=0;if(!rd(f,a)||!rd(f,b))return false;p.give=(int)a;p.give_amt=(int)b;}
+    else if(std::fseek(f,pos,SEEK_SET)!=0)return false;}  // no give block
   if(!rv(f,res)||!rv(f,fert)||!rv(f,racc)||!rv(f,occ)){return false;}std::int64_t n=0;if(!rd(f,n)||n<0||n>(1<<24)){return false;}ag.assign((std::size_t)n,Agent{});
   for(auto& a:ag){std::int64_t r[8];for(auto& x:r)if(!rd(f,x))return false;
     a.x=(int)r[0];a.y=(int)r[1];a.dir=(int)r[2];a.energy=(int)r[3];a.age=(int)r[4];a.lineage=(int)r[5];a.alive=r[6]!=0;a.id=(std::uint64_t)r[7];a.sig=0;}

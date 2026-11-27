@@ -106,6 +106,20 @@ def study(D,trace=None):
   out['food per agent-tick']=float(food_.sum()/cnt.sum());out['fed per agent-tick']=float(fed.sum()/cnt.sum())
   out['share agents never moving (life >= 50)']=frac(moves[lng]==0);out['share agents turning > 50% (life >= 50)']=frac(turns[lng]/cnt[lng]>0.5)
   out['share agents feeding at all (life >= 50)']=frac(fed[lng]>0)
+  # division of labour (Gorelick, Bertram, Killeen and Fewell 2004): I(agent; action) / H(action) over agents seen at
+  # least 50 ticks, against a null with actions shuffled across those agents' records within age bins
+  keep=np.repeat(lng,cnt);ia=ida[keep];aa=ra[keep].astype(np.int64);agv=rs['age'][keep].astype(np.int64)
+  def dol(x):
+    M=np.zeros((len(u),na));np.add.at(M,(ia,x),1);P=M/M.sum();pa=P.sum(1,keepdims=True);pt=P.sum(0,keepdims=True);nz=P>0
+    I=(P[nz]*np.log2(P[nz]/(pa@pt)[nz])).sum();q=pt[pt>0];return float(I/(-(q*np.log2(q)).sum()))
+  if len(aa)>100:
+    rng=np.random.default_rng(7);out['division of labour index']=dol(aa);nulls=[]
+    for _ in range(5):
+      x=aa.copy()
+      for lo,hi in [(0,50),(50,200),(200,100000)]:
+        m=np.flatnonzero((agv>=lo)&(agv<hi));x[m]=rng.permutation(x[m])
+      nulls.append(dol(x))
+    out['division of labour index, shuffle null']=float(np.mean(nulls))
   if trace is not None:
     g,i=trace;m=(rs['g']==g)&(rs['id']==i)
     print('trace game %d id %d: t x y dir energy age act eff die | food_under front_agent front_mat front_store land cue_f cue_r cue_store cue_irr'%(g,i))

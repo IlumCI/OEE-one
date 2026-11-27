@@ -69,6 +69,10 @@ struct WParams{
                     // agent's nearest own homestead farm cell, that farm's store/2 and its land's irrigation/2
   int farm_reset=1; // W4e 1: every placement tops farms up and re-irrigates their land; W4f 0: only the first placement
                     // (t 0) does; later ones rebuild destroyed farms empty, and homestead farms never decay
+  // IN1 (docs/SOCIAL.md): give 1 = action "give" (index 7 without matter, needing nact 8; index 10 with matter, nact 11):
+  // up to give_amt energy to the kin agent in front, keeping 1. Observation entry 63 (din 64) or 127 (din 128) shows the
+  // energy/8 of the agent in front if it is kin (a cue of need).
+  int give=0,give_amt=20;
 };
 
 struct Agent{int x=0,y=0,dir=0,energy=0,age=0,lineage=0;bool alive=false;std::uint64_t id=0;int sig=0,wpos=0;};
@@ -95,7 +99,7 @@ struct World{
   std::uint32_t nocue=0;               // analysis: lineages that see zeros in the W4g cue entries (not saved)
   // analysis: per-lineage counters when track is set (not saved): stat[k*32+a] actions a = 0..15, +16 kills made,
   // +17 births, +18 starved, +19 died of age, +20 killed, +21 non-zero symbols, +22 agent-ticks, +23 joint harvests,
-  // +29 agent-ticks on own irrigated land (with land);
+  // +29 agent-ticks on own irrigated land (with land); +30 energy given to kin (with give);
   // with irr (credit for irrigation, k = the credited lineage): +24 food from k-credited irrigated cells eaten by k,
   // +25 the same eaten by other lineages, +26 food from uncredited irrigated cells eaten by k, +27 energy k fed into
   // machines, +28 all food k took from cells
@@ -108,6 +112,8 @@ struct World{
   // (gate_eat: an eat that would take nothing; gate_all: any action that would have no effect, see futile())
   std::uint32_t gate_eat=0,gate_all=0;
   std::uint32_t sharp=0,greedy=0;  // analysis (not saved): lineages that sample with P(a) ~ 2^(logit/8) / take the argmax
+  std::uint32_t nogive=0;          // analysis (not saved): lineages whose give action does nothing
+  int give_act() const{return p.matter?10:7;}  // index of the give action (with p.give)
   bool futile(int s,int a) const;  // analysis: action a of the agent in slot s would have no effect in the current state
   std::vector<std::int8_t> mfd,ilin;  // last feeder lineage per machine (world state with land, else analysis); lineage
                                       // credited for each cell's irrigation (analysis, track)

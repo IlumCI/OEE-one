@@ -228,5 +228,26 @@ int main(){
     CHECK(f1<f0/2&&e1>e0*2&&!((m>>5)&1u)&&((c.mask(7,false)>>4)&1u),msg);
     Life z;z.init(1,8,7);LifeCfg off=c;off.on=0;for(int t=0;t<50;++t){std::vector<std::int8_t> l=base;z.learn(off,m,0,h,l.data(),1,-3);}
     bool zero=true;for(auto w:z.W)zero=zero&&w==0;CHECK(zero,"lifetime learning off: synapses stay zero");}
+  {// SL1: a newborn taught at birth starts with half its parent's synapses; observing a neighbour whose action paid
+    // makes that action likelier
+    LifeCfg c;c.on=1;c.eta=10;c.obs=1;Life lf;lf.init(2,8,7);const std::uint32_t m=c.mask(7,false);std::int8_t h[8]={30,-20,40,10,-10,50,0,25};
+    for(std::size_t i=0;i<lf.W.size()/2;++i)lf.W[i]=(std::int32_t)(i*977%20001)-10000;lf.b[0]=300;lf.inherit(1,0);bool half=lf.b[1]==300;
+    for(std::size_t i=0;i<lf.W.size()/2;++i)half=half&&lf.W[lf.W.size()/2+i]==(lf.W[i]>>1);
+    Life o;o.init(1,8,7);std::vector<std::int8_t> l(16,0);const std::int64_t* E=act_weights();auto pr=[&](int a){std::vector<std::int8_t> q=l;o.apply(c,m,0,h,q.data());
+      std::int64_t S=0;for(int k=0;k<7;++k)S+=E[(int)q[k]+128];return (double)E[(int)q[a]+128]/S;};const double p0=pr(3);
+    for(int t=0;t<500;++t){std::vector<std::int8_t> q=l;o.apply(c,m,0,h,q.data());o.learn_obs(c,m,0,h,q.data(),3,8*256);}
+    const double p1=pr(3);char msg[160];std::snprintf(msg,sizeof msg,"SL1: teaching halves the parent's synapses; observing a paying action raises it %.3f -> %.3f",p0,p1);
+    CHECK(half&&p1>2*p0&&!((m>>7)&1u),msg);}
+  {// IN1: give passes energy to the kin agent in front only, and the need cue shows that agent's energy
+    WParams g;g.L=12;g.S=8;g.K=2;g.nact=8;g.give=1;g.give_amt=20;g.regrow=0;g.stoch=0;World w;w.init(g,0);const int L=g.L;
+    auto pt=[&](int slot,int x,int y,int dir,int e){Agent& a=w.ag[slot];a=Agent{};a.x=x;a.y=y;a.dir=dir;a.energy=e;a.lineage=slot/g.S;a.alive=true;a.id=slot+1;w.occ[y*L+x]=slot;};
+    pt(0,3,3,0,100);pt(1,3,2,2,40);  // lineage 0 facing kin (north)
+    pt(g.S,7,7,0,100);pt(2,7,6,2,40);  // lineage 1 facing lineage 0
+    std::vector<std::int8_t> o(w.din());w.observe(0,o.data());const bool cue=o[63]==5;w.observe(g.S,o.data());const bool nocue=o[63]==0;
+    std::vector<std::int8_t> la((std::size_t)g.S*16,(std::int8_t)-100),lb((std::size_t)g.S*16,(std::int8_t)-100);la[7]=100;lb[7]=100;
+    for(int s=1;s<g.S;++s)la[(std::size_t)s*16]=100;for(int s=0;s<g.S;++s)if(s)lb[(std::size_t)s*16]=100;
+    const std::int8_t* l2[2]={la.data(),lb.data()};std::vector<int> born;w.tick(l2,born);
+    const bool kin=w.ag[0].energy==100-20-g.base&&w.ag[1].energy==40+20-g.base,other=w.ag[g.S].energy==100-g.base&&w.ag[2].energy==40-g.base;
+    CHECK(cue&&nocue&&kin&&other&&g.nact==8&&w.give_act()==7,"IN1: give passes energy to kin in front only; the need cue shows the kin's energy/8");}
   std::printf(fails?"%d FAILED\n":"all passed\n",fails);return fails?1:0;
 }
