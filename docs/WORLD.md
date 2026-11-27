@@ -1166,6 +1166,35 @@ W4f seed 1 at epoch 1000 (2026-11-27; docs/results/w4f/eval_1000.txt).
 - As fixed in the protocol, the next step is agent-side: a cue giving the direction to the agent's own farms and a
   visible sign that a farm is running dry, tested A/B against W4f without the cue.
 
+### W4g protocol: a cue to the farm (fixed 2026-11-27, before the code; the owner's 20-minute timer ran out, so the recommended option was taken)
+
+Why. With a lasting incentive that pays 3–4 times its cost, agents still do not keep their farms going (W4f). An
+agent sees only a 5x5 window, with no position, compass or sense of home. Its homestead is 6 cells in a world of
+1,024, so it may rarely meet its farm, and it cannot tell a farm running dry from one that is full. In evolved
+robots, homing to a charger arose with a beacon visible from anywhere and an input reporting the need (Floreano
+and Mondada 1996); a position input changed which solution evolution found (Aharonov-Barki, Beker and Ruppin
+2001). docs/results/w4e/next_lit.md.
+
+Change (`-home_cue 1`, on top of W4f arm J; four observation entries):
+- the egocentric offset to the agent's nearest own homestead farm cell, forward and right (8 per cell, clamped);
+- that farm's store (store/2, capped) and its land's irrigation (level/2).
+- The cue is computed by the world from the agent's own position. It carries no advice about what to do.
+
+Arms (3 seeds × 1000 epochs at H 600; the same seeds):
+- K: W4f arm J with `-home_cue 1`.
+- The comparison is W4f arm J on the same seed (already run), plus the within-arm ablations.
+
+Measures at epoch 1000 (as W4f), plus a cue ablation: the champion against a copy of itself that sees zeros in
+the four cue entries (does the cue matter?).
+
+Pass and kill:
+- **Pass (the agents lacked a sense of home):** the no-feed ablation costs fitness (share < 0.5, t < −3) in at
+  least 2 of 3 seeds. Next: remove the homesteads and test whether farming arises in the open world.
+- **Kill:** the no-feed ablation costs nothing in every seed. Then neither the incentive nor a cue is enough. Next:
+  the learner (a quality-diversity archive that keeps feeders as stepping stones), or step back from farming.
+- Otherwise there is no verdict; report it.
+- Viability guard as in W4d. Calibration: seed 1 for 200 epochs for viability (the economics are W4f's).
+
 Interim observation (2026-11-26, W4b seed 1). F seed 1 boomed early, at epochs 80–115 (peak 198 agents at 100).
 - At epoch 100 one lineage owned 502 of the 541 machines, holding 10.6k store.
 - The other lineages still grew to their 64-slot caps, and the boom collapsed by epoch 135.
