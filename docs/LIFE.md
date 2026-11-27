@@ -262,5 +262,13 @@ Pass, per arm: freezing costs fitness (share < 0.5, t < −3) in at least 2 of 3
 Kill: freezing costs nothing (|t| < 2) in every seed of L, LM and LL2. Then the three-factor learner does not pay even
 where a perfect individual learner wins 0.97, so the learner is the bottleneck, not the world.
 
+Viability (stated 2026-11-27 18:00 UTC, before any learning arm was scored; the project's guard, WORLD.md W3.x):
+- A run whose reseeds rise by more than 10 within 200 epochs is stopped and reported, not scored.
+- The world itself is viable: E seed 1 had 10 reseeds in 2,000 epochs, and the calibration seeds 3, 0 and 2 in 250.
+- So a non-viable learning run counts as a failure of its arm at that seed. Its learner cannot keep the lineage
+  alive.
+- LM seed 1 tripped the guard at epoch 728: 18 reseeds between epochs 450 and 650, 25 in all. It was stopped there
+  (runs8/w1k_LM_s1/NONVIABLE).
+
 Runs: runs8/w1k_{E,L,LM,LL2}_s{1,2,3}, queued in that order by seed once the viability check passes. Scored by
 tools/w/ll1c_eval.sh into docs/results/ll1c/.
