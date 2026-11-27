@@ -79,3 +79,29 @@ deaf	0.4374	0.0591	-1.06	0.4119	0.0675	-1.31
 e	e_prev	solo_log_ratio	t	median	surviveA	surviveB	lshareA	lt	swap_recovery	swap_t
 1000	500	0.3399	0.98	0.0964	45/64	47/64	0.7038	6.45	-0.0034	-0.02
 == era (post-founder share, e vs e-250)
+250:1.00 500:1.00 750:0.69 1000:0.56 
+== census (epoch machines walls tapes classes)
+1000 23 38 16 5
+== machines by owner in the latest checkpoint (mcal -ck)
+t 600000 own 2 graze 1
+owner	machines	store
+-1	6	305
+0	9	0
+1	5	0
+2	3	0
+top tapes (count owner tape):
+3	0	________________
+2	2	_,,,,,,,,,,,,,,,
+2	0	R,,,,,,,,,,,,,,,
+2	1	,,,,,,,,,,,,,,,,
+2	0	,,,,,,,,,,,,,,,,
+agents by lineage slot: 32 32 0 0 0
+nofeed	world fresh	0.4362	0.0602	-1.06	4/16
+nofeed	world own	0.5628	0.0426	1.47	5/16
+== land and irrigation in the final world
+machines 23 running 3 withI 17 withE 3 withIE 2 withC 1 | irrigated cells 4 mean irr 116.2
+agents 64
+land (irrigated cells by owner lineage; common first): common 2 L0 2 L1 0 L2 0 L3 0 L4 0
+run	epochs	boom_time	mean_pop	booms	largest_share_in_booms	peak	largest_share_all
+runs8/w4j_s2	801	0.000	65.7	0	-	128	0.49
+runs8/w4i_s2	801	0.000	65.1	0	-	124	0.50
