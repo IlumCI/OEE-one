@@ -1,0 +1,2 @@
+own_world gate_all 0.8752 0.0543 6.91 15/16
+own_world gate_eat 0.9366 0.0425 10.27 15/16
