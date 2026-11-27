@@ -34,3 +34,39 @@ land (irrigated cells by owner lineage; common first): common 0 L0 3 L1 1 L2 0 L
 run	epochs	boom_time	mean_pop	booms	largest_share_in_booms	peak	largest_share_all
 runs8/w4j_s1	801	0.002	78.5	2	0.37	155	0.48
 runs8/w4i_s1	801	0.000	61.8	0	-	107	0.53
+# runs8/w4j_s3 e 1000 world: -S 64 -regrow 16 -nact 10 -matter 1 -spawn 20 -mut 1024 -season 300 -view 1 -signals 1 -wall_decay 4 -m_cost 4 -m_give 0 -graze 1 -pass 1 -irr 8 -irr_decay 1 -own 2 -land 1 -farms 6 -farm_store 0 -farm_free 1 -irr_full 1 -farm_reset 0 -climate_ticks 1200
+champion agent_ticks 3754191 noop 0.001 fwd 0.326 left 0.005 right 0.131 eat 0.365 repro 0.034 attack 0.126 write 0.002 make 0.001 feed 0.009 kills/kt 0.18 births/kt 3.88 starved/kt 2.42 aged/kt 1.02 killed/kt 0.07 symbol 0.145 joint_harvests/kt 0.00 fed 27544 food 7369672 irr_own 18143 irr_other 0 irr_wild 37042 home 0.002
+random agent_ticks 45066 noop 0.060 fwd 0.049 left 0.085 right 0.141 eat 0.089 repro 0.055 attack 0.085 write 0.254 make 0.060 feed 0.122 kills/kt 0.69 births/kt 10.78 starved/kt 12.54 aged/kt 0.00 killed/kt 9.61 symbol 0.852 joint_harvests/kt 0.00 fed 16000 food 35106 irr_own 335 irr_other 0 irr_wild 64 home 0.006
+wipe	0.5758	0.0454	1.67	0.6066	0.0625	1.71
+deaf	0.3776	0.0602	-2.03	0.3499	0.0801	-1.87
+== generality (e vs e-500)
+e	e_prev	solo_log_ratio	t	median	surviveA	surviveB	lshareA	lt	swap_recovery	swap_t
+1000	500	-0.1276	-0.49	-0.1979	48/64	52/64	0.9484	34.64	-0.6221	-1.55
+== era (post-founder share, e vs e-250)
+250:1.00 500:0.95 750:0.99 1000:0.99 
+== census (epoch machines walls tapes classes)
+1000 32 41 10 4
+== machines by owner in the latest checkpoint (mcal -ck)
+t 600000 own 2 graze 1
+owner	machines	store
+-1	8	25
+0	5	0
+1	5	0
+2	11	0
+3	3	0
+top tapes (count owner tape):
+6	2	________________
+5	2	,,,,,,,,,,,,,,,,
+5	0	,,,,,,,,,,,,,,,,
+4	1	,,,,,,,,,,,,,,,,
+2	3	,,,,,,,,,,,,,,,,
+agents by lineage slot: 32 0 32 0 0
+nofeed	world fresh	0.6175	0.0637	1.85	10/16
+nofeed	world own	0.4376	0.0591	-1.06	7/16
+== land and irrigation in the final world
+machines 32 running 1 withI 21 withE 5 withIE 4 withC 2 | irrigated cells 2 mean irr 72.5
+agents 64
+land (irrigated cells by owner lineage; common first): common 1 L0 0 L1 0 L2 1 L3 0 L4 0
+run	epochs	boom_time	mean_pop	booms	largest_share_in_booms	peak	largest_share_all
+runs8/w4j_s3	801	0.000	67.5	0	-	148	0.51
+runs8/w4i_s3	801	0.000	64.1	0	-	124	0.51
