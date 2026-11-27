@@ -64,7 +64,11 @@ void World::init(const WParams& pp,int founders){
 std::int8_t* World::kmrow(int s){const int n=p.K*p.S;if(kmem.size()!=(std::size_t)(n+p.K)*4){kmem.assign((std::size_t)(n+p.K)*4,0);kmid.assign((std::size_t)n,0);}
   const Agent& a=ag[s];if((kindmemol>>a.lineage)&1u)return &kmem[((std::size_t)n+a.lineage)*4];
   std::int8_t* m=&kmem[(std::size_t)s*4];if(kmid[s]!=a.id){std::fill(m,m+4,0);kmid[s]=a.id;}return m;}  // a newborn starts empty
-bool World::ktox(int kind,long era) const{bool any=false;for(int i=0;i<p.kinds;++i)any=any||!(mix(mix(p.seed^0x70c5ULL)+(std::uint64_t)era*64+i)&1);
+bool World::ktox(int kind,long era) const{
+  if(p.kind_bad>0){const int b=std::min(p.kind_bad,p.kinds-1);int bad[4]={0,0,0,0},n=0;  // exactly b distinct kinds, drawn in order
+    for(std::uint64_t i=0;n<b&&i<64;++i){const int k=(int)(mix(mix(p.seed^0x70c5ULL)+(std::uint64_t)era*64+i)%(std::uint64_t)p.kinds);if(!bad[k]){bad[k]=1;++n;}}
+    return bad[kind]!=0;}
+  bool any=false;for(int i=0;i<p.kinds;++i)any=any||!(mix(mix(p.seed^0x70c5ULL)+(std::uint64_t)era*64+i)&1);
   if(!any)return kind!=(int)(era%p.kinds);return mix(mix(p.seed^0x70c5ULL)+(std::uint64_t)era*64+kind)&1;}
 void World::art_key(int g,long era,int* key,int& k) const{
   if(p.art_family){const std::uint64_t h=mix(mix(p.seed^0xa4f0ULL)+(std::uint64_t)g),e=mix(mix(p.seed^0xe7a0ULL)+(std::uint64_t)era);  // base table, era shift and order
@@ -145,8 +149,8 @@ void World::tick(const std::int8_t* const* logits,std::vector<int>& born){
         for(int a=0;a<p.nact;++a){w[a]=(a==act[s]||(all&&futile(s,a)))?0:E[(int)l[a]+128];tot+=w[a];}
         if(tot>0){std::uint64_t u=mix(mix(p.seed^0x9a7eULL)+((std::uint64_t)t<<24)+ag[s].id)%(std::uint64_t)tot;for(int a=0;a<p.nact;++a){if(u<(std::uint64_t)w[a]){act[s]=a;break;}u-=(std::uint64_t)w[a];}}}}
     if(p.kinds>0&&act[s]==4&&(((kindoracle|kindmemo|kindmemol)>>k)&1u)){const int c0=ag[s].y*p.L+ag[s].x;  // analysis: value of information
-      if(res[c0]>0){if((kindoracle>>k)&1u){if(ktox(fkind[c0],p.kind_era>0?t/p.kind_era:0))act[s]=0;}
-        else if(kmrow(s)[fkind[c0]]==2&&mix(mix(p.seed^0x5e7eULL)+((std::uint64_t)t<<24)+ag[s].id)%16!=0)act[s]=0;}}}
+      if(res[c0]>0){if((kindoracle>>k)&1u){if(ktox(fkind[c0],p.kind_era>0?t/p.kind_era:0))act[s]=1;}
+        else if(kmrow(s)[fkind[c0]]==2&&mix(mix(p.seed^0x5e7eULL)+((std::uint64_t)t<<24)+ag[s].id)%16!=0)act[s]=1;}}}
   if(track&&stat.size()<(std::size_t)p.K*32)stat.assign((std::size_t)p.K*32,0);
   if(probe){const int n=p.K*p.S;pact.assign(n,-1);peff.assign(n,0);pdie.assign(n,0);for(int s:order)pact[s]=(std::int16_t)act[s];}
   if(p.farms>0&&p.land&&!lown.empty()&&t%std::max(1,p.farm_every)==0)homestead();
@@ -373,7 +377,7 @@ void World::save(std::FILE* f) const{
   if(p.matter&&p.farms){wr(f,kExt13);wr(f,p.farms);wr(f,p.farm_store);wr(f,p.farm_every);wr(f,p.farm_free);wr(f,p.irr_full);wv(f,hfm);wr(f,p.farm_reset);wr(f,p.home_cue);}
   if(p.give){wr(f,kExt14);wr(f,p.give);wr(f,p.give_amt);}
   if(p.art>0){wr(f,kExt15);for(std::int64_t x:{p.art,p.art_glyphs,p.art_pay,p.art_rest,p.art_era,p.art_family,p.art_lock})wr(f,x);wv(f,aglyph);wv(f,aprog);wv(f,arest);}
-  if(p.art_code||p.kinds>0){wr(f,kExt16);for(std::int64_t x:{p.art_code,p.kinds,p.kind_era,p.kind_tox})wr(f,x);wv(f,fkind);}
+  if(p.art_code||p.kinds>0){wr(f,kExt16);for(std::int64_t x:{p.art_code,p.kinds,p.kind_era,p.kind_tox,p.kind_bad})wr(f,x);wv(f,fkind);}
   wv(f,res);wv(f,fert);wv(f,racc);wv(f,occ);wr(f,(std::int64_t)ag.size());
   for(auto& a:ag){const std::int64_t r[]={a.x,a.y,a.dir,a.energy,a.age,a.lineage,a.alive,(std::int64_t)a.id};for(auto x:r)wr(f,x);}
   if(ext())for(auto& a:ag){wr(f,a.sig);}
@@ -432,9 +436,9 @@ bool World::load(std::FILE* f){
     if(m==kExt15){std::int64_t x[7];for(auto& y:x)if(!rd(f,y))return false;if(!rv(f,aglyph)||!rv(f,aprog)||!rv(f,arest))return false;
       p.art=(int)x[0];p.art_glyphs=(int)x[1];p.art_pay=(int)x[2];p.art_rest=(int)x[3];p.art_era=(int)x[4];p.art_family=(int)x[5];p.art_lock=(int)x[6];}
     else if(std::fseek(f,pos,SEEK_SET)!=0)return false;}  // no artifact block
-  p.art_code=0;p.kinds=0;p.kind_era=1000;p.kind_tox=1;fkind.clear();
+  p.art_code=0;p.kinds=0;p.kind_era=1000;p.kind_tox=1;p.kind_bad=0;fkind.clear();
   {std::int64_t m=0;const long pos=std::ftell(f);if(!rd(f,m))return false;
-    if(m==kExt16){std::int64_t x[4];for(auto& y:x)if(!rd(f,y))return false;if(!rv(f,fkind))return false;p.art_code=(int)x[0];p.kinds=(int)x[1];p.kind_era=(int)x[2];p.kind_tox=(int)x[3];}
+    if(m==kExt16){std::int64_t x[5];for(auto& y:x)if(!rd(f,y))return false;if(!rv(f,fkind))return false;p.art_code=(int)x[0];p.kinds=(int)x[1];p.kind_era=(int)x[2];p.kind_tox=(int)x[3];p.kind_bad=(int)x[4];}
     else if(std::fseek(f,pos,SEEK_SET)!=0)return false;}  // no art_code / kinds block
   if(!rv(f,res)||!rv(f,fert)||!rv(f,racc)||!rv(f,occ)){return false;}std::int64_t n=0;if(!rd(f,n)||n<0||n>(1<<24)){return false;}ag.assign((std::size_t)n,Agent{});
   for(auto& a:ag){std::int64_t r[8];for(auto& x:r)if(!rd(f,x))return false;

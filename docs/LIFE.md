@@ -174,37 +174,69 @@ Why (the rethink of 2026-11-27):
 - The design that made learning evolve in the laboratory: substrate value that changes between generations, with
   many choices per life (Mery and Kawecki 2002, PNAS 99:14274; Dunlap and Stephens 2014, PNAS).
 
-World (`-kinds 2 -kind_era 1000 -kind_tox 1` on W1b):
-- Each cell's food is of one of 2 kinds, fixed per cell and drawn from the seed.
-- In each era of 1,000 ticks (two maximum lifespans), each kind is nutritious or toxic. At least one kind is
-  nutritious. Eating toxic food costs the energy it would have given.
-- Agents see the kind of the food underfoot and in front as one-hot lines (entries 53–56).
-- Every eat is a trial with an immediate reward. Agents eat on about 40% of ticks.
+World (`-kinds 4 -kind_bad 1 -kind_era 1000 -kind_tox 1` on W1b; corrected 2026-11-27 before any scored run, see below):
+- Each cell's food is of one of 4 kinds, fixed per cell and drawn from the seed.
+- In each era of 1,000 ticks (two maximum lifespans), exactly one kind is toxic. Eating it costs the energy it would
+  have given. A naive eater keeps about half its net intake.
+- Agents see the kind of the food underfoot and in front as one-hot lines (entries 53–60).
+- Every eat is a trial with an immediate reward. Agents eat on about 40–50% of ticks.
 - Evolution cannot hard-code the values: they change every 5 epochs, and the era is not observable.
 
+Correction (2026-11-27, 17:00 UTC). The first setting was not viable from random founders:
+- That setting was `-kinds 2 -kind_era 1000 -kind_tox 1`, each kind toxic with probability 1/2.
+- Its E seed 1 had 44 reseeds in 200 epochs (guard limit 10; W1b: 0) and was stopped at epoch 342. It is kept as
+  runs8/w1k0_E_s1 and not scored.
+- Naive agents ate poison on about half their eats in most eras and starved.
+- With toxic food giving nothing instead (`-kind_tox 0`), knowledge is worth nothing: the oracle copy loses (0.07).
+- Viability check from random founders (E arm settings, 250 epochs; reseeds):
+
+| World | Seed 1 | Seeds 2, 3 |
+|---|---|---|
+| kinds 2, each toxic w.p. 1/2, tox 1 | 60 (stopped) | |
+| kinds 3, one toxic, tox 1 | 11 | |
+| kinds 4, one toxic, tox 2 | 18 (guard trips) | |
+| **kinds 4, one toxic, tox 1** | **3** | **0, 2** |
+
 Calibration (value of information, W1b champion runs8/w1b_hist_s1 epoch 2000 against itself, 16 seeds × 2, A modified):
+- **oracle:** never eats toxic food.
+- **own memory:** refuses a kind its own last eat of it found toxic, retesting 1 time in 16. This is the perfect
+  individual learner.
+- **lineage memory:** the same with one memory per lineage.
+- A refused eat becomes a forward move. Standing still on the food made the W1b genome stay on the cell.
 
-| World | A never eats toxic (oracle) | A remembers its own eats (perfect individual learner) | A shares one memory per lineage |
-|---|---|---|---|
-| kinds 2, tox 1 | 0.91 (t 8.6) | **0.83 (t 5.7)** | 0.84 (t 6.9) |
-| kinds 2, tox 2 | 0.91 (t 8.6) | 0.67 (t 4.0) | 0.75 (t 5.0) |
-| kinds 4, tox 1 | 0.67 (t 2.1) | 0.60 (t 1.2) | 0.67 (t 2.3) |
-| kinds 4, tox 2 | 0.83 (t 5.6) | 0.64 (t 3.2) | 0.80 (t 4.8) |
+| World | Oracle | Own memory | Lineage memory | Naive toxic share of eats |
+|---|---|---|---|---|
+| **kinds 4, one toxic, tox 1** | 0.99 (t 134) | **0.97 (t 56)** | 0.96 (t 15) | 0.24 |
+| kinds 3, one toxic, tox 1 | 0.998 | 0.999 | 0.997 | 0.33 |
+| kinds 4, one toxic, tox 2 | 0.9997 | 0.999 | 0.999 | 0.23 |
 
-- With kinds 2 and tox 1, a perfect individual learner gets most of what knowledge is worth. This is the world for the
-  test.
-- With kinds 4 and tox 2, pooled memory is worth more than individual memory. That is the world for social learning
-  later (SL1).
+- Earlier settings, with refusal as standing still: kinds 2 (each toxic w.p. 1/2), tox 1: oracle 0.91, own memory
+  0.83. Kinds 4, tox 2: 0.83 and 0.64.
+- In the chosen world, a perfect individual learner gets almost all of what knowledge is worth.
 
-Learner check (the same champion, with learning and without; `-ablate freeze` freezes A):
-- The LL1 rule lowers B's toxic share of eats from 0.18–0.20 (frozen A) to 0.10–0.15.
-- The fitness effect is small (frozen A's share 0.45–0.52, |t| < 1.4).
-- Learning on a genome that never evolved with it captures little of the value. Whether evolution and learning
-  together close the gap is what the runs test (the Baldwin effect).
+Learner check (the same champion, learning B against frozen A, `-ablate freeze`, chosen world):
 
-Arms (seeds 1–3, 2,000 epochs, the LL1 settings otherwise; binary runs8/oee_w_v28):
+| Learner | Toxic share of eats, B by age 0–99 → 400+ (A frozen: 0.23–0.25) | Frozen A's share (without / with `-life_mod 1`) |
+|---|---|---|
+| LL1 rule, features only (eta 12) | 0.237 overall | 0.34 (t −2.8) / – |
+| + kind lines at the same rate | 0.237 overall | 0.42 (t −1.1) / 0.24 (t −5.4) |
+| + kind lines at 2^-9 | 0.227 → 0.218 | 0.38 (t −2.1) / 0.25 (t −5.1) |
+| **+ kind lines at 2^-7** | **0.216 → 0.169** | **0.38 (t −1.7) / 0.21 (t −5.4)** |
+| + kind lines at 2^-5 | 0.161 → 0.116 | 0.91 (t +19) / 0.67 (t +2.3) |
+
+- At one rate, a one-hot line carries |x|² = 4,096 against about 160,000 for the 64 features. A toxic eat moves the
+  eat logit through its kind line by about 0.08 units (16 units halve the probability), so the rule learns "eat more
+  or less", not "avoid this kind".
+- A separate rate for the sensory synapses (`-life_xeta`) lets the agent learn the food law within its life. At 2^-7
+  the toxic share falls with age to 0.17.
+- Faster rates also teach agents to attack much more. At 2^-5 the learning copy loses (0.91 to the frozen one).
+- With the fixed genome, the benefit of learning comes mostly from fewer attacks (0.12–0.13 against 0.16–0.19).
+  Whether evolution makes the food law the thing that is learned is part of what the runs show (measure 3).
+
+Arms (seeds 1–3, 2,000 epochs, the LL1 settings otherwise; binary runs8/oee_w_v29):
 - **E:** no learning (control; the recurrent state can still adapt within a life).
-- **L:** LL1's L (eta 12, lam 230, beta 7), with the plastic synapses also reading the kind lines (`-life_in 53,57`).
+- **L:** LL1's L (eta 12, lam 230, beta 7), with the plastic synapses also reading the kind lines at rate 2^-7
+  (`-life_in 53,61 -life_xeta 7`).
 - **LM:** L with the evolved neuromodulator (`-life_mod 1`). Evolution can gate when learning happens, i.e. prepared
   learning (Dunlap and Stephens 2014).
 - **LL2:** L with the evolved reward (`-life_rew 1`, LL2 above). Added 2026-11-27 before the runs, when the owner's
@@ -225,7 +257,7 @@ Pass, per arm: freezing costs fitness (share < 0.5, t < −3) in at least 2 of 3
   shows the evolved reward is what makes learning pay.
 
 Kill: freezing costs nothing (|t| < 2) in every seed of L, LM and LL2. Then the three-factor learner does not pay even
-where a perfect individual learner wins 0.83, so the learner is the bottleneck, not the world.
+where a perfect individual learner wins 0.97, so the learner is the bottleneck, not the world.
 
-Runs: runs8/w1k_{E,L,LM,LL2}_s{1,2,3}, queued in that order by seed, from 16:58 UTC on 2026-11-27. Scored by
+Runs: runs8/w1k_{E,L,LM,LL2}_s{1,2,3}, queued in that order by seed once the viability check passes. Scored by
 tools/w/ll1c_eval.sh into docs/results/ll1c/.

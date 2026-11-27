@@ -88,7 +88,9 @@ struct WParams{
   // (fixed per cell, from the seed); in each era of kind_era ticks every kind is nutritious or toxic (drawn from the
   // seed and the era; at least one nutritious); eating toxic food costs kind_tox energy per unit eaten instead of
   // giving one. Seen as one-hot lines (64) for the food underfoot (53..52+K) and in front (53+K..52+2K)
-  int kinds=0,kind_era=1000,kind_tox=1;
+  // kind_bad b >= 1: instead, exactly b kinds are toxic in each era (drawn from the seed and the era), so a naive
+  // eater keeps a viable share of its intake (from random founders)
+  int kinds=0,kind_era=1000,kind_tox=1,kind_bad=0;
 };
 
 struct Agent{int x=0,y=0,dir=0,energy=0,age=0,lineage=0;bool alive=false;std::uint64_t id=0;int sig=0,wpos=0;};
@@ -139,7 +141,7 @@ struct World{
   // LL1c per cell (with p.kinds; saved): food kind. kstat (analysis, track): per lineage eats of nutritious, eats of
   // toxic food, energy lost to toxic food. Value of information (analysis, not saved): kindoracle lineages never eat
   // toxic food; kindmemo agents refuse a kind their own last eat of it found toxic (retesting 1 time in 16); kindmemol
-  // the same with one memory per lineage
+  // the same with one memory per lineage. A refused eat becomes a forward move (moving on, not standing on the food)
   // kage (analysis, track): per lineage 6 bins x (nutritious eats, toxic eats); bins 0-4 eaters born in the current
   // kind era by age/100, bin 5 eaters born in an earlier era (the learning curve, and relearning after a change)
   std::vector<std::uint8_t> fkind;std::vector<long> kstat,kage;std::uint32_t kindoracle=0,kindmemo=0,kindmemol=0;std::vector<std::int8_t> kmem;std::vector<std::uint64_t> kmid;

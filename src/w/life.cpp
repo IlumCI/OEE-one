@@ -35,9 +35,9 @@ void Life::learn8(const LifeCfg& c,std::uint32_t msk,int r,const std::int8_t* h,
   for(int k=0;k<nl;++k){std::int64_t g;
     if(k<na){if(!((msk>>k)&1u))continue;g=((k==a?S:0)-E[(int)l[k]+128])*32768/S;}
     else g=Ss>0&&sg>=0?((k-na==sg?Ss:0)-E[(int)l[so+k-na]+128])*32768/Ss:0;
-    std::int32_t* w=&W[((std::size_t)r*nl+k)*J];std::int32_t* t=&e[((std::size_t)r*nl+k)*J];const int sh=(k<na||c.seta<0?c.eta:c.seta)+15;
+    std::int32_t* w=&W[((std::size_t)r*nl+k)*J];std::int32_t* t=&e[((std::size_t)r*nl+k)*J];const int sh=(k<na||c.seta<0?c.eta:c.seta)+15,shx=c.xeta>=0?c.xeta+15:sh;
     for(int j=k<na||c.symh?0:D;j<J;++j){const std::int64_t tr=((std::int64_t)t[j]*c.lam>>8)+((g*xin(h,x,j,D))>>7);t[j]=(std::int32_t)std::clamp<std::int64_t>(tr,-(1LL<<30),1LL<<30);
-      const std::int64_t nw=(std::int64_t)w[j]+((d*t[j]*m)>>sh);w[j]=(std::int32_t)std::clamp<std::int64_t>(nw,-(1LL<<28),1LL<<28);}}}
+      const std::int64_t nw=(std::int64_t)w[j]+((d*t[j]*m)>>(j>D?shx:sh));w[j]=(std::int32_t)std::clamp<std::int64_t>(nw,-(1LL<<28),1LL<<28);}}}
 void Life::learn_obs(const LifeCfg& c,std::uint32_t msk,int r,const std::int8_t* h,const std::int8_t* x,const std::int8_t* l,int a,std::int64_t d){
   if(!c.on||a<0||a>=na||!((msk>>a)&1u))return;
   const std::int64_t* E=act_weights();std::int64_t S=0;for(int k=0;k<na;++k)S+=E[(int)l[k]+128];if(S<=0)return;

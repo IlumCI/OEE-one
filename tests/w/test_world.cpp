@@ -292,6 +292,10 @@ int main(){
     World v;v.init(g,0);const bool same=v.fkind==w.fkind;
     int tk=-1;for(int i=0;i<4;++i)if(w.ktox(i,0))tk=i;bool hurt=tk<0;if(tk>=0){w.fkind[c0]=(std::uint8_t)tk;w.res[c0]=40;const int e1=w.ag[0].energy;born.clear();w.tick(lp,born);hurt=w.ag[0].energy-e1+g.base==-2*bite;}WParams h=g;h.seed=g.seed+1;World u;u.init(h,0);bool other=u.fkind!=w.fkind;
     char msg[200];std::snprintf(msg,sizeof msg,"LL1c: kinds seen (underfoot, front); eating %s food changes energy by %d; one nutritious kind per era; values change by era; map from the seed",tx?"toxic":"nutritious",dE);
-    CHECK(good&&flip&&seen&&eat&&hurt&&same&&other,msg);}
+    CHECK(good&&flip&&seen&&eat&&hurt&&same&&other,msg);
+    WParams gb=g;gb.kind_bad=1;World wb;wb.init(gb,0);bool one=true;int seen0[4]={0,0,0,0};
+    for(long e=0;e<64;++e){int n=0;for(int i=0;i<4;++i)if(wb.ktox(i,e)){++n;++seen0[i];}one=one&&n==1;}
+    bool all=true;for(int i=0;i<4;++i)all=all&&seen0[i]>4;
+    CHECK(one&&all,"LL1c kind_bad 1: exactly one kind is toxic in each era, and each kind is the toxic one in some eras");}
   std::printf(fails?"%d FAILED\n":"all passed\n",fails);return fails?1:0;
 }

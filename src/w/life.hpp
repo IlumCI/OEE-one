@@ -25,6 +25,8 @@ struct LifeCfg{
   int sym=0;     // 1: the symbol head (logits so..so+3, signals worlds) is plastic too: its own softmax, the same reward
   int seta=-1;   // the symbol head's learning rate 2^-seta (-1: eta)
   int symh=1;    // 0: the symbol head reads only the bias and the raw inputs, not the features h (a sparse code: specific)
+  int xeta=-1;   // learning rate 2^-xeta of the synapses from the raw inputs (-1: the head's rate). A one-hot line carries
+                 // |x|^2 = 4096 against about 1.6e5 for the 64 features, so at one rate it learns about 40 times slower
   int in0=0,in1=0;  // the synapses also read raw observation entries in0..in1-1 (as the network sees them), after the bias
   // plastic actions (bit a): all of the first na except reproduction (unless repro), give (IN1; index 7 without matter,
   // 10 with) and, with matter, write, make, feed
