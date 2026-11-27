@@ -162,6 +162,18 @@ int main(){
       std::FILE* fl=std::tmpfile();w.save(fl);std::rewind(fl);World v;const bool ok=v.load(fl);std::fclose(fl);const bool kept=ok&&v.p.farm_reset==0&&v.hfm==w.hfm;
       if(!(start&&stays&&rebuilt&&kept))std::printf("  start %d stays %d rebuilt %d kept %d\n",start,stays,rebuilt,kept);
       CHECK(start&&stays&&rebuilt&&kept,"W4f no free lunch: farms placed once on irrigated land with no store; never refilled or re-irrigated, never decay; a destroyed one is rebuilt empty; saved");}
+    {WParams q17=q;q17.irr=8;q17.irr_decay=1;q17.K=2;q17.pass=1;q17.graze=1;q17.land=1;q17.farms=6;q17.farm_store=0;q17.farm_every=50;q17.farm_reset=0;q17.farm_free=1;q17.irr_full=1;q17.home_cue=1;
+      World w;w.init(q17,0);for(auto& r:w.res)r=0;Agent& a=w.ag[q17.S];a=Agent{};a.x=1;a.y=1;a.dir=0;a.energy=5000;a.lineage=1;a.alive=true;a.id=1;w.occ[1*L+1]=q17.S;
+      std::vector<std::int8_t> la((std::size_t)q17.S*32,(std::int8_t)-100),lb((std::size_t)q17.S*32,(std::int8_t)-100);la[0]=100;lb[0]=100;const std::int8_t* l17[2]={la.data(),lb.data()};
+      std::vector<int> bn;w.tick(l17,bn);int bd=1<<30,ef=0,er=0,bc=-1;
+      for(int i=0;i<6;++i){const int c=w.home_cell(1,i);int dx=c%L-1,dy=c/L-1;if(dx>L/2)dx-=L;if(dx<-L/2)dx+=L;if(dy>L/2)dy-=L;if(dy<-L/2)dy+=L;
+        const int d=std::abs(dx)+std::abs(dy);if(d<bd){bd=d;bc=c;ef=-dy;er=dx;}}  // facing north: forward = -dy, right = +dx
+      w.mst[bc]=60;w.irl[bc]=200;std::vector<std::int8_t> ob(w.din());w.observe(q17.S,ob.data());
+      const bool cue=ob[123]==std::clamp(8*ef,-127,127)&&ob[124]==std::clamp(8*er,-127,127)&&ob[125]==30&&ob[126]==100;
+      w.nocue=1u<<1;w.observe(q17.S,ob.data());const bool off=ob[123]==0&&ob[124]==0&&ob[125]==0&&ob[126]==0;w.nocue=0;
+      std::FILE* fl=std::tmpfile();w.save(fl);std::rewind(fl);World v;const bool ok=v.load(fl);std::fclose(fl);const bool kept=ok&&v.p.home_cue==1&&v.p.farm_reset==0;
+      if(!(cue&&off&&kept))std::printf("  cue %d (%d %d %d %d vs %d %d) off %d kept %d\n",cue,ob[123],ob[124],ob[125],ob[126],8*ef,8*er,off,kept);
+      CHECK(cue&&off&&kept,"W4g cue: egocentric offset to the nearest own farm, its store and irrigation; zeros under the nocue ablation; saved");}
     {WParams q3=q;q3.nodes=1;q3.node_per=50;q3.node_ripe=10;q3.view=1;World w;w.init(q3,0);for(auto& r:w.res)r=0;
       int nc=-1;for(int c=0;c<L*L;++c)if(w.mat[c]==3){nc=c;break;}w.mat[nc]=0;const int c=5*L+5;w.mat[c]=3;w.nph[c]=0;w.ncyc[c]=-1;  // one node at (5,5), ripe at t 0-9
       auto put2=[&](int slot,int x,int y,int dir){Agent& g=w.ag[slot];g=Agent{};g.x=x;g.y=y;g.dir=dir;g.energy=100;g.alive=true;g.id=slot+1;w.occ[y*L+x]=slot;};

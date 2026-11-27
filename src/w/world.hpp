@@ -65,6 +65,8 @@ struct WParams{
   int farms=0,farm_store=40,farm_every=600;
   int farm_free=0;  // W4e: 1 = homestead farms pay no running cost (store is spent only on irrigation)
   int irr_full=0;   // 1 = an irrigation step spends store only when the whole +irr fits under the cap of 255
+  int home_cue=0;   // W4g: observation entries 123-126 give the egocentric offset (forward, right; 8 per cell) to the
+                    // agent's nearest own homestead farm cell, that farm's store/2 and its land's irrigation/2
   int farm_reset=1; // W4e 1: every placement tops farms up and re-irrigates their land; W4f 0: only the first placement
                     // (t 0) does; later ones rebuild destroyed farms empty, and homestead farms never decay
 };
@@ -90,6 +92,7 @@ struct World{
   std::uint32_t deaf=0;                // analysis: lineages (bit k) that hear no symbols (not saved)
   std::uint32_t deaf_kin=0,deaf_other=0;  // analysis: lineages that hear no symbols from their own / from other lineages
   std::uint32_t nofeed=0;              // analysis: lineages whose feed action does nothing (not saved)
+  std::uint32_t nocue=0;               // analysis: lineages that see zeros in the W4g cue entries (not saved)
   // analysis: per-lineage counters when track is set (not saved): stat[k*32+a] actions a = 0..15, +16 kills made,
   // +17 births, +18 starved, +19 died of age, +20 killed, +21 non-zero symbols, +22 agent-ticks, +23 joint harvests,
   // +29 agent-ticks on own irrigated land (with land);
@@ -140,7 +143,7 @@ struct World{
   // the resource entries 0-24 while ripe, else 0); 104-119 tape of the machine in front
   // (instruction index*8+4, data -64); 120 its store/4; 121 own write position*8.
   // with land: resource entries show 0 on another lineage's irrigated land; 122 the land underfoot (+64 own, -64 another
-  // lineage's, 0 common).
+  // lineage's, 0 common). With home_cue: 123-126 as described at WParams::home_cue.
   void observe(int slot,std::int8_t* o) const;
   // One tick. logits[k] points to S x kV int8 logits of lineage k (row s = slot k*S+s). Slots of newborn agents are
   // appended to `born` (their recurrent state must be reset by the caller).
