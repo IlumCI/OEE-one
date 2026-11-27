@@ -53,7 +53,8 @@
 //          -ablate sharp / greedy (analysis): A samples its actions with P(a) ~ 2^(logit/8) (twice as decisive) / takes
 //          the action with the highest logit.
 //          -life 1 [-life_repro 1] [-life_mod 1] [-life_eta 10 -life_lam 230 -life_beta 4] (training and tournaments):
-//          lifetime learning, docs/LIFE.md; -ablate freeze: A's plastic synapses stay zero (A without learning).
+//          lifetime learning, docs/LIFE.md; -ablate freeze: A's plastic synapses stay zero (A without learning);
+//          -life_b 0: B does not learn (to play a genome evolved without learning).
 //          -probe FILE (analysis): one record per living agent of A per tick in the first -probe_games games (default 2;
 //          solo: lineage 0, i.e. B in odd games): what it saw, its logits, its recurrent state after the step, the action
 //          drawn, its effect and how the agent died (layout in tools/w/probe.py).
@@ -184,7 +185,7 @@ constexpr std::int64_t kCkMagic=0x3130574b43454f4fLL;  // "OEECKW01"
 int main(int argc,char** argv){
   int epochs=100,P=128,H=200,threads=4,layers=2,D=64,sig=4,archive_every=50,seeds=5,ticks=2000,Kmax=1,split_at=-1,hist_frac=0,hist_founders=8,ck_every=10,climate_every=5,climate_ticks=1000,stats=0,curve=0,skip=-1,split_age=0,null_es=0,hist_pair=0,gen=0,arena_progs=0,solo=0,swap_at=0,swap_win=500,cat_every=0;
   double prog_cont=0.7,cat_keep=0.1,stress=0;
-  double alpha_floor=0;std::uint64_t seed=1,seed0=1000;std::string logf,archive,ta,tb,ckf,ablate,arena_ck,probef,maskf,mask_mode="zero";int probe_games=2,obs_norm=0,ef=0;w::LifeCfg lcfg;w::WParams wp;int founders=16;
+  double alpha_floor=0;std::uint64_t seed=1,seed0=1000;std::string logf,archive,ta,tb,ckf,ablate,arena_ck,probef,maskf,mask_mode="zero";int probe_games=2,obs_norm=0,ef=0,life_b=-1;w::LifeCfg lcfg;w::WParams wp;int founders=16;
   for(int a=1;a<argc;a+=2){const char* s=argv[a];const char* v=a+1<argc?argv[a+1]:"";
     if(!std::strcmp(s,"-epochs"))epochs=std::atoi(v);else if(!std::strcmp(s,"-pairs"))P=std::atoi(v);else if(!std::strcmp(s,"-H"))H=std::atoi(v);
     else if(!std::strcmp(s,"-L"))wp.L=std::atoi(v);else if(!std::strcmp(s,"-S"))wp.S=std::atoi(v);else if(!std::strcmp(s,"-founders"))founders=std::atoi(v);
@@ -198,7 +199,7 @@ int main(int argc,char** argv){
     else if(!std::strcmp(s,"-hist_frac"))hist_frac=std::atoi(v);else if(!std::strcmp(s,"-hist_founders"))hist_founders=std::atoi(v);
     else if(!std::strcmp(s,"-probe"))probef=v;else if(!std::strcmp(s,"-probe_games"))probe_games=std::atoi(v);else if(!std::strcmp(s,"-mask"))maskf=v;else if(!std::strcmp(s,"-mask_mode"))mask_mode=v;else if(!std::strcmp(s,"-obs_norm"))obs_norm=std::atoi(v);else if(!std::strcmp(s,"-ef"))ef=std::atoi(v);
     else if(!std::strcmp(s,"-life"))lcfg.on=std::atoi(v);else if(!std::strcmp(s,"-life_repro"))lcfg.repro=std::atoi(v);else if(!std::strcmp(s,"-life_mod"))lcfg.mod=std::atoi(v);
-    else if(!std::strcmp(s,"-life_eta"))lcfg.eta=std::atoi(v);else if(!std::strcmp(s,"-life_lam"))lcfg.lam=std::atoi(v);else if(!std::strcmp(s,"-life_beta"))lcfg.beta=std::atoi(v);
+    else if(!std::strcmp(s,"-life_eta"))lcfg.eta=std::atoi(v);else if(!std::strcmp(s,"-life_lam"))lcfg.lam=std::atoi(v);else if(!std::strcmp(s,"-life_beta"))lcfg.beta=std::atoi(v);else if(!std::strcmp(s,"-life_b"))life_b=std::atoi(v);
     else if(!std::strcmp(s,"-ablate"))ablate=v;else if(!std::strcmp(s,"-arena_ck"))arena_ck=v;else if(!std::strcmp(s,"-ck"))ckf=v;
     else if(!std::strcmp(s,"-season"))wp.season=std::atoi(v);else if(!std::strcmp(s,"-view"))wp.view=std::atoi(v);
     else if(!std::strcmp(s,"-signals"))wp.signals=std::atoi(v);else if(!std::strcmp(s,"-rot"))wp.rot=std::atoi(v);
@@ -268,7 +269,8 @@ int main(int argc,char** argv){
       const int sa=solo?0:sw;  // A's lineage slot (solo: the only slot, A in even games)
       std::vector<char> amn(q.K,0);if(!solo||sw==0){amn[sa]=ablate=="amnesia"?1:ablate=="shuffle"?2:0;if(ablate=="deaf")one[0].deaf=1u<<sa;if(ablate=="deafkin")one[0].deaf_kin=1u<<sa;if(ablate=="deafother")one[0].deaf_other=1u<<sa;if(ablate=="nofeed")one[0].nofeed=1u<<sa;if(ablate=="nocue")one[0].nocue=1u<<sa;if(ablate=="gate_eat")one[0].gate_eat=1u<<sa;if(ablate=="gate_all")one[0].gate_all=1u<<sa;if(ablate=="sharp")one[0].sharp=1u<<sa;if(ablate=="greedy")one[0].greedy=1u<<sa;}one[0].track=stats>0;
       std::vector<const Norm*> nmv(q.K,nullptr);nmv[0]=sw?(hB?&nB:nullptr):(hA?&nA:nullptr);if(!solo)nmv[1]=sw?(hA?&nA:nullptr):(hB?&nB:nullptr);
-      w::Life lfg;std::vector<w::LifeCfg> lcv(q.K,lcfg);if(lcfg.on){lfg.init(q.K*q.S,bc.D,q.nact);if(ablate=="freeze"&&(!solo||sw==0))lcv[sa].on=0;}  // freeze: A learns nothing
+      w::Life lfg;std::vector<w::LifeCfg> lcv(q.K,lcfg);if(lcfg.on){lfg.init(q.K*q.S,bc.D,q.nact);if(ablate=="freeze"&&(!solo||sw==0))lcv[sa].on=0;  // freeze: A learns nothing
+        if(life_b==0)for(int k=0;k<q.K;++k)if(solo?sw==1:k!=sa)lcv[k].on=0;}  // -life_b 0: B learns nothing (a genome evolved without learning)
       Probe pr;pr.k=sa;pr.game=gi;if(!solo||sw==0)pr.mask=msk;pr.shuf=mask_mode=="shuffle";pr.rec=!probef.empty()&&gi<probe_games;one[0].probe=pr.rec;
       int step=curve>0?std::min(curve,climate_ticks):climate_ticks;long la=-1,lb=-1;if(ablate=="wipe")step=std::min(step,100);  // wipe A's machines every 100 ticks
       long sp0=-1,sp1=-1,sp2=-1;  // swap test: integrated biomass at swap_at - swap_win, swap_at, swap_at + swap_win

@@ -38,6 +38,9 @@ def study(D,trace=None):
   for k,nm in [(1,'fwd blocked'),(4,'eat nothing'),(5,'repro failed'),(6,'attack no target'),(7,'write no machine'),(8,'make/unmake nothing'),(9,'feed nothing')]:
     if k<na:m=a==k;out['futile '+nm]=frac(ef[m]==0)
   out['futile per agent-tick']=frac(np.isin(a,[1,4,5,6,7,8,9])&(ef==0))
+  ag=r['age'].astype(np.int32);fu=np.isin(a,[1,4,5,6,7,8,9])&(ef==0)
+  for lo,hi in [(0,50),(50,200),(200,500)]:
+    m=(ag>=lo)&(ag<hi);out['futile, age %d-%d'%(lo,hi-1)]=frac(fu[m]);out['  n age %d-%d'%(lo,hi-1)]=int(m.sum())
   # situations (observation layout: World::observe); window cell 7 is in front, 12 underfoot
   fin=o[:,25+7];fmat=o[:,79+7] if D['din']>=104 else np.zeros(n,np.int16);food=o[:,12]*2;en=o[:,50]*8
   farm=(fmat==48)&np.all(o[:,104:120]==60,1) if D['din']>=120 else np.zeros(n,bool)  # tape of 16 ',' (irrigation)
