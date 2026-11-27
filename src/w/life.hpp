@@ -20,6 +20,8 @@ struct LifeCfg{
   int beta=4;    // running-mean (baseline) decay 2^-beta per tick
   int teach=0;   // SL1 V (docs/SOCIAL.md): a newborn's synapses start at half its parent's (traces zero, baseline copied)
   int obs=0;     // SL1 O: each tick an agent also learns, at half rate, from its nearest kin neighbour's action and reward
+  int rew=0;     // LL2: the reward adds logit[rlog]/8 energy units, an internal reward the network computes (evolved)
+  int rlog=14;   // logit used as the evolved reward (an otherwise unused output)
   // plastic actions (bit a): all of the first na except reproduction (unless repro), give (IN1; index 7 without matter,
   // 10 with) and, with matter, write, make, feed
   std::uint32_t mask(int na,bool matter) const;
@@ -36,7 +38,8 @@ struct Life{
   void apply(const LifeCfg& c,std::uint32_t msk,int r,const std::int8_t* h,std::int8_t* l) const;
   // after the tick: l the logits the action was sampled from (V entries; l[c.mlog] is the neuromodulator), a the action
   // taken, dE the reward (energy change over the tick)
-  void learn(const LifeCfg& c,std::uint32_t msk,int r,const std::int8_t* h,const std::int8_t* l,int a,int dE);
+  void learn(const LifeCfg& c,std::uint32_t msk,int r,const std::int8_t* h,const std::int8_t* l,int a,int dE){learn8(c,msk,r,h,l,a,(std::int64_t)dE*256);}
+  void learn8(const LifeCfg& c,std::uint32_t msk,int r,const std::int8_t* h,const std::int8_t* l,int a,std::int64_t r8);  // reward in Q8
   // SL1 O: row r (features h, logits l) learns from a neighbour's action a and reward prediction error d (Q8), at half
   // rate and without a trace; only when a is plastic
   void learn_obs(const LifeCfg& c,std::uint32_t msk,int r,const std::int8_t* h,const std::int8_t* l,int a,std::int64_t d);

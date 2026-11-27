@@ -25,10 +25,10 @@ void Life::apply(const LifeCfg& c,std::uint32_t msk,int r,const std::int8_t* h,s
 // (energy units * 256); m in Q7 (128 = 1). dW = delta*e*m >> (eta + 15), i.e. W += 2^-eta * m * delta(energy) * e.
 // One tick with g = 1, delta = 1 energy unit, m = 1 changes the action's plastic logit by about 2^-eta * 256 * |x|^2 /
 // 65536 (|x|^2 summed over the J inputs).
-void Life::learn(const LifeCfg& c,std::uint32_t msk,int r,const std::int8_t* h,const std::int8_t* l,int a,int dE){
+void Life::learn8(const LifeCfg& c,std::uint32_t msk,int r,const std::int8_t* h,const std::int8_t* l,int a,std::int64_t r8){
   if(!c.on)return;
   const std::int64_t* E=act_weights();std::int64_t S=0;for(int k=0;k<na;++k)S+=E[(int)l[k]+128];if(S<=0)return;
-  const std::int64_t d=(std::int64_t)dE*256-b[r];b[r]+=(std::int32_t)(d>>c.beta);
+  const std::int64_t d=r8-b[r];b[r]+=(std::int32_t)(d>>c.beta);
   const std::int64_t m=c.mod?(std::int64_t)l[c.mlog]+128:128;
   for(int k=0;k<na;++k){if(!((msk>>k)&1u))continue;const std::int64_t g=((k==a?S:0)-E[(int)l[k]+128])*32768/S;
     std::int32_t* w=&W[((std::size_t)r*na+k)*J];std::int32_t* t=&e[((std::size_t)r*na+k)*J];

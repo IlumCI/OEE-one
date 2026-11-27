@@ -121,3 +121,38 @@ Otherwise: no verdict; report it, with strength.
 Next:
 - If an arm passes, carry it to the W4f/W4g world (the main line), against W4f arm J.
 - Then evolve the rule's form (DiscoRL, Oh et al., Nature 2025: learning rules discovered by meta-learning).
+
+## LL2: an evolved reward (designed 2026-11-27; runs only if LL1 shows learning neutral or harmful)
+
+Why:
+- In the first LL1 result (arm L, seed 1), learning is neutral in the champion's own world and slightly harmful in
+  fresh arenas.
+- Learning raised attacks (0.19 of actions against 0.13 frozen), because a hit pays 20 energy at once.
+- In a world of rivals that copy the same strategy, the extra fights cost the lineage agents.
+- A reward of the agent's own energy does not track the lineage's fitness.
+
+In animals the reward system is itself evolved, so what feels good tracks fitness rather than raw intake:
+- the optimal reward problem: Singh, Lewis and Barto 2009, "Where do rewards come from?"; Singh et al. 2010, IEEE
+  TAMD;
+- evolved intrinsic rewards, with individual learning inside lives and the reward evolving across them, let
+  cooperation arise where selfish learners fail (Wang et al., AAMAS 2019, arXiv:1811.05931);
+- reward functions found by evolutionary meta-optimisation (arXiv:2512.13399, 2025) or black-box meta-learning
+  (arXiv:2407.21546).
+
+Mechanism (`-life_rew 1`; logit 14 in worlds without matter):
+- The reward becomes the energy change plus logit_r/8 energy units, an internal reward the network outputs from what
+  it perceives and remembers.
+- The genome (the network's weights) shapes it, so evolution decides what the agent finds rewarding beyond energy:
+  for example, a sense that fighting is bad when rivals are many, or that being near kin is good.
+- It starts close to the energy reward: an untrained network's logit_r is noise around zero.
+- Ablation `-ablate norew`: A learns from energy only.
+
+Measures and pass/kill (W1b; on the best LL1 arm; 3 seeds × 2000 epochs):
+1. Learning used: freeze costs (share < 0.5, t < −3) in at least 2 of 3 seeds.
+2. The evolved reward is what makes it pay: `norew` also costs (t < −3) in at least 2 of 3 seeds.
+3. What it rewards: the sensitivity of logit_r to each input (tools/w/sens on logit 14).
+4. Waste headroom and strength, as LL1.
+
+Pass: 1 and 2 hold.
+Kill: freezing costs nothing in every seed (|t| < 2).
+
