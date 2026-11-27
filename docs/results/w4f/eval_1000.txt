@@ -1,0 +1,7 @@
+# runs8/w4j_s1 e 1000 world: -S 64 -regrow 16 -nact 10 -matter 1 -spawn 20 -mut 1024 -season 300 -view 1 -signals 1 -wall_decay 4 -m_cost 4 -m_give 0 -graze 1 -pass 1 -irr 8 -irr_decay 1 -own 2 -land 1 -farms 6 -farm_store 0 -farm_free 1 -irr_full 1 -farm_reset 0 -climate_ticks 1200
+champion agent_ticks 3915854 noop 0.004 fwd 0.218 left 0.006 right 0.210 eat 0.507 repro 0.051 attack 0.001 write 0.002 make 0.000 feed 0.002 kills/kt 0.00 births/kt 3.54 starved/kt 1.94 aged/kt 1.22 killed/kt 0.01 symbol 0.958 joint_harvests/kt 0.00 fed 24439 food 7485944 irr_own 98646 irr_other 0 irr_wild 30374 home 0.008
+random agent_ticks 151461 noop 0.095 fwd 0.169 left 0.062 right 0.040 eat 0.112 repro 0.121 attack 0.081 write 0.129 make 0.112 feed 0.079 kills/kt 1.58 births/kt 11.47 starved/kt 13.36 aged/kt 0.00 killed/kt 1.49 symbol 0.651 joint_harvests/kt 0.00 fed 36390 food 228307 irr_own 857 irr_other 0 irr_wild 337 home 0.004
+wipe	0.4987	0.0159	-0.08	0.4955	0.0251	-0.18
+deaf	0.4510	0.0140	-3.50	0.4259	0.0223	-3.33
+== generality (e vs e-500)
+e	e_prev	solo_log_ratio	t	median	surviveA	surviveB	lshareA	lt	swap_recovery	swap_t
