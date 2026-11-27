@@ -70,3 +70,12 @@ land (irrigated cells by owner lineage; common first): common 1 L0 0 L1 0 L2 1 L
 run	epochs	boom_time	mean_pop	booms	largest_share_in_booms	peak	largest_share_all
 runs8/w4j_s3	801	0.000	67.5	0	-	148	0.51
 runs8/w4i_s3	801	0.000	64.1	0	-	124	0.51
+# runs8/w4j_s2 e 1000 world: -S 64 -regrow 16 -nact 10 -matter 1 -spawn 20 -mut 1024 -season 300 -view 1 -signals 1 -wall_decay 4 -m_cost 4 -m_give 0 -graze 1 -pass 1 -irr 8 -irr_decay 1 -own 2 -land 1 -farms 6 -farm_store 0 -farm_free 1 -irr_full 1 -farm_reset 0 -climate_ticks 1200
+champion agent_ticks 3956851 noop 0.001 fwd 0.364 left 0.031 right 0.143 eat 0.310 repro 0.132 attack 0.015 write 0.003 make 0.000 feed 0.002 kills/kt 0.22 births/kt 3.89 starved/kt 2.30 aged/kt 1.19 killed/kt 0.02 symbol 0.289 joint_harvests/kt 0.00 fed 13737 food 8471692 irr_own 50737 irr_other 0 irr_wild 40831 home 0.004
+random agent_ticks 50936 noop 0.128 fwd 0.085 left 0.063 right 0.091 eat 0.138 repro 0.069 attack 0.085 write 0.202 make 0.044 feed 0.093 kills/kt 0.94 births/kt 15.20 starved/kt 8.09 aged/kt 0.00 killed/kt 17.16 symbol 0.778 joint_harvests/kt 0.00 fed 7697 food 107529 irr_own 292 irr_other 0 irr_wild 60 home 0.005
+wipe	0.5299	0.0394	0.76	0.5333	0.0537	0.62
+deaf	0.4374	0.0591	-1.06	0.4119	0.0675	-1.31
+== generality (e vs e-500)
+e	e_prev	solo_log_ratio	t	median	surviveA	surviveB	lshareA	lt	swap_recovery	swap_t
+1000	500	0.3399	0.98	0.0964	45/64	47/64	0.7038	6.45	-0.0034	-0.02
+== era (post-founder share, e vs e-250)
