@@ -60,6 +60,8 @@ checkpoints.
 
 ## LL1 protocol (fixed 2026-11-27, before the runs)
 
+Runs: runs8/w1l_L_s1..3, w1l_LR_s1..3, w1l_LM_s1..3 (binary runs8/oee_w_v27).
+
 World: W1b, as LT1 (H 200, 64 pairs, 4 lineages, 7 actions, historical self-play every 4th pair, split lineages keep
 the parent's age), seeds 1–3, 2000 epochs. Control: runs8/w1b_hist_s1..s3.
 
@@ -73,8 +75,34 @@ Arms:
   "Backpropamine"). At m = 1 it is the fixed rule.
 
 Learning rate η, trace λ and baseline β: chosen before the runs by calibration on the control champion (W1b seed 1,
-epoch 2000), learning on against learning off. The calibration and the chosen values are recorded below, before the
-runs start.
+epoch 2000), learning on against learning off (2026-11-27, 16 seeds × 2).
+
+Calibration. Share of a frozen copy against a learning copy; below 0.5 means learning helps:
+
+| η (2^−x) | λ | β | Frozen copy's share |
+|---|---|---|---|
+| 6 | 230 | 4 | 0.995 (t +662) |
+| 8 | 230 | 4 | 0.93 (t +35) |
+| 10 | 230 | 4 | 0.48 (t −0.4) |
+| 12 | 230 | 4 | 0.43 (t −0.9) |
+| 14 | 230 | 4 | 0.42 (t −1.2) |
+| 16 | 230 | 4 | 0.46 (t −0.6) |
+| 18 | 230 | 4 | 0.58 (t +1.3) |
+| 12 | 128 | 4 | 0.41 (t −1.4) |
+| 12 | 250 | 4 | 0.62 (t +1.7) |
+| 14 | 128 | 4 | 0.58 (t +1.2) |
+| 12 | 230 | 6 | 0.36 (t −2.0) |
+| **12** | **230** | **7** | **0.29 (t −3.3)** |
+| 12 | 230 | 9 | 0.52 (t +0.4) |
+| 10 | 230 | 7 | 0.62 (t +1.6) |
+| 14 | 230 | 7 | 0.47 (t −0.4) |
+| 12 | 200 | 7 | 0.45 (t −0.7) |
+
+- Fast learning destroys a genome evolved without it (η 2^−6: the frozen copy wins everything).
+- Slow learning with a slowly moving baseline helps even a genome that never had it.
+- Chosen: η = 2^−12, λ = 230/256, β = 7 (the baseline averages over about 128 ticks).
+- The landscape is noisy (SE about 0.07). In LL1 the genome evolves with learning, so it can adapt to these values.
+  In arm LM the network can also scale the rate by 0 to 2.
 
 Measures per seed (champion of the arm; 16 seeds × 2 mirrored games unless stated):
 1. **Learning is used:** the champion with its plastic synapses frozen at zero (`-ablate freeze`) against an intact
