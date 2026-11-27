@@ -1,0 +1,26 @@
+== runs8/w1l_p_s1 (world of runs8/w1b_hist_s1)
+gate_all	1000	0.9998	0.0002	2873.02	16/16
+gate_all	1250	1.0000	0.0000	23246.82	16/16
+gate_all	1500	1.0000	0.0000	129428.92	16/16
+gate_all	1750	0.9990	0.0006	852.66	16/16
+gate_all	2000	0.9987	0.0008	605.86	16/16
+gate_all	mean	0.9995
+gate_eat	1000	0.7986	0.0794	3.76	13/16
+gate_eat	1250	0.9444	0.0291	15.26	16/16
+gate_eat	1500	0.9578	0.0304	15.07	16/16
+gate_eat	1750	0.9486	0.0275	16.34	16/16
+gate_eat	2000	0.9149	0.0308	13.49	15/16
+gate_eat	mean	0.9129
+vs	runs8/w1b_hist_s1	0.9901	0.0031	159.95	16/16
+vs	runs8/w1b_hist_s2	0.2206	0.0498	-5.62	4/16
+vs	runs8/w1b_hist_s3	0.6584	0.0851	1.86	11/16
+vs	runs8/w1b_hist_s4	0.9758	0.0089	53.76	16/16
+vs	runs8/w1b_hist_s5	0.9923	0.0027	183.22	16/16
+vs_own	1000	0.8571	0.0422	8.47	16/16
+entropy bits (max 2.81)                       0.7720
+futile per agent-tick                         0.2244
+P(eat | food underfoot >= 32)                 0.2601
+P(eat | no food underfoot)                    0.2991
+P(eat | food underfoot 2-30)                  0.4317
+P(attack | other lineage in front)            0.8115
+P(attack | kin in front)                      0.0035
