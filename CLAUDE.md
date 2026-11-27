@@ -1,7 +1,8 @@
 # Operating rules for this repository
 
 ## Direction (read first; binding)
-- Goal: open-ended evolution toward ASI. Plan and rules: docs/PLAN.md §0–4. Current build: docs/WORLD.md
+- Goal: open-ended evolution toward ASI. The ASI can take any form: a single model, any kind of entity, or a
+  structure of many worlds in different fields. Plan and rules: docs/PLAN.md §0–4. Current build: docs/WORLD.md
   (World v1, phases W0–W4; main line now W3 programmable matter, re-plan 2026-11-25). Engine: src/evo (integer
   EGGROLL on AMX int8), docs/EVO.md.
 - Containment (binding): evolved agents never get real network, device or internet access, directly or through
