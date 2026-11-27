@@ -10,4 +10,4 @@ W=$("$d"/wflags.sh "$r");g="$r/archive/egg_$e.bin"
 for a in fresh own;do x="";[ $a = own ]&&x="-arena_ck $r/ck.bin"
   "$bin" -tourney "$g" "$g" -seeds $n -threads $T -ablate nofeed $x $W|awk -v a=$a '/^mean_lshareA/{printf "nofeed\tworld %s\t%s\t%s\t%s\t%s\n",a,$2,$4,$6,$8}';done
 c="${IRRC:-build/rel/irrcensus}";[ -x "$c" ]&&{ echo "== land and irrigation in the final world";"$c" "$r/ck.bin"; }
-python3 "$d"/booms.py -e0 200 -e1 1000 "$r" "$(echo "$r"|sed 's/w4i_s/w4h_s/')"
+python3 "$d"/booms.py -e0 200 -e1 1000 "$r" "$(echo "$r"|sed 's/w4i_s/w4h_s/;s/w4j_s/w4i_s/')"
