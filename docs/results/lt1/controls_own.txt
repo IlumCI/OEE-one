@@ -1,0 +1,6 @@
+w1b_hist_s2 own_world gate_all 0.9702 0.0298 15.76 16/16
+w1b_hist_s2 own_world gate_eat 0.9355 0.0430 10.13 14/16
+w1b_hist_s3 own_world gate_all 1.0000 0.0000 48129.83 16/16
+w1b_hist_s3 own_world gate_eat 0.9309 0.0397 10.86 16/16
+w1b_hist_s1 own_world gate_all 1.0000 0.0000 0.00 16/16
+w1b_hist_s1 own_world gate_eat 0.8749 0.0552 6.79 15/16
