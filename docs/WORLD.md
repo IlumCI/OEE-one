@@ -1068,6 +1068,15 @@ W4e viability (2026-11-27; runs8/w4i_s1 at epoch 200).
   agent-ticks on its own land, and eats 3.6 food from its own credited land per unit of energy it feeds.
 - Seeds 2 and 3 started (runs8/w4i_s2, w4i_s3; binary runs8/oee_w_v23).
 
+W4e seed 1 at epoch 1000 (2026-11-27; docs/results/w4e/eval_1000.txt).
+- **The no-feed ablation costs nothing:** 0.41 (t −1.3) in fresh homestead arenas, 0.50 (t 0.0) in its own final
+  world. Feeding is below random (0.2% of actions, random 7.0%).
+- **But the champion uses its farms:** 2.0% of its agent-ticks are on its own irrigated land, against 0.3% for
+  random agents. It eats 7.9 food from its own credited land per unit of energy it feeds.
+  - It harvests each fresh homestead while the farm's own store lasts, and does not keep it going.
+- Deafness costs a great deal here: 0.17 (t −7.9). The wipe: 0.45 (t −1.2).
+- Seed 1 meets the kill condition. The verdict waits for seeds 2 and 3.
+
 Interim observation (2026-11-26, W4b seed 1). F seed 1 boomed early, at epochs 80–115 (peak 198 agents at 100).
 - At epoch 100 one lineage owned 502 of the 541 machines, holding 10.6k store.
 - The other lineages still grew to their 64-slot caps, and the boom collapsed by epoch 135.

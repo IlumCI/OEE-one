@@ -1,0 +1,34 @@
+# runs8/w4i_s1 e 1000 world: -S 64 -regrow 16 -nact 10 -matter 1 -spawn 20 -mut 1024 -season 300 -view 1 -signals 1 -wall_decay 4 -m_cost 4 -m_give 0 -graze 1 -pass 1 -irr 8 -irr_decay 1 -own 2 -land 1 -farms 6 -farm_store 10 -farm_free 1 -irr_full 1 -climate_ticks 1200
+champion agent_ticks 3980915 noop 0.023 fwd 0.315 left 0.003 right 0.159 eat 0.354 repro 0.123 attack 0.017 write 0.003 make 0.001 feed 0.002 kills/kt 0.21 births/kt 3.78 starved/kt 2.15 aged/kt 1.24 killed/kt 0.01 symbol 0.962 joint_harvests/kt 0.00 fed 31332 food 8301255 irr_own 246097 irr_other 0 irr_wild 14364 home 0.020
+random agent_ticks 54306 noop 0.085 fwd 0.201 left 0.056 right 0.032 eat 0.118 repro 0.137 attack 0.085 write 0.119 make 0.098 feed 0.070 kills/kt 1.03 births/kt 18.23 starved/kt 11.66 aged/kt 0.00 killed/kt 16.00 symbol 0.596 joint_harvests/kt 0.00 fed 9694 food 103990 irr_own 501 irr_other 0 irr_wild 14 home 0.003
+wipe	0.4520	0.0406	-1.18	0.4234	0.0612	-1.25
+deaf	0.1702	0.0416	-7.94	0.0989	0.0498	-8.06
+== generality (e vs e-500)
+e	e_prev	solo_log_ratio	t	median	surviveA	surviveB	lshareA	lt	swap_recovery	swap_t
+1000	500	-0.1074	-0.48	0.0954	51/64	51/64	0.9248	23.25	0.3592	1.32
+== era (post-founder share, e vs e-250)
+250:1.00 500:1.00 750:0.99 1000:0.62 
+== census (epoch machines walls tapes classes)
+1000 18 55 10 4
+== machines by owner in the latest checkpoint (mcal -ck)
+t 600000 own 2 graze 1
+owner	machines	store
+-1	4	121
+0	1	29
+1	13	0
+top tapes (count owner tape):
+9	1	________________
+1	1	}_______________
+1	-1	__{]>D{{S[,D,+[_
+1	-1	_+},____________
+1	1	]_______________
+agents by lineage slot: 26 27 0 0 0
+nofeed	world fresh	0.4144	0.0670	-1.28	5/16
+nofeed	world own	0.5000	0.0456	0.00	4/16
+== land and irrigation in the final world
+machines 18 running 2 withI 4 withE 1 withIE 1 withC 1 | irrigated cells 2 mean irr 248.0
+agents 53
+land (irrigated cells by owner lineage; common first): common 1 L0 0 L1 1 L2 0 L3 0 L4 0
+run	epochs	boom_time	mean_pop	booms	largest_share_in_booms	peak	largest_share_all
+runs8/w4i_s1	801	0.000	61.8	0	-	107	0.53
+runs8/w4h_s1	801	0.000	62.0	0	-	99	0.52
