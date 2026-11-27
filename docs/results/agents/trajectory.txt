@@ -1,0 +1,32 @@
+# Champions across training (self-play, 1 seed x 2 games, 2000 ticks; tools/w/probe.py fields computed by a short
+# script): futile = share of agent-ticks whose action had no effect; P(eat|food0) and P(eat|food>=2) = eating with
+# no food / some food underfoot; P(att|agent) / P(att|none) = attacking with someone / no one in front; H = policy
+# entropy in bits; pop = mean living agents of the champion's lineage.
+w4j_s1_0       futile 0.445  P(eat|food0) 0.145 P(eat|food>=2) 0.124  P(att|agent) 0.067 P(att|none) 0.086  H 2.90  pop 5.2
+w4j_s1_100     futile 0.408  P(eat|food0) 0.484 P(eat|food>=2) 0.477  P(att|agent) 0.009 P(att|none) 0.008  H 2.08  pop 44.0
+w4j_s1_200     futile 0.402  P(eat|food0) 0.486 P(eat|food>=2) 0.469  P(att|agent) 0.006 P(att|none) 0.004  H 1.84  pop 46.6
+w4j_s1_300     futile 0.327  P(eat|food0) 0.440 P(eat|food>=2) 0.412  P(att|agent) 0.004 P(att|none) 0.003  H 1.68  pop 47.1
+w4j_s1_400     futile 0.350  P(eat|food0) 0.456 P(eat|food>=2) 0.410  P(att|agent) 0.002 P(att|none) 0.002  H 1.68  pop 49.1
+w4j_s1_500     futile 0.361  P(eat|food0) 0.491 P(eat|food>=2) 0.448  P(att|agent) 0.002 P(att|none) 0.002  H 1.64  pop 51.0
+w4j_s1_600     futile 0.423  P(eat|food0) 0.562 P(eat|food>=2) 0.514  P(att|agent) 0.002 P(att|none) 0.001  H 1.58  pop 50.1
+w4j_s1_700     futile 0.363  P(eat|food0) 0.526 P(eat|food>=2) 0.491  P(att|agent) 0.004 P(att|none) 0.002  H 1.54  pop 47.3
+w4j_s1_800     futile 0.375  P(eat|food0) 0.528 P(eat|food>=2) 0.518  P(att|agent) 0.001 P(att|none) 0.001  H 1.54  pop 52.8
+w4j_s1_900     futile 0.396  P(eat|food0) 0.545 P(eat|food>=2) 0.526  P(att|agent) 0.004 P(att|none) 0.003  H 1.53  pop 53.2
+w4j_s1_1000    futile 0.363  P(eat|food0) 0.516 P(eat|food>=2) 0.507  P(att|agent) 0.002 P(att|none) 0.001  H 1.50  pop 50.8
+w1b_hist_s1_0     futile 0.227  P(eat|food0) 0.116 P(eat|food>=2) 0.088  P(att|agent) 0.064 P(att|none) 0.072  H 2.42  pop 39.1
+w1b_hist_s1_100   futile 0.408  P(eat|food0) 0.549 P(eat|food>=2) 0.485  P(att|agent) 0.018 P(att|none) 0.015  H 1.51  pop 29.5
+w1b_hist_s1_200   futile 0.446  P(eat|food0) 0.584 P(eat|food>=2) 0.569  P(att|agent) 0.014 P(att|none) 0.011  H 1.43  pop 30.1
+w1b_hist_s1_300   futile 0.395  P(eat|food0) 0.496 P(eat|food>=2) 0.528  P(att|agent) 0.010 P(att|none) 0.009  H 1.51  pop 32.2
+w1b_hist_s1_400   futile 0.400  P(eat|food0) 0.450 P(eat|food>=2) 0.490  P(att|agent) 0.004 P(att|none) 0.004  H 1.41  pop 31.8
+w1b_hist_s1_500   futile 0.378  P(eat|food0) 0.421 P(eat|food>=2) 0.471  P(att|agent) 0.004 P(att|none) 0.003  H 1.37  pop 30.3
+w1b_hist_s1_600   futile 0.438  P(eat|food0) 0.479 P(eat|food>=2) 0.571  P(att|agent) 0.004 P(att|none) 0.004  H 1.33  pop 30.5
+w1b_hist_s1_700   futile 0.379  P(eat|food0) 0.450 P(eat|food>=2) 0.505  P(att|agent) 0.027 P(att|none) 0.014  H 1.33  pop 33.0
+w1b_hist_s1_800   futile 0.411  P(eat|food0) 0.405 P(eat|food>=2) 0.489  P(att|agent) 0.092 P(att|none) 0.033  H 1.39  pop 32.6
+w1b_hist_s1_900   futile 0.377  P(eat|food0) 0.378 P(eat|food>=2) 0.453  P(att|agent) 0.128 P(att|none) 0.025  H 1.37  pop 30.5
+w1b_hist_s1_1000  futile 0.413  P(eat|food0) 0.374 P(eat|food>=2) 0.448  P(att|agent) 0.131 P(att|none) 0.018  H 1.27  pop 31.4
+w1b_hist_s1_1500  futile 0.378  P(eat|food0) 0.389 P(eat|food>=2) 0.282  P(att|agent) 0.474 P(att|none) 0.143  H 1.21  pop 33.5
+w1b_hist_s1_2000  futile 0.356  P(eat|food0) 0.388 P(eat|food>=2) 0.282  P(att|agent) 0.563 P(att|none) 0.152  H 1.11  pop 33.0
+# W1 (w1_hist_s1, 5000 epochs) gates, champion with gate against an intact copy (mean_lshareA se t wins):
+# 1000 gate_eat 0.6790 0.0229 7.81 15/16   gate_all 0.8510 0.0137 25.66 16/16
+# 2500 gate_eat 0.6165 0.0279 4.18 13/16   gate_all 0.5692 0.0452 1.53 12/16
+# 5000 gate_eat 0.8768 0.0044 86.05 16/16  gate_all 0.9774 0.0034 141.44 16/16

@@ -1203,6 +1203,116 @@ W4g viability (2026-11-27; runs8/w4k_s1 at epoch 200).
   on its own land, and eats 2.2 food from its own land per unit of energy fed.
 - Seeds 2 and 3 started (runs8/w4k_s2, w4k_s3; binary runs8/oee_w_v25).
 
+### Agent study: are the agents themselves flawed? (2026-11-27; docs/results/agents/)
+
+Question (owner): are the agents flawed, or carrying broken mutations? Protocol and reading rules fixed before the
+measurements: docs/results/agents/protocol.md.
+
+Method.
+- Genomes:
+  - the last champion of W1b, W1 (5000 epochs), W2, W3a, W4e and W4f (3 seeds);
+  - for W4f seed 1, also the champions at epochs 0 (the initial random genome) and 500.
+- Setting: each genome plays itself (A = B) in its training world.
+- Tools (all analysis-only):
+  - `oee_w -probe` records, per agent and tick: what the agent saw, its logits, its recurrent state, the action
+    drawn, what the action did, and how the agent died.
+  - `sens` steps the brain again from recorded states. It reproduces the recorded logits exactly (all 20,939
+    checked) and then varies one input at a time.
+  - Lesions:
+    - zero lesions (`-mask`);
+    - shuffle lesions (`-mask_mode shuffle`): each agent sees another agent's values;
+    - gates (`-ablate gate_eat`, `gate_all`): an action that would have no effect is drawn again from the other
+      actions, with the same policy;
+    - sharper and greedy policies (`-ablate sharp`, `greedy`).
+  - Weight statistics (`tools/w/eggstat.py`).
+
+Results.
+1. **No broken networks.** In the W4f seed-1 champion:
+   - no weight sits at the int8 limit;
+   - no hidden unit is constant, saturated or dormant (tau 0.1);
+   - effective rank is 61–62 of 64 per layer;
+   - 6% of action logits sit at the limit.
+   Weights do grow with time:
+   - mean |w| goes from 12.8 at the start to 17 by epoch 1000;
+   - in W1 at epoch 5000 it reaches 39, and 0.1% of weights are at the limit, so saturation is approaching in long
+     runs.
+2. **Weight changes look like drift.**
+   - Successive changes of the same weight are uncorrelated (|r| < 0.04 for every matrix). The same holds for
+     weights that cannot affect behaviour (input entry 127 is always 0: r 0.03; unused logits 10–11: r 0.03).
+   - The mean change from the start to epoch 1000 is 11.2 units. A pure random walk under the update schedule
+     (sum of alpha = 185 over 1000 epochs) predicts 10.9.
+   - Selection is not visible weight by weight. What it builds must survive constant random change.
+3. **Few inputs are used** (W4f seed 1, shuffle lesions, 16 seeds × 2).
+   - Food (t −4.2), age (t −4.3) and heard symbols (t −5.1) are used.
+   - Energy, other agents, material, tape, write position and land are not (|t| < 1).
+   - Zero lesions overstate use. Zeroing age gives 0.13, but shuffling it gives 0.42. Zeroing energy gives 0.41, but
+     shuffling it gives 0.49 (not used).
+4. **A third of all actions do nothing** (W4f seed 1, epoch 1000):
+   - 36% of agent-ticks are futile: a blocked move, an empty bite, a failed birth, feeding nothing;
+   - the agent eats about as often with no food underfoot (0.52) as with food (0.51);
+   - over the food range agents actually meet (0 to 32), the eat-versus-forward logit moves by 1.4 units, about a
+     6% change in odds;
+   - the policy is close to random: entropy 1.5 bits of 3.3, and a choice with P > 0.9 in 0.07% of steps.
+   W1b, the simplest world, shows the same pattern:
+   - 36% futile;
+   - 44% of attacks have no target;
+   - eating is more frequent with no food (0.36) than with food (0.28).
+5. **The waste is a missed easy gain in every world.** Here the champion with futile draws re-drawn plays an intact
+   copy (mean post-founder share of the gated copy, t, wins of 16):
+
+| Champion | Futile eats re-drawn | All futile actions re-drawn | Sharper policy (logit/8) | Greedy policy |
+|---|---|---|---|---|
+| W1b s1, 2000 | 0.91 (t 36, 16/16) | 1.00 (16/16) | 0.50 (t 0.1) | 0.00 |
+| W1 s1, 5000 | 0.88 (t 86, 16/16) | 0.98 (t 141, 16/16) | 0.56 (t 1.6) | 0.27 (t −5.8) |
+| W2 s1, 3000 | 0.81 (t 5.0, 11/16) | 0.97 (t 15, 15/16) | 0.28 (t −2.4) | 0.06 |
+| W3a s1, 2000 | 0.75 (t 10.8, 16/16) | 0.78 (t 9.4, 16/16) | 0.19 (t −14) | 0.04 |
+| W4e s1, 1000 | 0.83 (t 4.5, 14/16) | 1.00 (16/16) | 0.58 (t 0.9) | 0.09 |
+| W4f s1, 1000 | 0.69 (t 5.7, 16/16) | 0.75 (t 8.1, 16/16) | 0.36 (t −4.4) | 0.03 |
+| W4f s2, 1000 | 0.75 (t 3.9, 12/16) | 1.00 (16/16) | 0.22 (t −3.6) | 0.00 |
+| W4f s3, 1000 | 0.97 (t 58, 16/16) | 1.00 (16/16) | 0.29 (t −3.7) | 0.00 |
+
+   - Avoiding futile actions needs only information the agent already sees: the food underfoot, who or what is in
+     front, its own energy.
+   - The gates add almost nothing beyond that. They also know a machine's store underfoot, a cell with 1 unit of
+     food (shown as 0) and whether the lineage has a free slot.
+   - A policy that is decisive everywhere is not better: the sharper policy is neutral or worse, and the greedy
+     policy collapses. The champions need their randomness. What they lack is conditional suppression of useless
+     choices.
+6. **More training does not remove it** (docs/results/agents/trajectory.txt).
+   - The futile share is 33–45% at every archived epoch from 100 to 1000 (W4f seed 1) and from 100 to 2000 (W1b
+     seed 1).
+   - In W1 the eat-gate gain is 0.68 at epoch 1000, 0.62 at 2500 and 0.88 at 5000.
+   - Conditions that do appear can be lost:
+     - in W1b, eating became more likely with food (epochs 300–1000), then reversed (1500–2000);
+     - in W4f seed 1, the eat logit's sensitivity to food was 17 units at epoch 500 and 8.6 at epoch 1000.
+7. **Response follows input spread** (W4f seed 1).
+   - Over the full input range, the eat-versus-forward logit moves 8.6 units for food underfoot, 17 for an agent in
+     front and 13 for material in front. Per unit of input this is 0.07–0.13 for each, so evolution has not
+     amplified any pathway in particular.
+   - Inputs with a small spread therefore have little effect. Food underfoot has SD 8, against 24 for an agent in
+     front, 25 for energy and 35 for age.
+   - This is the problem state normalisation solves in random search. Mania, Guy and Recht 2018 (arXiv:1803.07055),
+     §3.2: "We were not able to train a linear policy for this task without the normalization of the states";
+     normalisation "ensures that policies put equal weight on the different components of the states". OpenAI-ES
+     normalises sensors (virtual batch normalisation). Pagliuca, Milano and Nolfi 2020 (arXiv:1912.05239) find
+     normalisation "minor in simple problems, but crucial in more complex ones". They credit Adam with avoiding "an
+     uncontrolled growth of the size of the connection weights", which matches the growth in result 1.
+   - The W4g champion (seed 1, epoch 500) does not respond to the cue either, even though its direction entries
+     have a large spread (SD 51). There, input scale is not the reason.
+
+Reading.
+- The agents are not broken. They are crude, and evolution has not made them less so.
+- The learner finds base rates (how often to do each thing) and a few coarse conditions, then stops improving.
+- About a third of actions are wasted, in every world and at every epoch, even though avoiding them would win
+  decisively.
+- Single weights drift as if unselected, so a condition that does form can erode.
+- This limit sits under every world built so far. Farming (W4c–W4g) needs a multi-step conditional policy: go to the
+  farm when it runs low, feed it, come back. These agents do not reliably follow the one-step condition "eat where
+  there is food".
+- The next step is in the learner, not the world. §8 says "If updates stall, raise P before changing anything else".
+  The literature adds input normalisation and update accumulation (Adam-like) as the established remedies for
+  random search.
+
 Interim observation (2026-11-26, W4b seed 1). F seed 1 boomed early, at epochs 80–115 (peak 198 agents at 100).
 - At epoch 100 one lineage owned 502 of the 541 machines, holding 10.6k store.
 - The other lineages still grew to their 64-slot caps, and the boom collapsed by epoch 135.
