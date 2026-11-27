@@ -1390,6 +1390,43 @@ Next steps:
 
 Compute: arm N about 1.4 h per seed at one thread; arm P about 4 times that. Binary runs8/oee_w_v26 (commit 357fc51).
 
+### LT1 verdict (2026-11-27; docs/results/lt1/)
+
+Waste headroom: the share of a copy whose futile draws are drawn again against the intact champion, mean over epochs
+1000–2000 in fresh arenas, and at epoch 2000 in the run's own final world. Strength: mean share against the five
+control champions at epoch 2000. Futile: share of the champion's agent-ticks with no effect.
+
+| Run | Headroom, fresh (mean 1000–2000) | Headroom, own world | Strength | Champion 2000 against 1000 | Futile |
+|---|---|---|---|---|---|
+| Control s1 / s2 / s3 | 0.999 / 0.965 / 0.994 | 1.00 / 0.97 / 1.00 | (reference) | | 0.36 / 0.33 / 0.28 |
+| N s1 | 0.92 | 1.00 | 0.43 | 0.45 | 0.44 |
+| N s2 | 0.91 | 1.00 | 0.60 | 0.96 | 0.32 |
+| N s3 | 1.00 | 1.00 | 0.60 | 0.16 | 0.25 |
+| P s1 | 1.00 | 0.88 | 0.77 | 0.86 | 0.22 |
+| P s2 | 0.98 | 0.88 | 0.95 | 0.84 | 0.40 |
+| P s3 | 0.38 | 0.85 | 0.03 | 0.94 | 0.30 |
+
+- **N (input normalisation): killed.** The waste is unchanged in every seed, and strength is level with the controls
+  (0.54).
+  - It also made one champion brittle. N s1 dies out in every fresh self-play arena: it eats on 1.4% of actions and
+    tries to reproduce on 37%.
+  - The cause is that the arena starts full of food, which the training world never had once grazed. The rescaled
+    food inputs then saturate at values the network never met.
+  - Normalising by past statistics amplifies inputs outside the past range, a risk in an open-ended world.
+- **P (4 times more fork pairs per update): no verdict.**
+  - The headroom fell below 0.70 in one seed (s3), but that champion is a peaceful forager that loses to every
+    control (0.03). There its "futile" eats work as waiting, so re-drawing them hurts.
+  - In the other two seeds the headroom is unchanged.
+  - Strength rose in two seeds (0.77, 0.95): those champions beat most or all control champions.
+  - In their own worlds all three P champions have less headroom than the controls (0.85–0.88 against 0.97–1.00).
+- **Reading.**
+  - More samples per update make a stronger learner in most seeds, but they do not remove the waste.
+  - Rescaling the inputs does neither.
+  - The flaw is not mainly the noise in each update or the scale of the inputs. It is what a learner that changes
+    genomes between generations can reach. This is consistent with the agent study.
+  - The main line is now lifetime learning (LL1, docs/LIFE.md, running).
+  - Error feedback (LT2, built) was to follow only if both arms were killed. It stays ready but is not started.
+
 Interim observation (2026-11-26, W4b seed 1). F seed 1 boomed early, at epochs 80–115 (peak 198 agents at 100).
 - At epoch 100 one lineage owned 502 of the 541 machines, holding 10.6k store.
 - The other lineages still grew to their 64-slot caps, and the boom collapsed by epoch 135.
