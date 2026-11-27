@@ -269,6 +269,8 @@ Viability (stated 2026-11-27 18:00 UTC, before any learning arm was scored; the 
   alive.
 - LM seed 1 tripped the guard at epoch 728: 18 reseeds between epochs 450 and 650, 25 in all. It was stopped there
   (runs8/w1k_LM_s1/NONVIABLE).
+- LL2 seed 1 tripped it at epoch 912: 6 reseeds by epoch 400, 49 by epoch 900. It was stopped at 919
+  (runs8/w1k_LL2_s1/NONVIABLE).
 
 Runs: runs8/w1k_{E,L,LM,LL2}_s{1,2,3}, queued in that order by seed once the viability check passes. Scored by
 tools/w/ll1c_eval.sh into docs/results/ll1c/.
