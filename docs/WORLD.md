@@ -1195,6 +1195,14 @@ Pass and kill:
 - Otherwise there is no verdict; report it.
 - Viability guard as in W4d. Calibration: seed 1 for 200 epochs for viability (the economics are W4f's).
 
+W4g viability (2026-11-27; runs8/w4k_s1 at epoch 200).
+- Viable: no reseeds after startup. Mean population 47 over epochs 0–200 (W4f seed 1: 55), peak 103; the largest
+  lineage holds 70% of agents on average.
+- Three homestead cells are irrigated and owned at the epoch-200 boundary.
+- The epoch-200 champion in its own world (4 seeds, interim): feeds on 0.4% of actions, spends 0.5% of agent-ticks
+  on its own land, and eats 2.2 food from its own land per unit of energy fed.
+- Seeds 2 and 3 started (runs8/w4k_s2, w4k_s3; binary runs8/oee_w_v25).
+
 Interim observation (2026-11-26, W4b seed 1). F seed 1 boomed early, at epochs 80–115 (peak 198 agents at 100).
 - At epoch 100 one lineage owned 502 of the 541 machines, holding 10.6k store.
 - The other lineages still grew to their 64-slot caps, and the boom collapsed by epoch 135.
