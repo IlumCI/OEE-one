@@ -249,5 +249,19 @@ int main(){
     const std::int8_t* l2[2]={la.data(),lb.data()};std::vector<int> born;w.tick(l2,born);
     const bool kin=w.ag[0].energy==100-20-g.base&&w.ag[1].energy==40+20-g.base,other=w.ag[g.S].energy==100-g.base&&w.ag[2].energy==40-g.base;
     CHECK(cue&&nocue&&kin&&other&&g.nact==8&&w.give_act()==7,"IN1: give passes energy to kin in front only; the need cue shows the kin's energy/8");}
+  {// AR1: an artifact opens to its key spoken token by token, pays and rests; a wrong token resets it; agents cannot
+    // enter it; the law changes with the era (family mode: the same base under a shift or reversal)
+    WParams g;g.L=12;g.S=4;g.K=1;g.nact=7;g.signals=1;g.regrow=0;g.stoch=0;g.art=1;g.art_era=1000;g.art_pay=60;g.art_rest=5;World w;w.init(g,0);const int L=g.L;
+    for(auto& x:w.aglyph)x=-1;const int fa=4*L+5;w.aglyph[fa]=3;
+    Agent& a=w.ag[0];a=Agent{};a.x=5;a.y=5;a.dir=0;a.energy=200;a.lineage=0;a.alive=true;a.id=1;w.occ[5*L+5]=0;  // facing the artifact (north)
+    int key[3],k=0;w.art_key(3,0,key,k);std::vector<std::int8_t> o(w.din());w.observe(0,o.data());const bool seen=o[79+7]==15*4&&o[104]==0&&o[105]==64;
+    auto say=[&](int sym,int act){std::vector<std::int8_t> l((std::size_t)g.S*16,(std::int8_t)-128);l[act]=127;l[8+sym]=127;const std::int8_t* lp[1]={l.data()};std::vector<int> born;w.tick(lp,born);};
+    const int e0=a.energy;for(int i=0;i<k;++i)say(key[i],0);const bool paid=w.ag[0].energy==e0-k*g.base+g.art_pay&&w.arest[fa]>0&&w.aprog[fa]==0;
+    w.arest[fa]=0;const int wrong=1+key[0]%3;say(key[0],0);const int p1=w.aprog[fa];say(wrong,0);const bool reset=(k==1)||(p1==1&&w.aprog[fa]==0);
+    say(0,1);const bool blocked=w.ag[0].y==5;  // forward into the artifact: no move
+    bool differ=false;for(int gl=0;gl<8&&!differ;++gl){int k1,k2,a1[3],a2[3];w.art_key(gl,0,a1,k1);w.art_key(gl,1,a2,k2);differ=k1!=k2||!std::equal(a1,a1+k1,a2);}
+    WParams f=g;f.art_family=1;World v;v.init(f,0);bool fam=true;for(int gl=0;gl<8;++gl){int k1,k2,a1[3],a2[3];v.art_key(gl,0,a1,k1);v.art_key(gl,5,a2,k2);fam=fam&&k1==k2;}
+    char msg[200];std::snprintf(msg,sizeof msg,"AR1: artifact seen, opened by its %d-token key, pays and rests; a wrong token resets; cannot be entered; laws differ by era; family keeps key lengths",k);
+    CHECK(seen&&paid&&reset&&blocked&&differ&&fam,msg);}
   std::printf(fails?"%d FAILED\n":"all passed\n",fails);return fails?1:0;
 }

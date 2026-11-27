@@ -54,8 +54,17 @@ void World::init(const WParams& pp,int founders){
     if(p.nodes>0){nph.assign(N,0);ncyc.assign(N,-1);const int nn=std::max(1,(int)std::lround((double)p.nodes*N/1024));int placed=0;
       for(std::uint64_t i=0;placed<nn&&i<(std::uint64_t)64*N;++i){const std::uint64_t h=mix(mix(p.seed^0x40deULL)+i);const int c=(int)(h%N);if(mat[c])continue;
         mat[c]=3;res[c]=0;nph[c]=(int)((h>>32)%(std::uint64_t)std::max(1,p.node_per));++placed;}}}
+  aglyph.clear();aprog.clear();arest.clear();astat.clear();
+  if(p.art>0){aglyph.assign(N,-1);aprog.assign(N,0);arest.assign(N,0);const int na=std::max(1,(int)std::lround((double)p.art*N/1024));int placed=0;
+    for(std::uint64_t i=0;placed<na&&i<(std::uint64_t)64*N;++i){const std::uint64_t h=mix(mix(p.seed^0xa47eULL)+i);const int c=(int)(h%N);if(aglyph[c]>=0)continue;
+      aglyph[c]=(std::int8_t)((h>>32)%(std::uint64_t)std::max(1,p.art_glyphs));++placed;}}
   for(int k=0;k<p.K;++k)reseed_lineage(k,founders,0);
 }
+void World::art_key(int g,long era,int* key,int& k) const{
+  if(p.art_family){const std::uint64_t h=mix(mix(p.seed^0xa4f0ULL)+(std::uint64_t)g),e=mix(mix(p.seed^0xe7a0ULL)+(std::uint64_t)era);  // base table, era shift and order
+    k=(int)(h%7)<4?1:(int)(h%7)<6?2:3;const int sh=(int)(e%3),rev=(int)((e>>8)&1);for(int i=0;i<k;++i)key[rev?k-1-i:i]=1+((int)((h>>(8+2*i))%3)+sh)%3;}
+  else{const std::uint64_t h=mix(mix(p.seed^0xa4f0ULL)+((std::uint64_t)era<<16)+(std::uint64_t)g);k=(int)(h%7)<4?1:(int)(h%7)<6?2:3;
+    for(int i=0;i<k;++i)key[i]=1+(int)((h>>(8+2*i))%3);}}
 
 void World::set_climate(std::uint64_t salt){
   if(p.season<=0)return;const std::uint64_t h=mix(mix(p.seed^0xc11eULL)+salt);
@@ -75,7 +84,7 @@ int World::cap(int c) const{
 void World::reseed_lineage(int k,int founders,std::uint64_t salt){
   const int N=p.L*p.L;int placed=0;
   for(std::uint64_t i=0;placed<founders&&i<(std::uint64_t)64*N;++i){
-    const std::uint64_t h=mix(mix(p.seed^0xf00dULL)+((std::uint64_t)k<<40)+(salt<<20)+i);const int c=(int)(h%N);if(occ[c]>=0||(p.matter&&mat[c]))continue;
+    const std::uint64_t h=mix(mix(p.seed^0xf00dULL)+((std::uint64_t)k<<40)+(salt<<20)+i);const int c=(int)(h%N);if(occ[c]>=0||(p.matter&&mat[c])||is_art(c))continue;
     if(fert[c]<32&&i<(std::uint64_t)32*N)continue;  // prefer fertile cells
     int s=-1;for(int j=0;j<p.S;++j)if(!ag[(std::size_t)k*p.S+j].alive){s=j;break;}if(s<0)break;
     Agent& a=ag[(std::size_t)k*p.S+s];a=Agent{};a.x=c%p.L;a.y=c/p.L;a.dir=(int)((h>>32)&3);a.energy=p.e0;a.lineage=k;a.alive=true;a.id=next_id++;
@@ -93,6 +102,9 @@ void World::observe(int slot,std::int8_t* o) const{
       if(q>=0&&q!=slot){o[25+i]=(std::int8_t)(ag[q].lineage==lin?64:-64);if(hear&&(!p.kin_sig||ag[q].lineage==lin)&&(ag[q].lineage==lin?hk:ho))o[53+i]=(std::int8_t)(32*ag[q].sig);}}}
   o[50]=(std::int8_t)std::min(127,a.energy/8);o[51]=(std::int8_t)std::min(127,a.age/4);o[52]=64;
   if(p.signals)o[78]=(std::int8_t)(32*a.sig);
+  if(p.art>0){i=0;  // AR1: artifacts in the window (15*(glyph+1); no food shown there); the one in front: progress, rest
+    for(int v=2;v>=-2;--v){const int bx=a.x+v*fx,by=a.y+v*fy;for(int u=-2;u<=2;++u,++i){const int c=wr(by+u*ry)*L+wr(bx+u*rx);if(aglyph[c]>=0){o[79+i]=(std::int8_t)(15*(aglyph[c]+1));o[i]=0;}}}
+    const int fa=wr(a.y+fy)*L+wr(a.x+fx);if(aglyph[fa]>=0){o[104]=(std::int8_t)(32*aprog[fa]);o[105]=(std::int8_t)(arest[fa]>0?-64:64);}}
   if(p.give){const int q=occ[wr(a.y+fy)*L+wr(a.x+fx)];if(q>=0&&q!=slot&&ag[q].lineage==lin)o[din()-1]=(std::int8_t)std::min(127,ag[q].energy/8);}  // IN1: need of the kin in front
   if(p.matter){i=0;
     for(int v=2;v>=-2;--v){const int bx=a.x+v*fx,by=a.y+v*fy;
@@ -137,7 +149,7 @@ void World::tick(const std::int8_t* const* logits,std::vector<int>& born){
   for(int s:order){Agent& a=ag[s];if(!a.alive)continue;const int c=a.y*p.L+a.x;
     const int fc=((a.y+FY[a.dir]+p.L)%p.L)*p.L+(a.x+FX[a.dir]+p.L)%p.L;
     switch(act[s]){
-      case 1:if(occ[fc]<0&&(!p.matter||!mat[fc]||(p.pass&&mat[fc]==1))){occ[c]=-1;a.x=fc%p.L;a.y=fc/p.L;occ[fc]=s;if(probe)peff[s]=1;}a.energy-=p.move;break;
+      case 1:if(occ[fc]<0&&!is_art(fc)&&(!p.matter||!mat[fc]||(p.pass&&mat[fc]==1))){occ[c]=-1;a.x=fc%p.L;a.y=fc/p.L;occ[fc]=s;if(probe)peff[s]=1;}a.energy-=p.move;break;
       case 2:a.dir=(a.dir+3)&3;a.energy-=p.turn;if(probe)peff[s]=1;break;
       case 3:a.dir=(a.dir+1)&3;a.energy-=p.turn;if(probe)peff[s]=1;break;
       case 4:{if(p.nodes>0&&p.matter&&mat[fc]==3)neat.push_back({fc,s});
@@ -148,7 +160,7 @@ void World::tick(const std::int8_t* const* logits,std::vector<int>& born){
         if(p.pass&&p.matter&&take<p.bite&&mat[c]==1&&(p.graze?(!p.own||mlin[c]<0||mlin[c]==a.lineage):(p.own&&mlin[c]==a.lineage))){const int t2=std::min<int>(p.bite-take,mst[c]);mst[c]=(std::int16_t)(mst[c]-t2);take+=t2;}  // underfoot
         if(p.matter&&take<p.bite&&mat[fc]==1&&(p.graze?(!p.own||mlin[fc]<0||mlin[fc]==a.lineage):(p.own&&mlin[fc]==a.lineage))){const int t2=std::min<int>(p.bite-take,mst[fc]);mst[fc]=(std::int16_t)(mst[fc]-t2);take+=t2;}  // granary or grazing
         a.energy=std::min(p.ecap,a.energy+take);if(probe)peff[s]=(std::int16_t)take;break;}
-      case 5:if(a.energy>=p.repro_min&&occ[fc]<0&&(!p.matter||!mat[fc]||(p.pass&&mat[fc]==1))){const int k=a.lineage;int j=-1;
+      case 5:if(a.energy>=p.repro_min&&occ[fc]<0&&!is_art(fc)&&(!p.matter||!mat[fc]||(p.pass&&mat[fc]==1))){const int k=a.lineage;int j=-1;
           for(int q=0;q<p.S;++q)if(!ag[(std::size_t)k*p.S+q].alive){j=q;break;}
           if(j>=0){const int cs=k*p.S+j;Agent& b=ag[cs];b=Agent{};b.x=fc%p.L;b.y=fc/p.L;b.dir=a.dir;b.energy=p.repro_give;b.lineage=k;b.alive=true;b.id=next_id++;
             occ[fc]=cs;a.energy-=p.repro_give+p.repro_cost;born.push_back(cs);parents.push_back(s);if(track)++stat[(std::size_t)k*32+17];if(probe)peff[s]=1;}}
@@ -173,6 +185,14 @@ void World::tick(const std::int8_t* const* logits,std::vector<int>& born){
       if(j-i>=2&&ripe(nc)){for(std::size_t k=i;k<j;++k){Agent& e=ag[neat[k].second];if(e.alive)e.energy=std::min(p.ecap,e.energy+p.node_pay);}
         ncyc[nc]=(std::int32_t)((t+nph[nc])/std::max(1,p.node_per));if(track)stat[(std::size_t)ag[neat[i].second].lineage*32+23]+=(long)(j-i);}
       i=j;}}
+  if(p.art>0){const long era=p.art_era>0?t/p.art_era:0;if(p.art_era>0&&t%p.art_era==0)std::fill(aprog.begin(),aprog.end(),0);  // AR1: a new law resets the locks
+    if(track&&astat.size()!=(std::size_t)p.K*4)astat.assign((std::size_t)p.K*4,0);std::vector<char> heard(N,0);
+    for(int s:order){Agent& a=ag[s];if(!a.alive||a.sig<=0)continue;const int fc=((a.y+FY[a.dir]+p.L)%p.L)*p.L+(a.x+FX[a.dir]+p.L)%p.L;
+      if(!is_art(fc)||arest[fc]>0||heard[fc])continue;heard[fc]=1;if((artmute>>a.lineage)&1u)continue;
+      int key[3],k=1;art_key(aglyph[fc],era,key,k);const std::size_t ls=(std::size_t)a.lineage*4;if(track)++astat[ls];
+      if(a.sig==key[aprog[fc]]){if(++aprog[fc]>=k){a.energy=std::min(p.ecap,a.energy+p.art_pay);aprog[fc]=0;arest[fc]=(std::int16_t)p.art_rest;if(track){++astat[ls+1];astat[ls+3]+=p.art_pay;}}}
+      else{aprog[fc]=0;if(track)++astat[ls+2];}}
+    for(auto& r:arest)if(r>0)--r;}
   for(int s=0;s<p.K*p.S;++s){Agent& a=ag[s];if(!a.alive)continue;a.energy-=p.base+(a.sig>0?p.sig_cost:0);++a.age;
     if(a.energy<=0||a.age>p.max_age){a.alive=false;occ[a.y*p.L+a.x]=-1;if(track)++stat[(std::size_t)a.lineage*32+(a.energy<=0?18:19)];if(probe)pdie[s]=a.energy<=0?1:2;}}
   if(p.matter)run_machines();
@@ -190,7 +210,7 @@ void World::tick(const std::int8_t* const* logits,std::vector<int>& born){
 }
 
 bool World::futile(int s,int a) const{const Agent& g=ag[s];const int L=p.L,c=g.y*L+g.x,fc=((g.y+FY[g.dir]+L)%L)*L+(g.x+FX[g.dir]+L)%L;
-  const bool fb=occ[fc]>=0||(p.matter&&mat[fc]&&!(p.pass&&mat[fc]==1));  // front blocked (moves, births)
+  const bool fb=occ[fc]>=0||is_art(fc)||(p.matter&&mat[fc]&&!(p.pass&&mat[fc]==1));  // front blocked (moves, births)
   auto gr=[&](int x){return p.matter&&mat[x]==1&&mst[x]>0&&(p.graze?(!p.own||mlin[x]<0||mlin[x]==g.lineage):(p.own&&mlin[x]==g.lineage));};
   switch(a){
     case 1:return fb;
@@ -297,6 +317,7 @@ constexpr std::int64_t kExt11=0x4245564157LL;  // W4e homesteads (farms, farm_st
 constexpr std::int64_t kExt12=0x4345564157LL;  // W4f homesteads (kExt11 + farm_reset)
 constexpr std::int64_t kExt13=0x4445564157LL;  // W4g homesteads (kExt12 + home_cue)
 constexpr std::int64_t kExt14=0x4545564157LL;  // IN1 give (give, give_amt)
+constexpr std::int64_t kExt15=0x4645564157LL;  // AR1 artifacts (params, glyphs, locks, rest)
 template<class T> void wv(std::FILE* f,const std::vector<T>& v){wr(f,(std::int64_t)v.size());if(!v.empty())std::fwrite(v.data(),sizeof(T),v.size(),f);}
 template<class T> bool rv(std::FILE* f,std::vector<T>& v){std::int64_t n=0;if(!rd(f,n)||n<0||n>(1<<26))return false;v.resize((std::size_t)n);
   return n==0||std::fread(v.data(),sizeof(T),(std::size_t)n,f)==(std::size_t)n;}
@@ -318,6 +339,7 @@ void World::save(std::FILE* f) const{
   if(p.matter&&p.land){wr(f,kExt10);wr(f,p.land);wv(f,lown);wv(f,mfd);}
   if(p.matter&&p.farms){wr(f,kExt13);wr(f,p.farms);wr(f,p.farm_store);wr(f,p.farm_every);wr(f,p.farm_free);wr(f,p.irr_full);wv(f,hfm);wr(f,p.farm_reset);wr(f,p.home_cue);}
   if(p.give){wr(f,kExt14);wr(f,p.give);wr(f,p.give_amt);}
+  if(p.art>0){wr(f,kExt15);for(std::int64_t x:{p.art,p.art_glyphs,p.art_pay,p.art_rest,p.art_era,p.art_family})wr(f,x);wv(f,aglyph);wv(f,aprog);wv(f,arest);}
   wv(f,res);wv(f,fert);wv(f,racc);wv(f,occ);wr(f,(std::int64_t)ag.size());
   for(auto& a:ag){const std::int64_t r[]={a.x,a.y,a.dir,a.energy,a.age,a.lineage,a.alive,(std::int64_t)a.id};for(auto x:r)wr(f,x);}
   if(ext())for(auto& a:ag){wr(f,a.sig);}
@@ -371,6 +393,11 @@ bool World::load(std::FILE* f){
   {std::int64_t m=0;const long pos=std::ftell(f);if(!rd(f,m))return false;
     if(m==kExt14){std::int64_t a=0,b=0;if(!rd(f,a)||!rd(f,b))return false;p.give=(int)a;p.give_amt=(int)b;}
     else if(std::fseek(f,pos,SEEK_SET)!=0)return false;}  // no give block
+  p.art=0;p.art_glyphs=8;p.art_pay=60;p.art_rest=100;p.art_era=1000;p.art_family=0;aglyph.clear();aprog.clear();arest.clear();
+  {std::int64_t m=0;const long pos=std::ftell(f);if(!rd(f,m))return false;
+    if(m==kExt15){std::int64_t x[6];for(auto& y:x)if(!rd(f,y))return false;if(!rv(f,aglyph)||!rv(f,aprog)||!rv(f,arest))return false;
+      p.art=(int)x[0];p.art_glyphs=(int)x[1];p.art_pay=(int)x[2];p.art_rest=(int)x[3];p.art_era=(int)x[4];p.art_family=(int)x[5];}
+    else if(std::fseek(f,pos,SEEK_SET)!=0)return false;}  // no artifact block
   if(!rv(f,res)||!rv(f,fert)||!rv(f,racc)||!rv(f,occ)){return false;}std::int64_t n=0;if(!rd(f,n)||n<0||n>(1<<24)){return false;}ag.assign((std::size_t)n,Agent{});
   for(auto& a:ag){std::int64_t r[8];for(auto& x:r)if(!rd(f,x))return false;
     a.x=(int)r[0];a.y=(int)r[1];a.dir=(int)r[2];a.energy=(int)r[3];a.age=(int)r[4];a.lineage=(int)r[5];a.alive=r[6]!=0;a.id=(std::uint64_t)r[7];a.sig=0;}

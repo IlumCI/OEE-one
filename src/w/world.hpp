@@ -73,6 +73,13 @@ struct WParams{
   // up to give_amt energy to the kin agent in front, keeping 1. Observation entry 63 (din 64) or 127 (din 128) shows the
   // energy/8 of the agent in front if it is kin (a cue of need).
   int give=0,give_amt=20;
+  // AR1 (docs/ARTIFACTS.md; needs signals, no matter): art = artifacts per 1024 cells, puzzle boxes agents cannot enter.
+  // Each shows a glyph (0..art_glyphs-1) and hides key = law[glyph] (1-3 tokens from symbols 1..3, P(k) ~ 2^-k). An
+  // artifact reads the symbol of the first agent (tick order) facing it: a matching token advances its lock, a wrong
+  // non-zero one resets it, silence leaves it; a full key pays art_pay energy to that agent and the artifact rests
+  // art_rest ticks. The law is redrawn every art_era ticks (0: never; locks reset); art_family 1 draws each era's law
+  // from a hidden family (a fixed base table under a token shift and reversal: a law of the laws, AR3).
+  int art=0,art_glyphs=8,art_pay=60,art_rest=100,art_era=1000,art_family=0;
 };
 
 struct Agent{int x=0,y=0,dir=0,energy=0,age=0,lineage=0;bool alive=false;std::uint64_t id=0;int sig=0,wpos=0;};
@@ -113,6 +120,12 @@ struct World{
   std::uint32_t gate_eat=0,gate_all=0;
   std::uint32_t sharp=0,greedy=0;  // analysis (not saved): lineages that sample with P(a) ~ 2^(logit/8) / take the argmax
   std::uint32_t nogive=0;          // analysis (not saved): lineages whose give action does nothing
+  std::uint32_t artmute=0;         // analysis (not saved): lineages whose symbols artifacts ignore
+  // AR1 per cell (with p.art; saved): artifact glyph (-1 none), lock progress, rest ticks left; astat (analysis, track):
+  // per lineage tokens spoken to artifacts, openings, resets, energy gained
+  std::vector<std::int8_t> aglyph;std::vector<std::uint8_t> aprog;std::vector<std::int16_t> arest;std::vector<long> astat;
+  bool is_art(int c) const{return !aglyph.empty()&&aglyph[c]>=0;}
+  void art_key(int g,long era,int* key,int& k) const;  // AR1: the key of glyph g in era (deterministic from the seed)
   int give_act() const{return p.matter?10:7;}  // index of the give action (with p.give)
   bool futile(int s,int a) const;  // analysis: action a of the agent in slot s would have no effect in the current state
   std::vector<std::int8_t> mfd,ilin;  // last feeder lineage per machine (world state with land, else analysis); lineage
