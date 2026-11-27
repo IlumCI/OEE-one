@@ -1,0 +1,38 @@
+# runs8/w4k_s1 e 1000 world: -S 64 -regrow 16 -nact 10 -matter 1 -spawn 20 -mut 1024 -season 300 -view 1 -signals 1 -wall_decay 4 -m_cost 4 -m_give 0 -graze 1 -pass 1 -irr 8 -irr_decay 1 -own 2 -land 1 -farms 6 -farm_store 0 -farm_free 1 -irr_full 1 -farm_reset 0 -home_cue 1 -climate_ticks 1200
+champion agent_ticks 3628510 noop 0.005 fwd 0.308 left 0.002 right 0.165 eat 0.457 repro 0.023 attack 0.030 write 0.006 make 0.001 feed 0.003 kills/kt 0.10 births/kt 3.93 starved/kt 2.34 aged/kt 1.14 killed/kt 0.07 symbol 0.992 joint_harvests/kt 0.00 fed 10392 food 7253661 irr_own 11841 irr_other 0 irr_wild 45713 home 0.002
+random agent_ticks 114439 noop 0.115 fwd 0.133 left 0.071 right 0.041 eat 0.104 repro 0.119 attack 0.114 write 0.082 make 0.134 feed 0.086 kills/kt 2.25 births/kt 12.65 starved/kt 14.05 aged/kt 0.00 killed/kt 3.08 symbol 0.585 joint_harvests/kt 0.00 fed 32463 food 175780 irr_own 495 irr_other 0 irr_wild 922 home 0.006
+wipe	0.5174	0.0085	2.04	0.5343	0.0187	1.83
+deaf	0.3784	0.0135	-9.02	0.3370	0.0276	-5.90
+== generality (e vs e-500)
+e	e_prev	solo_log_ratio	t	median	surviveA	surviveB	lshareA	lt	swap_recovery	swap_t
+1000	500	-0.0191	-0.05	0.1105	42/64	38/64	0.5567	4.39	0.3925	0.81
+== era (post-founder share, e vs e-250)
+250:1.00 500:0.49 750:0.55 1000:0.53 
+== census (epoch machines walls tapes classes)
+1000 29 46 16 5
+== machines by owner in the latest checkpoint (mcal -ck)
+t 600000 own 2 graze 1
+owner	machines	store
+-1	4	0
+0	6	0
+1	6	0
+2	12	0
+3	1	0
+top tapes (count owner tape):
+5	2	________________
+5	0	,,,,,,,,,,,,,,,,
+3	1	,,,,,,,,,,,,,,,,
+2	2	R,,,,,,,,,,,,,,,
+1	-1	__{]>D{{S[,D,+[_
+agents by lineage slot: 12 0 34 0 0
+nofeed	world fresh	0.5028	0.0133	0.21	7/16
+nofeed	world own	0.4934	0.0149	-0.45	9/16
+nocue	world fresh	0.7390	0.0369	6.47	15/16
+nocue	world own	0.6720	0.0556	3.09	11/16
+== land and irrigation in the final world
+machines 29 running 0 withI 21 withE 2 withIE 1 withC 2 | irrigated cells 1 mean irr 36.0
+agents 46
+land (irrigated cells by owner lineage; common first): common 0 L0 0 L1 0 L2 1 L3 0 L4 0
+run	epochs	boom_time	mean_pop	booms	largest_share_in_booms	peak	largest_share_all
+runs8/w4k_s1	801	0.000	69.4	0	-	127	0.51
+runs8/w4j_s1	801	0.002	78.5	2	0.37	155	0.48
