@@ -1097,6 +1097,37 @@ W4e seed 1 at epoch 1000 (2026-11-27; docs/results/w4e/eval_1000.txt).
     needed in non-episodic neuroevolution (Hamon, Nisioti and Moulin-Frier 2023, arXiv:2302.09334).
 - So this kill does not yet separate a missing incentive from a missing capability.
 
+### W4f protocol: no free lunch (fixed 2026-11-27, before the code; the owner's 20-minute timer ran out, so the recommended option was taken)
+
+Why. W4e handed each lineage fresh, irrigated land with free store every epoch, and reset the farms, so neglect
+never cost anything that lasted. This test removes both and keeps everything else. It separates a missing
+incentive from a missing capability (docs/results/w4e/next_lit.md).
+
+Change (`-farm_reset 0`, on top of W4e arm I with `-farm_store 0`):
+- At the start each lineage's homestead farms are placed as in W4e, on fully irrigated land, but with no store.
+- After that the world never refills a farm's store and never re-irrigates its land. Every 600 ticks it only
+  rebuilds an empty farm machine on a homestead cell where one was destroyed.
+- A homestead farm does not decay while it has no store, so it always stands ready to be fed.
+- The land keeps its fertility across epochs only as long as someone feeds its farm. With `-irr_decay 1` unfed land
+  is bare within 255 ticks.
+- Economics, land ownership, free running and efficient irrigation as in W4e.
+
+Arms (3 seeds × 1000 epochs at H 600; the same seeds):
+- J: W4e arm I with `-farm_reset 0 -farm_store 0`.
+
+Measures at epoch 1000 (as W4e): the no-feed ablation in homestead arenas, fresh and from the run's final world;
+feed and building rates against random agents; time on own land; the land census of the final world.
+
+Pass and kill:
+- **Pass (the incentive was missing):** the no-feed ablation costs fitness (share < 0.5, t < −3) in at least 2 of 3
+  seeds. Next: remove the homesteads and test whether farming arises in the open world with these economics.
+- **Kill (the incentive is not the bottleneck):** the no-feed ablation costs nothing in every seed. Next: an
+  agent-side cue (a sense of direction home, and a visible sign that a farm is running dry), A/B against no cue.
+- Otherwise there is no verdict; report it.
+- Viability guard as in W4d.
+- Calibration before the runs: from the second epoch on (bare land), a fed homestead farm must return at least
+  twice the energy fed as extra food on its land over an epoch; then seed 1 for 200 epochs for viability.
+
 Interim observation (2026-11-26, W4b seed 1). F seed 1 boomed early, at epochs 80–115 (peak 198 agents at 100).
 - At epoch 100 one lineage owned 502 of the 541 machines, holding 10.6k store.
 - The other lineages still grew to their 64-slot caps, and the boom collapsed by epoch 135.
