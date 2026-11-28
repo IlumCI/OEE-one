@@ -1,0 +1,8 @@
+L: freeze t<-3 in 6 of 6; beats E (t>2) in 2 of 6; pooled share against E 0.396 (sd 0.343, t -0.74 over 6 seeds)
+LL2: freeze t<-3 in 6 of 6; beats E (t>2) in 3 of 6; pooled share against E 0.473 (sd 0.313, t -0.21 over 6 seeds)
+LL2_vs_L	s1	0.3400	0.0586	-2.73	5/16
+LL2_vs_L	s2	0.7463	0.0679	3.63	13/16
+LL2_vs_L	s3	0.7047	0.0352	5.81	15/16
+LL2_vs_L	s4	0.5300	0.0450	0.67	7/16
+LL2_vs_L	s5	0.3642	0.0689	-1.97	4/16
+LL2_vs_L	s6	0.7631	0.0256	10.27	16/16

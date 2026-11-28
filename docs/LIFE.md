@@ -396,3 +396,85 @@ LL2 is better than L if it wins the head to head (t > 2) in at least 4 of 6 seed
 Kill of "learning beats evolution alone": both L and LL2 beat E in at most 2 of 6 seeds.
 
 Viability: reported, not an exclusion (as decided for LL1c at 19:08).
+
+## LL1c replication verdict (2026-11-28 01:30 UTC; seeds 1–6; docs/results/ll1c/)
+
+| Run | Freeze: frozen share (t) | Against E (t) | Toxic share intact / frozen | Intact toxic, age 0-99 -> 400+ | Against epoch 1000 (t) | Reseeds |
+|---|---|---|---|---|---|---|
+| E s1 | - | - | 0.254 / - | 0.246 -> 0.248 | 0.844 (8.60) | 10 |
+| E s2 | - | - | 0.248 / - | 0.231 -> 0.263 | 0.549 (0.73) | 0 |
+| E s3 | - | - | 0.251 / - | 0.232 -> 0.261 | 0.778 (6.30) | 15 |
+| E s4 | - | - | 0.249 / - | 0.246 -> 0.242 | 0.851 (6.90) | 7 |
+| E s5 | - | - | 0.255 / - | 0.245 -> 0.262 | 0.709 (5.28) | 3 |
+| E s6 | - | - | 0.257 / - | 0.255 -> 0.251 | 0.998 (665.22) | 4 |
+| L s1 | 0.042 (-52.33) | 0.797 (5.91) | 0.186 / 0.291 | 0.210 -> 0.114 | 0.719 (4.26) | 18 |
+| L s2 | 0.233 (-8.64) | 0.279 (-3.13) | 0.175 / 0.271 | 0.192 -> 0.116 | 0.593 (2.65) | 28 |
+| L s3 | 0.199 (-9.21) | 0.294 (-3.26) | 0.156 / 0.262 | 0.191 -> 0.090 | 0.549 (1.14) | 48 |
+| L s4 | 0.091 (-42.61) | 0.162 (-5.40) | 0.170 / 0.267 | 0.192 -> 0.105 | 0.714 (6.21) | 110 |
+| L s5 | 0.228 (-5.41) | 0.837 (6.81) | 0.192 / 0.270 | 0.221 -> 0.119 | 0.618 (1.79) | 8 |
+| L s6 | 0.298 (-6.47) | 0.006 (-309.35) | 0.168 / 0.271 | 0.206 -> 0.081 | 0.768 (7.22) | 44 |
+| LM s1 | 0.038 (-74.22) | 0.584 (1.01) | 0.167 / 0.285 | 0.180 -> 0.102 | 0.478 (-0.59) | 133 |
+| LM s2 | 0.122 (-11.08) | 0.617 (1.48) | 0.150 / 0.270 | 0.189 -> 0.058 | 0.546 (0.84) | 38 |
+| LM s3 | 0.078 (-28.06) | 0.341 (-2.30) | 0.162 / 0.272 | 0.194 -> 0.089 | 0.574 (1.64) | 44 |
+| LL2 s1 | 0.153 (-8.44) | 0.647 (1.96) | 0.174 / 0.277 | 0.199 -> 0.102 | 0.699 (5.72) | 90 |
+| LL2 s2 | 0.067 (-33.53) | 0.665 (2.18) | 0.170 / 0.265 | 0.197 -> 0.106 | 0.649 (2.78) | 111 |
+| LL2 s3 | 0.061 (-26.62) | 0.662 (2.80) | 0.174 / 0.271 | 0.203 -> 0.091 | 0.603 (1.98) | 15 |
+| LL2 s4 | 0.212 (-5.85) | 0.132 (-6.23) | 0.201 / 0.281 | 0.224 -> 0.125 | 0.614 (2.64) | 149 |
+| LL2 s5 | 0.190 (-15.00) | 0.716 (2.61) | 0.166 / 0.256 | 0.183 -> 0.111 | 0.648 (2.40) | 72 |
+| LL2 s6 | 0.167 (-10.19) | 0.012 (-205.27) | 0.174 / 0.278 | 0.188 -> 0.102 | 0.560 (1.27) | 136 |
+
+Summary (tools/w/ll1c_rep.sh; head to head: LL2 as A, L as B learning from energy only):
+
+```
+L: freeze t<-3 in 6 of 6; beats E (t>2) in 2 of 6; pooled share against E 0.396 (sd 0.343, t -0.74 over 6 seeds)
+LL2: freeze t<-3 in 6 of 6; beats E (t>2) in 3 of 6; pooled share against E 0.473 (sd 0.313, t -0.21 over 6 seeds)
+LL2_vs_L	s1	0.3400	0.0586	-2.73	5/16
+LL2_vs_L	s2	0.7463	0.0679	3.63	13/16
+LL2_vs_L	s3	0.7047	0.0352	5.81	15/16
+LL2_vs_L	s4	0.5300	0.0450	0.67	7/16
+LL2_vs_L	s5	0.3642	0.0689	-1.97	4/16
+LL2_vs_L	s6	0.7631	0.0256	10.27	16/16
+```
+
+By the protocol:
+- **L fails.** It beats E in 2 of 6 seeds (the kill for L).
+- **LL2 fails.** It beats E in 3 of 6; 4 were needed.
+- **LL2 is not shown better than L.** It wins the head to head in 3 of 6 seeds (t > 2).
+- **The kill of "learning beats evolution alone" is not met formally** (LL2 has 3 of 6). But neither arm has an
+  average advantage: pooled shares against E are 0.40 (t −0.74) and 0.47 (t −0.21).
+- **Learning is used in all 12 learning runs.** Freezing costs in 12 of 12 (t −5 to −74).
+- **The food law is learned within life in all 12.** Toxic share 0.18–0.22 at ages 0–99 falls to 0.08–0.13 at 400+.
+  It stays flat at 0.25–0.26 in all 6 E lineages.
+
+Why learning does not make better lineages (the hiding effect). Each learning champion frozen, against the E champion
+of its seed (docs/results/ll1c/hiding.txt):
+
+```
+s1 L frozen vs E: 0.2239 (t -5.05)
+s1 LL2 frozen vs E: 0.0743 (t -18.48)
+s2 L frozen vs E: 0.0402 (t -120.68)
+s2 LL2 frozen vs E: 0.0447 (t -94.96)
+s3 L frozen vs E: 0.0714 (t -17.62)
+s3 LL2 frozen vs E: 0.0562 (t -14.07)
+s4 L frozen vs E: 0.0172 (t -72.41)
+s4 LL2 frozen vs E: 0.0219 (t -44.53)
+```
+
+- The innate genome of a learning lineage is far weaker than an E genome (0.02–0.22). With learning it climbs back
+  to about E's level (0.40–0.47 on average).
+- Learning stands in for genetic adaptation instead of adding to it. This is the hiding effect: learning makes
+  genotypes look alike to selection and slows the evolution of innate competence (Paenke, Sendhoff and Kawecki 2007,
+  Am. Nat.; Paenke et al. 2009, Artif. Life 15:227).
+- The learning lineages also gain less against their own epoch-1000 ancestors: 0.55–0.77 against E's 0.55–0.998.
+- Learning lineages are less stable as populations: 8–149 reseeds against 0–15.
+- Where an E lineage evolved fast breeding, it beat learners that ate better (seed 3, verdict above).
+
+Conclusions:
+- Our evolved agents do use lifetime learning where it can pay, and they learn the world's changing law within their
+  lives. That was not true before LL1c.
+- Individual learning that restarts from zero every life does not make better lineages than evolution alone in this
+  world. Evolution lets learning carry the load and lets innate competence decay.
+- Two kinds of next step follow from the measured cause rather than from a new mechanism:
+  - inheritance of what was learned (SL1 V, teaching at birth, built), so a newborn does not restart from zero;
+  - or the long-run test of genetic assimilation (the Baldwin effect may need longer than 2,000 epochs).
+
