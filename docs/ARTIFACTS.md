@@ -310,7 +310,7 @@ W2 champion, eras of 4,000 ticks, games of 8,000 ticks, 16 seeds × 2, the LT le
   - 5.3 tokens per opening, random level.
 - LT seeds 2 and 3 are viable so far (0–1 reseeds by epoch 720) and continue to epoch 1,000 for the record.
 
-**Calibration verdict (2026-11-28 07:40 UTC).**
+**Calibration verdict (2026-11-28 08:45 UTC).**
 - The artifacts world is viable: E 0, 0, 0 reseeds in 1,000 epochs; LT 0 so far.
 - But it does not exercise knowledge enough for learning or culture to start. No learner variant moved tokens per
   opening off the random level, with a fixed genome or after 1,000 epochs of evolution, and learning and teaching
