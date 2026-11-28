@@ -561,3 +561,6 @@ have produced.
 - Threads: a copy of L s1 resumed from its epoch-1,050 checkpoint gives a byte-identical checkpoint and log at
   epoch 1,060 with 1 and with 2 threads (2026-11-28 18:17 UTC). L s3 and LT s3 therefore run with `-threads 2`, to use
   the cores the other runs free as they finish.
+- Container restart (2026-11-28 19:26 UTC): the four learning runs resumed from their checkpoints (bit-exact), at
+  epochs 1,400 (L s1), 1,680 (LT s1), 1,210 (L s2) and 1,110 (LT s2). The scorer was restarted for the seven runs
+  not yet scored.
