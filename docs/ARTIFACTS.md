@@ -502,3 +502,31 @@ is valuable, exercised and non-substitutable.
 Extension: if any deciding t lies between 2 and 3, the arm is extended to 6 seeds before a verdict (LL1c lesson).
 
 Viability: reported per run (tools/w/viab_any.sh), not an exclusion.
+
+### AR5 interim and an added diagnostic (2026-11-28 17:50 UTC; docs/results/ar5/interim.txt)
+
+Interim head-to-heads at the latest saved epochs. These are not results: the protocol scores epoch 2,000.
+
+**Head to head against E:**
+- LT s1 wins: 0.78 at epoch 1,200.
+- L s1 loses: 0.11 at epoch 950. It led at epoch 250 (0.63).
+- L s2 wins: 0.74 at epoch 725.
+- LT s2 is level: 0.47 at epoch 650.
+
+**Fights decide these games, not knowledge:**
+- L s1 knows the law better than E s1 (3.2 tokens per opening against 4.7) and gets 27% more artifact energy per
+  agent-tick. It still loses: its agents are killed 6.2 times per thousand agent-ticks, E's 0.3.
+- L s2 wins with no knowledge lead (4.3 against 4.4).
+
+**Each side alone in the same arenas** (`-solo 1`, log ratio of post-founder biomass):
+- The learner does better than E in 3 of 4 pairs:
+  - L s1 +0.26 (t 12);
+  - L s2 +0.12 (t 3.1);
+  - LT s2 +0.15 (t 3.8);
+  - LT s1 +0.07 (t 1.2).
+- Freezing L s1 costs −0.29 alone (t −10.5).
+
+**Added to the scoring as diagnostics, not criteria:** solo versions of freeze, noteach, against E and against L
+(tools/w/ar5_eval.sh). The verdict still uses the criteria above (tools/w/ar5_verdict.sh). Solo answers a separate
+question: is the learner better at living in this world, apart from how fights between separately evolved
+populations go?
