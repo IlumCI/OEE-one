@@ -1,0 +1,24 @@
+# AR5 interim head-to-heads (2026-11-28 17:20-17:40 UTC). Interim only, not a result: the protocol scores epoch 2000.
+# A learns (B: -life_b 0) or teaches (B: -teach_b 0); 16 seeds x 2, fresh arenas, the A run's world flags.
+LT_s1 e1000 vs E_s1 e1000: 0.7494 t 6.85 wins 15/16
+LT_s1 e1200 vs E_s1 e1200: 0.7789 t 8.29 wins 16/16
+L_s1 e250 vs E_s1 e250: 0.6306 t 3.86 wins 14/16
+L_s1 e500 vs E_s1 e500: 0.1300 t -23.44 wins 0/16
+L_s1 e750 vs E_s1 e750: 0.0261 t -82.54 wins 0/16
+L_s1 e950 vs E_s1 e950: 0.1056 t -37.51 wins 0/16
+L_s1 e950 vs L_s1 e500: 0.8167 t 20.19 wins 16/16
+L_s1 e950 freeze: 0.4071 t -8.15 wins 0/16
+L_s2 e725 vs E_s2 e725: 0.7435 t 5.20 wins 15/16
+LT_s2 e650 vs E_s2 e650: 0.4695 t -0.54 wins 8/16
+LT_s1 e950 vs L_s1 e950: 0.9320 t 34.21 wins 16/16
+LT_s2 e650 vs L_s2 e650: 0.3362 t -4.50 wins 3/16
+
+# stats (per thousand agent-ticks of that side) in the head-to-heads against E
+L_s1 e950 A: agent_ticks 950505 repro 0.172 attack 0.095 kills 0.92 births 10.00 starved 3.81 aged 0.34 killed 6.24 art_energy 2340.0 tokens_per_opening 3.2
+E_s1 e950 B: agent_ticks 3839481 repro 0.032 attack 0.095 kills 1.60 births 4.10 starved 2.13 aged 1.32 killed 0.28 art_energy 1845.8 tokens_per_opening 4.7
+LT_s1 e1200 A: agent_ticks 3722747 repro 0.055 attack 0.102 kills 1.82 births 5.39 starved 2.66 aged 1.01 killed 1.33 art_energy 1831.6 tokens_per_opening 3.8
+E_s1 e1200 B: agent_ticks 1676136 repro 0.030 attack 0.168 kills 2.96 births 7.57 starved 2.93 aged 0.59 killed 4.05 art_energy 1747.9 tokens_per_opening 4.5
+L_s2 e725 A: agent_ticks 3670550 repro 0.064 attack 0.097 kills 2.34 births 6.45 starved 3.27 aged 0.76 killed 2.05 art_energy 1652.8 tokens_per_opening 4.3
+E_s2 e725 B: agent_ticks 1957874 repro 0.039 attack 0.178 kills 3.94 births 8.58 starved 3.63 aged 0.36 killed 4.50 art_energy 1361.3 tokens_per_opening 4.4
+LT_s2 e650 A: agent_ticks 2832027 repro 0.059 attack 0.143 kills 2.90 births 8.32 starved 3.63 aged 0.61 killed 3.87 art_energy 1861.0 tokens_per_opening 3.7
+E_s2 e650 B: agent_ticks 3167604 repro 0.056 attack 0.131 kills 3.47 births 7.51 starved 3.96 aged 0.60 killed 2.61 art_energy 1407.7 tokens_per_opening 4.8
