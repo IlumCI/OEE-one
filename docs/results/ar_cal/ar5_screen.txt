@@ -1,0 +1,12 @@
+# AR5 parameter screen (2026-11-28; docs/ARTIFACTS.md): W2 champion against itself, A modified, 16 seeds x 2, 2000 ticks; base: -S 64 -nact 7 -season 300 -view 1 -signals 1 -art 96 -art_rest 20 -art_lock 10 -art_era 1000 -art_glyphs 8 -art_code 1
+regrow 4 kmax 1 pay 100 none: agent_ticks 441756 tokens/kt 19.2 tokens/life 9.6 openings/kt 5.99 art_energy/kt 599.4 tokens/opening 3.2 share 0.5000 t 0.00
+regrow 4 kmax 1 pay 100 artguess: agent_ticks 1285984 tokens/kt 40.0 tokens/life 20.0 openings/kt 13.42 art_energy/kt 1341.5 tokens/opening 3.0 share 0.9158 t 10.28
+regrow 4 kmax 1 pay 100 artmemo: agent_ticks 3445244 tokens/kt 33.3 tokens/life 16.6 openings/kt 21.77 art_energy/kt 2176.9 tokens/opening 1.5 share 0.9966 t 331.48
+regrow 4 kmax 1 pay 100 artmemol: agent_ticks 3857644 tokens/kt 29.2 tokens/life 14.6 openings/kt 29.06 art_energy/kt 2905.6 tokens/opening 1.0 share 0.9993 t 1869.37
+regrow 4 kmax 1 pay 100 artoracle: agent_ticks 3901553 tokens/kt 29.1 tokens/life 14.6 openings/kt 29.14 art_energy/kt 2913.7 tokens/opening 1.0 share 0.9997 t 3869.54
+regrow 4 kmax 1 pay 200 none: agent_ticks 979893 tokens/kt 21.3 tokens/life 10.7 openings/kt 6.91 art_energy/kt 1381.4 tokens/opening 3.1 share 0.5000 t 0.00
+regrow 4 kmax 1 pay 200 artguess: agent_ticks 3371591 tokens/kt 38.1 tokens/life 19.1 openings/kt 12.69 art_energy/kt 2537.9 tokens/opening 3.0 share 0.9272 t 10.74
+regrow 4 kmax 1 pay 200 artmemo: agent_ticks 3690694 tokens/kt 32.5 tokens/life 16.2 openings/kt 21.57 art_energy/kt 4313.1 tokens/opening 1.5 share 0.9736 t 24.85
+regrow 4 kmax 1 pay 200 artmemol: agent_ticks 3920869 tokens/kt 29.2 tokens/life 14.6 openings/kt 29.04 art_energy/kt 5808.9 tokens/opening 1.0 share 0.9991 t 1529.06
+regrow 4 kmax 1 pay 200 artoracle: agent_ticks 3937990 tokens/kt 28.9 tokens/life 14.4 openings/kt 28.94 art_energy/kt 5788.6 tokens/opening 1.0 share 0.9985 t 683.71
+regrow 4 kmax 2 pay 100 none: agent_ticks 381543 tokens/kt 20.7 tokens/life 10.3 openings/kt 4.18 art_energy/kt 418.0 tokens/opening 5.0 share 0.5000 t 0.00
