@@ -530,3 +530,29 @@ Interim head-to-heads at the latest saved epochs. These are not results: the pro
 (tools/w/ar5_eval.sh). The verdict still uses the criteria above (tools/w/ar5_verdict.sh). Solo answers a separate
 question: is the learner better at living in this world, apart from how fights between separately evolved
 populations go?
+
+### AR5 binary switch to oee_w_v31 (2026-11-28 17:56 UTC, bit-identical)
+
+**What changed:** the learning loops in src/w/life.cpp (`apply`, `learn8`) were rewritten so the compiler vectorises
+them: the inputs are gathered into one array, and the code is built with `-O3 -march=native`. It is integer only,
+with the same operations; d·t·m is computed as (d·m)·t, the same product with no overflow. This is commit 57fe4f2,
+binary runs8/oee_w_v31.
+
+**Speed:** a tournament with learners is 2.1 times faster (6.3 s to 3.0 s). Learning took about 75% of a learning
+run's time.
+
+**Proof of identity:**
+- Copies of L s1 and LT s2 were resumed from the same checkpoints (epochs 1,040 and 750), once with v30 and once
+  with v31. After 10 epochs they gave byte-identical checkpoints, identical logs (except the timing column) and
+  identical archives.
+- Tournament output is identical in 5 modes: stats, noteach, freeze solo, teach_b 0, and life_b 0 solo.
+- The 12 World v1 tests pass.
+
+**The switch:** the four learning runs were stopped and resumed from their last checkpoints with v31:
+- L s1 at epoch 1,050;
+- LT s1 at 1,330;
+- L s2 at 850;
+- LT s2 at 760.
+
+The seed-3 runs will start with v31. Scoring (build/rel/oee_w) is the same binary. Results are the ones v30 would
+have produced.
