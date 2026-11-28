@@ -406,3 +406,31 @@ of 1,000 ticks, 8 glyphs, `-art_code 1`.
 
 Step 2 (viability from random founders, E arm, seeds 1–3, 1,000 epochs) uses binary runs8/oee_w_v30.
 
+### AR5 calibration step 2, first set rejected; screen 2 (2026-11-28 09:40 UTC)
+
+- **Regrow 4, kmax 2, pay 100 is not viable from random founders.** The guard counts reseeds in any 200 epochs
+  (new tools/w/viab_any.sh; viab.sh checks only the latest window, and these runs move too fast for a 20-minute
+  monitor):
+  - E seed 1: at most 18 (epochs 100–300), 50 reseeds by epoch 900;
+  - E seed 3: at most 11;
+  - E seed 2: at most 4.
+- Populations in the canonical world were 2–84. The runs were stopped and are kept as runs8/w2a5_E_s*.
+- The proxy that predicts this is the intact W2 champion's population in the screen. The chosen set had 0.38M
+  agent-ticks. For comparison, the viable LL1c world had 1.34M and the non-viable first kinds world 0.40M.
+- The trade-off: if naive agents can live on guessing, guessing is also strong competition for learning. More free
+  food gives viability and leaves artifacts as the bonus that knowledge unlocks.
+
+Screen 2 (docs/results/ar_cal/ar5_screen2.txt; kmax 2):
+
+| Set (regrow / pay) | Intact population | Share: guess / own memory / oracle | Population: guess / own memory |
+|---|---|---|---|
+| 6 / 100 | 0.52M | 0.80 / 0.998 / 0.9998 | 1.18M / 3.40M |
+| 6 / 150 | 0.67M | 0.86 / 0.967 / 0.9995 | 2.36M / 3.63M |
+| 8 / 100 | 0.77M | 0.89 / 0.936 / 0.9996 | 1.78M / 3.47M |
+| **8 / 150** | **1.02M** | **0.76 / 0.966 / 0.9985** | **2.52M / 3.65M** |
+
+- **Regrow 8, kmax 2, pay 150** is the first set at the viability proxy (about 1M). Its learning premium remains:
+  own memory 0.97 against guess 0.76.
+- Its viability from random founders is under test: E seeds 1–3, 1,000 epochs, runs8/w2a6_E_s*, binary
+  runs8/oee_w_v30, guard over any window.
+

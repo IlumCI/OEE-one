@@ -1,0 +1,17 @@
+# AR5 screen 2 (2026-11-28, after step-2 viability failed at regrow 4): W2 champion against itself, 16 seeds x 2; base as screen 1, kmax 2
+regrow 6 kmax 2 pay 100 none: pop 0.52M tok/life 10.8 open 4.24 en 423.5 tpo 5.1 share 0.5000 t 0.00
+regrow 6 kmax 2 pay 100 artguess: pop 1.18M tok/life 22.8 open 9.54 en 954.0 tpo 4.8 share 0.8029 t 5.54
+regrow 6 kmax 2 pay 100 artmemo: pop 3.40M tok/life 21.6 open 18.62 en 1862.3 tpo 2.3 share 0.9977 t 400.11
+regrow 6 kmax 2 pay 100 artoracle: pop 3.92M tok/life 19.9 open 28.03 en 2803.0 tpo 1.4 share 0.9998 t 4914.29
+regrow 6 kmax 2 pay 150 none: pop 0.67M tok/life 10.8 open 4.25 en 637.8 tpo 5.1 share 0.5000 t 0.00
+regrow 6 kmax 2 pay 150 artguess: pop 2.36M tok/life 22.6 open 9.49 en 1423.1 tpo 4.8 share 0.8555 t 6.52
+regrow 6 kmax 2 pay 150 artmemo: pop 3.63M tok/life 21.2 open 18.58 en 2787.3 tpo 2.3 share 0.9671 t 14.99
+regrow 6 kmax 2 pay 150 artoracle: pop 3.96M tok/life 19.9 open 28.19 en 4228.6 tpo 1.4 share 0.9995 t 1785.89
+regrow 8 kmax 2 pay 100 none: pop 0.77M tok/life 11.1 open 4.52 en 452.4 tpo 4.9 share 0.5000 t 0.00
+regrow 8 kmax 2 pay 100 artguess: pop 1.78M tok/life 22.4 open 9.08 en 907.8 tpo 4.9 share 0.8857 t 7.83
+regrow 8 kmax 2 pay 100 artmemo: pop 3.47M tok/life 21.1 open 18.24 en 1823.9 tpo 2.3 share 0.9364 t 10.53
+regrow 8 kmax 2 pay 100 artoracle: pop 3.94M tok/life 19.6 open 27.74 en 2774.5 tpo 1.4 share 0.9996 t 3087.91
+regrow 8 kmax 2 pay 150 none: pop 1.02M tok/life 11.4 open 4.62 en 693.3 tpo 5.0 share 0.5000 t 0.00
+regrow 8 kmax 2 pay 150 artguess: pop 2.52M tok/life 22.0 open 9.26 en 1388.9 tpo 4.8 share 0.7598 t 4.38
+regrow 8 kmax 2 pay 150 artmemo: pop 3.65M tok/life 21.0 open 18.34 en 2750.8 tpo 2.3 share 0.9663 t 14.98
+regrow 8 kmax 2 pay 150 artoracle: pop 3.94M tok/life 19.6 open 27.72 en 4157.5 tpo 1.4 share 0.9985 t 990.54
