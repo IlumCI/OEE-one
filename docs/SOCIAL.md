@@ -176,3 +176,53 @@ Viability: reported, not an exclusion (as LL1c).
 
 Smoke check before the runs (2 arenas, not a result): the LL1c L seed 1 champion with teaching switched on beats its
 own copy without it, 0.84.
+
+### SL1 V verdict (2026-11-28 04:50 UTC; docs/results/ll1c/w1k_SV_s*.txt, sv_summary.txt)
+
+| Run | Freeze: frozen share (t) | Against E (t) | Toxic share intact / frozen | Intact toxic, age 0-99 -> 400+ | Against epoch 1000 (t) | Reseeds |
+|---|---|---|---|---|---|---|
+| SV s1 | 0.013 (-137.96) | 0.989 (166.72) | 0.162 / 0.272 | 0.179 -> 0.104 | 0.925 (19.47) | 40 |
+| SV s2 | 0.021 (-103.77) | 0.670 (2.13) | 0.139 / 0.286 | 0.160 -> 0.081 | 0.730 (4.86) | 1 |
+| SV s3 | 0.000 (-10652.04) | 0.238 (-4.57) | 0.128 / 0.238 | 0.137 -> 0.089 | 0.450 (-1.47) | 5 |
+| SV s4 | 0.005 (-355.54) | 0.141 (-9.34) | 0.170 / 0.268 | 0.177 -> 0.114 | 0.774 (5.31) | 18 |
+| SV s5 | 0.010 (-161.96) | 0.962 (17.48) | 0.154 / 0.283 | 0.163 -> 0.085 | 0.706 (4.26) | 26 |
+| SV s6 | 0.040 (-59.93) | 0.009 (-260.14) | 0.160 / 0.288 | 0.180 -> 0.093 | 0.552 (0.78) | 9 |
+
+```
+SV: noteach t<-3 in 6 of 6; freeze t<-3 in 6 of 6; beats E (t>2) in 3 of 6; pooled share against E 0.501 (sd 0.429, t 0.01 over 6 seeds)
+SV_vs_L	s1	0.8620	0.0367	9.86	16/16	frozen_SV_vs_E 0.5051 (t 0.11)	newborn_toxic SV 0.179 L 0.210
+SV_vs_L	s2	0.8245	0.0346	9.38	16/16	frozen_SV_vs_E 0.0401 (t -81.19)	newborn_toxic SV 0.160 L 0.192
+SV_vs_L	s3	0.5551	0.0685	0.80	8/16	frozen_SV_vs_E 0.0040 (t -426.65)	newborn_toxic SV 0.137 L 0.191
+SV_vs_L	s4	0.5066	0.0410	0.16	8/16	frozen_SV_vs_E 0.0110 (t -213.58)	newborn_toxic SV 0.177 L 0.192
+SV_vs_L	s5	0.7193	0.0456	4.81	12/16	frozen_SV_vs_E 0.1025 (t -25.08)	newborn_toxic SV 0.163 L 0.221
+SV_vs_L	s6	0.8420	0.0319	10.71	16/16	frozen_SV_vs_E 0.0014 (t -1553.25)	newborn_toxic SV 0.180 L 0.206
+```
+
+By the protocol:
+- **Not passed.** Teaching is used in 6 of 6 seeds (noteach t −4.8 to −32), but SV beats E in only 3 of 6. The
+  pooled share against E is 0.50 (t 0.0).
+- **Not killed either.** Teaching costs in every seed, and SV beats E in more than 2 of 6.
+- **Secondary met.** SV beats L in 4 of 6 seeds (0.72–0.86, t 4.8–10.7) and never loses (seeds 3 and 4: 0.56 and
+  0.51, ns).
+
+What teaching does:
+1. **Newborns inherit the law.** Their toxic share at ages 0–99 is below L's in 6 of 6 seeds (0.137–0.180 against
+   0.191–0.221).
+2. **Lineages are steadier.** SV has 1–40 reseeds, against 8–110 for L.
+3. **It removed hiding once.** In seed 1 the frozen SV genome matches E's (0.51) and SV dominates E (0.99). In the
+   other seeds the innate genome stays far behind (frozen 0.001–0.10).
+
+What it does not do: beat the strongest lineages evolved without learning.
+- The E lineages of seeds 3, 4 and 6 beat every learning arm: L, LL2 and SV.
+- Seed 3's E lineage breeds fast. Seed 6's is the strongest of all (0.998 against its own ancestor).
+- Across L, LL2 and SV, the arms beat E in 2, 3 and 3 of 6 seeds. Which seeds is largely decided by how strong that
+  seed's E lineage is.
+
+Reading:
+- In this world, evolution without learning finds other routes to the same fitness, such as reproduction strategy.
+- The knowledge needed is small: one toxic kind of four per era. Breeding and innate caution can substitute for it.
+- The value-of-information ladder, which compares the same genome with and without knowledge (0.97), overstates
+  the advantage at the lineage level. Lineages without learning adapt in other ways.
+- So the limit is the world's knowledge ceiling: how much there is to learn that nothing else can replace. It is
+  not the learner (learning and teaching both work) and not transmission.
+

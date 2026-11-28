@@ -1,0 +1,7 @@
+SV: noteach t<-3 in 6 of 6; freeze t<-3 in 6 of 6; beats E (t>2) in 3 of 6; pooled share against E 0.501 (sd 0.429, t 0.01 over 6 seeds)
+SV_vs_L	s1	0.8620	0.0367	9.86	16/16	frozen_SV_vs_E 0.5051 (t 0.11)	newborn_toxic SV 0.179 L 0.210
+SV_vs_L	s2	0.8245	0.0346	9.38	16/16	frozen_SV_vs_E 0.0401 (t -81.19)	newborn_toxic SV 0.160 L 0.192
+SV_vs_L	s3	0.5551	0.0685	0.80	8/16	frozen_SV_vs_E 0.0040 (t -426.65)	newborn_toxic SV 0.137 L 0.191
+SV_vs_L	s4	0.5066	0.0410	0.16	8/16	frozen_SV_vs_E 0.0110 (t -213.58)	newborn_toxic SV 0.177 L 0.192
+SV_vs_L	s5	0.7193	0.0456	4.81	12/16	frozen_SV_vs_E 0.1025 (t -25.08)	newborn_toxic SV 0.163 L 0.221
+SV_vs_L	s6	0.8420	0.0319	10.71	16/16	frozen_SV_vs_E 0.0014 (t -1553.25)	newborn_toxic SV 0.180 L 0.206
