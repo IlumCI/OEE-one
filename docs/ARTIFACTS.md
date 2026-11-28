@@ -308,7 +308,13 @@ W2 champion, eras of 4,000 ticks, games of 8,000 ticks, 16 seeds × 2, the LT le
   - noteach 0.48 (t −0.4): teaching not used;
   - against the E seed 1 champion at epoch 1,000: 0.49 (t −0.1);
   - 5.3 tokens per opening, random level.
-- LT seeds 2 and 3 are viable so far (0–1 reseeds by epoch 720) and continue to epoch 1,000 for the record.
+- **LT seeds 2 and 3 at epoch 1,000** (docs/results/ar_cal/w2ar_LT_s{2,3}.txt):
+  - freeze 0.48 (t −0.2) and 0.53 (t +0.5);
+  - noteach 0.54 (t +0.5) and 0.53 (t +0.3);
+  - against E 0.19 (t −4.0) and 0.59 (t +1.0);
+  - 5.9 and 5.0 tokens per opening.
+- So in all three LT seeds learning and teaching are unused, and the law is not known.
+- **All six calibration runs are viable:** at most 0–1 reseeds in any 200 epochs (tools/w/viab_any.sh).
 
 **Calibration verdict (2026-11-28 08:45 UTC).**
 - The artifacts world is viable: E 0, 0, 0 reseeds in 1,000 epochs; LT 0 so far.
