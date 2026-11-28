@@ -19,6 +19,7 @@ struct LifeCfg{
   int lam=230;   // eligibility trace decay lam/256 per tick
   int beta=4;    // running-mean (baseline) decay 2^-beta per tick
   int teach=0;   // SL1 V (docs/SOCIAL.md): a newborn's synapses start at half its parent's (traces zero, baseline copied)
+  int tkeep=1;   // teaching fidelity: the newborn keeps 1 - 2^-tkeep of its parent's synapses (1: half; 3: 7/8)
   int obs=0;     // SL1 O: each tick an agent also learns, at half rate, from its nearest kin neighbour's action and reward
   int rew=0;     // LL2: the reward adds logit[rlog]/8 energy units, an internal reward the network computes (evolved)
   int rlog=14;   // logit used as the evolved reward (an otherwise unused output)
@@ -41,7 +42,7 @@ struct Life{
   void init(int R,int D,int na,int ns=0,int nx=0,int so=8);  // ns 4: plastic symbol head
   void reset(int r);                            // a newborn in row r: synapses, traces and baseline to zero
   void copy_row(int rd,const Life& src,int rs);  // row rd of this = row rs of src (same D, na)
-  void inherit(int rd,int rs);                   // SL1 V: row rd (a newborn) = half the synapses of row rs (its parent)
+  void inherit(int rd,int rs,int keep=1);        // SL1 V: row rd (a newborn) = 1 - 2^-keep of the synapses of row rs (its parent)
   // adds the plastic contribution to the logits l of row r, given its features h (D int8) and raw inputs x (nx int8)
   void apply(const LifeCfg& c,std::uint32_t msk,int r,const std::int8_t* h,const std::int8_t* x,std::int8_t* l) const;
   void apply(const LifeCfg& c,std::uint32_t msk,int r,const std::int8_t* h,std::int8_t* l) const{apply(c,msk,r,h,nullptr,l);}

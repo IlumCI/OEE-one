@@ -10,7 +10,8 @@ std::uint32_t LifeCfg::mask(int na,bool matter) const{std::uint32_t m=0;
   for(int a=0;a<na&&a<32;++a){if(a==5&&!repro)continue;if(matter&&a>=7&&a<=10)continue;if(!matter&&a==7)continue;m|=1u<<a;}return m;}
 void Life::init(int RR,int DD,int nn,int ns,int xx,int oo){R=RR;D=DD;na=nn;nl=na+ns;nx=xx;so=oo;J=D+1+nx;W.assign((std::size_t)R*nl*J,0);e.assign((std::size_t)R*nl*J,0);b.assign(R,0);}
 void Life::reset(int r){const std::size_t n=(std::size_t)nl*J;std::fill(W.begin()+r*n,W.begin()+(r+1)*n,0);std::fill(e.begin()+r*n,e.begin()+(r+1)*n,0);b[r]=0;}
-void Life::inherit(int rd,int rs){const std::size_t n=(std::size_t)nl*J;for(std::size_t i=0;i<n;++i){W[rd*n+i]=W[rs*n+i]>>1;e[rd*n+i]=0;}b[rd]=b[rs];}
+void Life::inherit(int rd,int rs,int keep){const std::size_t n=(std::size_t)nl*J;
+  for(std::size_t i=0;i<n;++i){const std::int32_t w=W[rs*n+i];W[rd*n+i]=keep<=1?w>>1:w-(w>>keep);e[rd*n+i]=0;}b[rd]=b[rs];}
 void Life::copy_row(int rd,const Life& s,int rs){const std::size_t n=(std::size_t)nl*J;
   std::copy(s.W.begin()+rs*n,s.W.begin()+(rs+1)*n,W.begin()+rd*n);std::copy(s.e.begin()+rs*n,s.e.begin()+(rs+1)*n,e.begin()+rd*n);b[rd]=s.b[rs];}
 namespace {

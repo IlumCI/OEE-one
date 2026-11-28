@@ -188,7 +188,7 @@ void run_worlds(std::vector<w::World>& ws,evo::Rows& rows,const std::vector<evo:
           for(auto [dx,dy]:nb){const int c=((ag.y+dy+Lw)%Lw)*Lw+(ag.x+dx+Lw)%Lw,o=ws[i].occ[c];if(o<0||o/S!=k)continue;const int rn=(k*nw+i)*S+o%S;if(!lok[rn])continue;
             lf->learn_obs((*lc)[k],lmask[k],row,rows.state.data()+(std::size_t)row*L+L-Dh,nx?lx.data()+(std::size_t)row*nx:nullptr,lgt.data()+(std::size_t)row*V,lact[rn],ldl[rn]);break;}}}
       for(std::size_t bi=0;bi<born.size();++bi){const int b=born[bi],k=b/S,s=b%S;auto dst=rows.state.begin()+((std::size_t)(k*nw+i)*S+s)*L;
-        if(lf){lf->reset((k*nw+i)*S+s);if(lrn&&(*lc)[k].teach&&bi<ws[i].parents.size())lf->inherit((k*nw+i)*S+s,(k*nw+i)*S+ws[i].parents[bi]%S);}  // SL1 V: taught at birth
+        if(lf){lf->reset((k*nw+i)*S+s);if(lrn&&(*lc)[k].teach&&bi<ws[i].parents.size())lf->inherit((k*nw+i)*S+s,(k*nw+i)*S+ws[i].parents[bi]%S,(*lc)[k].tkeep);}  // SL1 V: taught at birth
         if(ws[i].p.lamarck&&bi<ws[i].parents.size()){const int q=ws[i].parents[bi];std::copy(rows.state.begin()+((std::size_t)(k*nw+i)*S+q%S)*L,rows.state.begin()+((std::size_t)(k*nw+i)*S+q%S+1)*L,dst);}
         else std::fill(dst,dst+L,0);}
       if(integ)for(int k=0;k<K;++k)if(st[k])(*integ)[k][i]+=ws[i].biomass(k);}
@@ -224,7 +224,7 @@ int main(int argc,char** argv){
     else if(!std::strcmp(s,"-life_eta"))lcfg.eta=std::atoi(v);else if(!std::strcmp(s,"-life_lam"))lcfg.lam=std::atoi(v);else if(!std::strcmp(s,"-life_beta"))lcfg.beta=std::atoi(v);else if(!std::strcmp(s,"-life_b"))life_b=std::atoi(v);else if(!std::strcmp(s,"-rew_b"))rew_b=std::atoi(v);else if(!std::strcmp(s,"-teach_b"))teach_b=std::atoi(v);
     else if(!std::strcmp(s,"-life_sym"))lcfg.sym=std::atoi(v);else if(!std::strcmp(s,"-life_seta"))lcfg.seta=std::atoi(v);else if(!std::strcmp(s,"-life_symh"))lcfg.symh=std::atoi(v);else if(!std::strcmp(s,"-life_xeta"))lcfg.xeta=std::atoi(v);else if(!std::strcmp(s,"-life_in")){if(std::sscanf(v,"%d,%d",&lcfg.in0,&lcfg.in1)!=2){std::fprintf(stderr,"-life_in A,B\n");return 2;}}
     else if(!std::strcmp(s,"-art_code"))wp.art_code=std::atoi(v);else if(!std::strcmp(s,"-kinds"))wp.kinds=std::atoi(v);else if(!std::strcmp(s,"-kind_era"))wp.kind_era=std::atoi(v);else if(!std::strcmp(s,"-kind_tox"))wp.kind_tox=std::atoi(v);else if(!std::strcmp(s,"-kind_bad"))wp.kind_bad=std::atoi(v);
-    else if(!std::strcmp(s,"-life_rew"))lcfg.rew=std::atoi(v);else if(!std::strcmp(s,"-life_teach"))lcfg.teach=std::atoi(v);else if(!std::strcmp(s,"-life_obs"))lcfg.obs=std::atoi(v);
+    else if(!std::strcmp(s,"-life_rew"))lcfg.rew=std::atoi(v);else if(!std::strcmp(s,"-life_teach"))lcfg.teach=std::atoi(v);else if(!std::strcmp(s,"-life_tkeep"))lcfg.tkeep=std::atoi(v);else if(!std::strcmp(s,"-life_obs"))lcfg.obs=std::atoi(v);
     else if(!std::strcmp(s,"-give"))wp.give=std::atoi(v);else if(!std::strcmp(s,"-give_amt"))wp.give_amt=std::atoi(v);
     else if(!std::strcmp(s,"-art"))wp.art=std::atoi(v);else if(!std::strcmp(s,"-art_glyphs"))wp.art_glyphs=std::atoi(v);else if(!std::strcmp(s,"-art_pay"))wp.art_pay=std::atoi(v);
     else if(!std::strcmp(s,"-art_rest"))wp.art_rest=std::atoi(v);else if(!std::strcmp(s,"-art_era"))wp.art_era=std::atoi(v);else if(!std::strcmp(s,"-art_family"))wp.art_family=std::atoi(v);else if(!std::strcmp(s,"-art_lock"))wp.art_lock=std::atoi(v);
@@ -418,6 +418,7 @@ int main(int argc,char** argv){
   if(lcfg.sym||lcfg.in1!=lcfg.in0){fp2.push_back(9991400+lcfg.sym);fp2.push_back(9991500000LL+1000LL*lcfg.in0+lcfg.in1);}
   if(lcfg.seta>=0||lcfg.symh!=1){fp2.push_back(9991600+lcfg.seta);fp2.push_back(9991700+lcfg.symh);}
   if(lcfg.xeta>=0)fp2.push_back(9991800+lcfg.xeta);
+  if(lcfg.tkeep!=1)fp2.push_back(9991900+lcfg.tkeep);
   if(wp.art_code)fp2.push_back(9992100+wp.art_code);
   if(wp.kinds){fp2.push_back(9992200+wp.kinds);fp2.push_back(9992300000LL+wp.kind_era);fp2.push_back(9992400+wp.kind_tox);if(wp.kind_bad)fp2.push_back(9992500+wp.kind_bad);}
   if(wp.give){fp2.push_back(9991100+wp.give);fp2.push_back(9991200+wp.give_amt);}

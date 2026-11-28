@@ -225,3 +225,61 @@ Measure, from AR2's runs:
 - Ablation `artmute`: artifacts ignore A's symbols.
 - Tests: key law and era redraw are deterministic; a correct sequence opens and pays; a wrong token resets;
   bit-exact resume.
+
+## Culture-world calibration (protocol fixed 2026-11-28 05:17 UTC, before the runs)
+
+Chosen when the owner's decision timer expired with the recommended option applied, after the SL1 V verdict
+(SOCIAL.md).
+- The limit there is the food world's knowledge ceiling: there is little to learn, and breeding substitutes for it.
+- The artifacts world has a large ceiling. Pooled knowledge is worth about 3 times individual knowledge (value of
+  information, above), and an artifact cannot be opened without knowing its key.
+- No long runs before the owner sees this calibration.
+
+World: the W2 world of runs8/w2_sig_s1 with `-art 32 -art_pay 300 -art_rest 100 -art_lock 30 -art_era 1000
+-art_glyphs 8 -art_code 1`.
+
+Learner (LT): the LL1c learner on the symbol head with teaching:
+`-life 1 -life_eta 12 -life_lam 230 -life_beta 7 -life_sym 1 -life_in 104,128 -life_xeta 7 -life_teach 1`.
+
+(a) **Viability from random founders over 1,000 epochs** (the LL1c lesson: 250 was too short).
+- Arms E (no learning) and LT, seeds 1–3: runs8/w2ar_{E,LT}_s{1,2,3}, binary runs8/oee_w_v29.
+- Viable: no more than 10 reseeds in any 200 epochs.
+
+(b) **Teaching accumulates the law** (fixed genome: the W2 champion runs8/w2_sig_s1 epoch 3000).
+- Eras of 4,000 ticks and games of 8,000 ticks, so many generations see each law.
+- Comparisons, 16 seeds × 2:
+  - A learning with teaching against B learning without (`-teach_b 0`);
+  - A frozen against B learning with teaching.
+- Measures: openings per thousand agent-ticks, tokens per opening, and tokens per opening of newborns (ages 0–99).
+- Accumulation shows if teaching lowers newborns' tokens per opening below the non-teaching learner's.
+
+(c) The value of information with `-art_code 1` is already measured (above): oracle share 0.75–0.81, individual
+memory 0.59–0.75, lineage memory 0.69–0.84.
+
+Decision after the calibration, by the owner: the culture runs (E, LT, LT plus observation; 6 seeds) or a change of
+world.
+
+### Calibration (b) result (2026-11-28 05:40 UTC): teaching does not accumulate the law
+
+W2 champion, eras of 4,000 ticks, games of 8,000 ticks, 16 seeds × 2, the LT learner:
+
+| Comparison | Tokens per opening, A / B | Newborn tokens per opening, A / B | Openings per thousand agent-ticks, A / B | Share of A |
+|---|---|---|---|---|
+| A teaching (1/2) against B learning only | 5.2 / 5.4 | 5.29 / 5.59 | 1.05 / 1.00 | 0.34 (t −2.1) |
+| A frozen against B teaching (1/2) | 5.7 / 5.1 | 5.62 / 5.30 | 0.94 / 1.06 | 0.59 (t 1.9) |
+| A without teaching against B teaching that keeps 7/8 (`-life_tkeep 3`) | 5.3 / 5.0 | 5.34 / 5.13 | 1.03 / 1.09 | 0.56 (t 1.0) |
+| A without observation against B with observation (`-life_obs 1`) | 5.3 / 5.4 | 5.38 / 5.64 | 1.01 / 0.97 | 0.47 (t −0.6) |
+
+- Random speaking gives about 5–6 tokens per opening, and the oracle about 1.5.
+- No learner variant moves far from random: not teaching at either fidelity, not observation.
+- Halving at birth caps what a lineage carries at about twice one life's learning. But even at 7/8 there is
+  nothing to accumulate. An individual speaks to a ready artifact only about 3 times per life, so individual
+  learning yields almost nothing to pass on.
+- So the culture world cannot start from this genome. It would need evolution to first raise how often agents
+  engage artifacts, then learning, then transmission. That is three capabilities in sequence, which the bootstrap
+  rule warns against.
+- Whether evolution raises engagement is visible in calibration (a): openings by the E and LT champions at epoch
+  1,000.
+- Added for this check: `-life_tkeep k` (teaching keeps 1 − 2^−k of the parent's synapses; default 1, half,
+  unchanged).
+
