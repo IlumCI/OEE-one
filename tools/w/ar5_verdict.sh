@@ -14,7 +14,7 @@ function cr(nm,x,dr,s){if(x=="-")return;x+=0
 function ok(A,lt){return A["freeze"]>=b&&A["vsE"]>=b&&A["tok"]>=b&&(!lt||(A["noteach"]>=b&&A["vsL"]>=b))}
 {n=split(FILENAME,p,"/");f=p[n];sub(/\.txt$/,"",f);split(f,q,"_");a=q[2];s=substr(q[3],2)+0;R[a,s]=1;if(s>ms)ms=s}
 $1=="freeze"{F[a,s]=$5;FS_[a,s]=$3}$1=="noteach"{N[a,s]=$5;NS[a,s]=$3}$1=="vs_E"{VE[a,s]=$5;VES[a,s]=$3}
-$1=="vs_L"{VL[a,s]=$5;VLS[a,s]=$3}$1=="vs_own"{O[a,s]=$3" ("$5")"}
+$1=="vs_L"{VL[a,s]=$5;VLS[a,s]=$3}$1~/_solo$/{D[$1,a,s]=$3" ("$5")";HD[$1]=1}$1=="vs_own"{O[a,s]=$3" ("$5")"}
 $1=="knowledge"{for(i=3;i<NF;++i)if($i=="tokens_per_opening")K[a,s]=$(i+1)}
 $1~/^w2a7_.*:[0-9]+:[0-9]+/{split($1,z,":");V[a,s]=z[3]}
 END{print "| run | freeze share (t) | noteach share (t) | vs E share (t) | vs L share (t) | tokens/opening (E) | vs own e1000 (t) | max reseeds in 200 |"
@@ -22,6 +22,8 @@ print "|---|---|---|---|---|---|---|---|"
 na=split("E L LT",ar," ")
 for(i=1;i<=na;++i)for(s=1;s<=ms;++s){a=ar[i];if(!((a,s) in R))continue;k=a SUBSEP s
   printf "| %s s%d | %s (%s) | %s (%s) | %s (%s) | %s (%s) | %s (%s) | %s | %s |\n",a,s,g(FS_,k),g(F,k),g(NS,k),g(N,k),g(VES,k),g(VE,k),g(VLS,k),g(VL,k),g(K,k),g(K,"E" SUBSEP s),g(O,k),g(V,k)}
+if(length(HD)){printf "\nDiagnostics, not criteria: solo log ratio of post-founder biomass, A over B (t)\n| run | freeze_solo | noteach_solo | vs_E_solo | vs_L_solo |\n|---|---|---|---|---|\n"
+  for(i=2;i<=na;++i)for(s=1;s<=ms;++s){a=ar[i];if(!((a,s) in R))continue;o="| "a" s"s" |";split("freeze_solo noteach_solo vs_E_solo vs_L_solo",dn," ");for(j=1;j<=4;++j)o=o" "((dn[j],a,s) in D?D[dn[j],a,s]:"-")" |";print o}}
 kill=1;nk=0
 for(i=2;i<=na;++i){a=ar[i];lt=a=="LT";n=0;ext="";split("",C);split("",LO);split("",HI)
   for(s=1;s<=ms;++s){k=a SUBSEP s;if(g(F,k)=="-")continue;++n;++nk;t=F[k]+0;if(t>=2||t<=-2)kill=0

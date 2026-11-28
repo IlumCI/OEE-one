@@ -22,3 +22,12 @@ L_s2 e725 A: agent_ticks 3670550 repro 0.064 attack 0.097 kills 2.34 births 6.45
 E_s2 e725 B: agent_ticks 1957874 repro 0.039 attack 0.178 kills 3.94 births 8.58 starved 3.63 aged 0.36 killed 4.50 art_energy 1361.3 tokens_per_opening 4.4
 LT_s2 e650 A: agent_ticks 2832027 repro 0.059 attack 0.143 kills 2.90 births 8.32 starved 3.63 aged 0.61 killed 3.87 art_energy 1861.0 tokens_per_opening 3.7
 E_s2 e650 B: agent_ticks 3167604 repro 0.056 attack 0.131 kills 3.47 births 7.51 starved 3.96 aged 0.60 killed 2.61 art_energy 1407.7 tokens_per_opening 4.8
+
+# solo (-solo 1, 2026-11-28 17:50 UTC): each side alone in the same arenas; log ratio of post-founder biomass, A over B
+L_s1 e950 vs E_s1 e950 solo: 0.2568 t 12.18 wins 16/16 (head-to-head 0.1056 t -37.51)
+LT_s1 e1200 vs E_s1 e1200 solo: 0.0723 t 1.24 wins 11/16 (head-to-head 0.7789 t 8.29)
+L_s2 e725 vs E_s2 e725 solo: 0.1157 t 3.09 wins 12/16 (head-to-head 0.7435 t 5.20)
+LT_s2 e650 vs E_s2 e650 solo: 0.1481 t 3.80 wins 14/16 (head-to-head 0.4695 t -0.54)
+LT_s1 e950 vs L_s1 e950 solo: -0.2720 t -12.38 wins 0/16 (head-to-head 0.9320 t 34.21)
+LT_s2 e650 vs L_s2 e650 solo: 0.0520 t 3.56 wins 14/16 (head-to-head 0.3362 t -4.50)
+L_s1 e950 freeze solo: -0.2877 t -10.52 wins 0/16 (head-to-head 0.4071 t -8.15)
