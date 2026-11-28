@@ -1,0 +1,5 @@
+== runs8/w2ar_LT_s1 epoch 1000 (-S 64 -regrow 16 -nact 7 -season 300 -view 1 -signals 1 -art 32 -art_pay 300 -art_rest 100 -art_lock 30 -art_era 1000 -art_glyphs 8 -art_code 1 -life 1 -life_eta 12 -life_lam 230 -life_beta 7 -life_sym 1 -life_in 104,128 -life_xeta 7 -life_teach 1)
+freeze	0.5898	0.0662	1.36	10/16
+noteach	0.4776	0.0547	-0.41	7/16
+vs_E	0.4921	0.0935	-0.08	10/16
+stats	 symbol 0.826 art_tokens/kt 5.8 art_openings/kt 1.09 tokens_per_opening 5.3
