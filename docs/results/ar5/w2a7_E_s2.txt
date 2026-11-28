@@ -1,0 +1,4 @@
+== runs8/w2a7_E_s2 (-S 64 -regrow 8 -nact 7 -season 300 -view 1 -signals 1 -art 96 -art_pay 150 -art_rest 20 -art_lock 10 -art_era 1000 -art_glyphs 8 -art_code 1 -art_kmax 2)
+knowledge	2000	 symbol 0.826 art_tokens/kt 47.5 art_openings/kt 9.93 art_energy/kt 1489.2 tokens_per_opening 4.8 0:44594/9424/30197 100:24242/5036/16500 200:16654/3440/11350 300:11813/2438/8047 400:9025/1873/6120 old_era:11809/2501/7874
+vs_own	1000	0.8019	0.0513	5.88	13/16
+w2a7_E_s2:2000:0
