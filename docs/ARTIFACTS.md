@@ -556,3 +556,5 @@ run's time.
 
 The seed-3 runs will start with v31. Scoring (build/rel/oee_w) is the same binary. Results are the ones v30 would
 have produced.
+- A further 12–18% is available: `-mprefer-vector-width=512` for life.cpp gives identical tournament output, against
+  the 256-bit default. It is held back until AR5 is scored, so that build/rel stays the binary the runs use.
