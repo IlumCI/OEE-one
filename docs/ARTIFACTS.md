@@ -440,3 +440,30 @@ Screen 2 (docs/results/ar_cal/ar5_screen2.txt; kmax 2):
 - Its viability from random founders is under test: E seeds 1–3, 1,000 epochs, runs8/w2a6_E_s*, binary
   runs8/oee_w_v30, guard over any window.
 
+### AR5 calibration step 2: viability passed; knowledge still pays against evolution alone (2026-11-28; docs/results/ar_cal/ar5_step2.txt)
+
+Set: regrow 8, kmax 2, pay 150 (with 96 artifacts, rest 20, lockout 10, eras of 1,000 ticks, 8 glyphs,
+`-art_code 1`).
+
+- **Viable from random founders.** The guard over any 200 epochs gives E seeds 1–3 a maximum of 2, 0 and 0
+  reseeds. Canonical populations are 54–139.
+- **The evolved non-learning champion (E seed 1, epoch 1,000), against itself with A modified, 16 seeds × 2:**
+
+| A | Share (t) | Population | Speaks | Tokens per life | Tokens per opening | Artifact energy per thousand agent-ticks |
+|---|---|---|---|---|---|---|
+| intact | 0.50 | 2.77M | 0.85 | 25.2 | 4.6 | 1,633 |
+| artguess | 0.57 (1.6) | 3.01M | 0.86 | 26.7 | 4.8 | 1,670 |
+| artmemo | **0.83 (15.3)** | 3.90M | 0.84 | 23.4 | 2.0 | 3,442 |
+| artmemol | 0.87 (19.6) | 3.97M | 0.83 | 21.6 | 1.4 | 4,590 |
+| artoracle | 0.89 (21.3) | 3.98M | 0.83 | 21.9 | 1.4 | 4,699 |
+
+- **Evolution alone found the best non-learning strategy:** speak at every chance. Always guessing adds only 0.57
+  (t 1.6). This is the alternative that learning must beat.
+- **A perfect individual learner still beats it** (0.83, t 15). Knowing the law beats it 0.89.
+- Every condition of the design rule now holds against the evolved control:
+  - **valuable** (0.89);
+  - **learnable by individuals** (0.83);
+  - **exercised** (about 25 tokens per life);
+  - **non-substitutable** (the best substitute is already in place and loses to knowledge).
+- AR5 is calibrated. The next step is the owner's decision on the runs.
+

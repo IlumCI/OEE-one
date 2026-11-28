@@ -1,0 +1,9 @@
+# AR5 step 2 follow-up (2026-11-28): the evolved E seed 1 champion (epoch 1000) against itself, A modified, 16 seeds x 2
+w2a6_E_s1:1000:2
+w2a6_E_s2:1000:0
+w2a6_E_s3:1000:0
+E s1 e1000 none: pop 2.77M symbol 0.848 tok/life 25.2 open 10.88 en 1632.6 tpo 4.6 share 0.5000 t 0.00
+E s1 e1000 artguess: pop 3.01M symbol 0.859 tok/life 26.7 open 11.13 en 1670.1 tpo 4.8 share 0.5655 t 1.55
+E s1 e1000 artmemo: pop 3.90M symbol 0.840 tok/life 23.4 open 22.94 en 3441.5 tpo 2.0 share 0.8276 t 15.34
+E s1 e1000 artmemol: pop 3.97M symbol 0.827 tok/life 21.6 open 30.60 en 4589.5 tpo 1.4 share 0.8686 t 19.56
+E s1 e1000 artoracle: pop 3.98M symbol 0.831 tok/life 21.9 open 31.33 en 4699.1 tpo 1.4 share 0.8900 t 21.33
