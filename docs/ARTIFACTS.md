@@ -259,7 +259,7 @@ memory 0.59–0.75, lineage memory 0.69–0.84.
 Decision after the calibration, by the owner: the culture runs (E, LT, LT plus observation; 6 seeds) or a change of
 world.
 
-### Calibration (b) result (2026-11-28 05:40 UTC): teaching does not accumulate the law
+### Calibration (b) result (2026-11-28 05:23 UTC): teaching does not accumulate the law
 
 W2 champion, eras of 4,000 ticks, games of 8,000 ticks, 16 seeds × 2, the LT learner:
 
