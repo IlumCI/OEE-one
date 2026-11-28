@@ -297,6 +297,12 @@ W2 champion, eras of 4,000 ticks, games of 8,000 ticks, 16 seeds × 2, the LT le
   - it beats the W2 champion (0.65, t 2.6).
 - So 1,000 epochs bring about 30% more artifact use. An agent still speaks to a ready artifact about 3–4 times per
   life, which is too few to learn the law.
+- **E seed 3 is viable too** (0 reseeds in 1,000 epochs). All three E seeds pass.
+- **LT seed 1 at epoch 500 does not use what it has.** Against itself it gets 5.2 tokens per opening (E seed 1 at
+  epoch 500: 5.8) and 1.23 openings per thousand agent-ticks (E: 1.18). But `-ablate freeze` costs nothing (0.49,
+  t −0.15), and neither does `-ablate noteach` (0.50, t −0.02).
+- In the food-kinds world, freezing was fatal by epoch 2,000. Here, after 500 epochs, the lineage neither depends on
+  learning nor on teaching: there is too little to learn (rule 3 below). The same test is repeated at epoch 1,000.
 
 ## A design rule from LL1c, SL1 V and this calibration (2026-11-28)
 
