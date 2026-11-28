@@ -11,6 +11,7 @@ g="$a/archive/egg_$e.bin";echo "== $a ($W)"
 if echo "$W"|grep -q -- '-life 1';then
   echo -e "freeze\t$e\t$(t "$g" "$g" -ablate freeze)"
   echo "$W"|grep -q -- '-life_rew 1'&&echo -e "norew\t$e\t$(t "$g" "$g" -ablate norew)"
+  echo "$W"|grep -q -- '-life_teach 1'&&echo -e "noteach\t$e\t$(t "$g" "$g" -ablate noteach)"
   [ -n "$er" ]&&echo -e "vs_E\t$er\t$(t "$g" "$er/archive/egg_$e.bin" -life_b 0)"
   echo -e "curve_frozen\t$e\t$(cv "$g" "$g" -ablate freeze)"
 fi
