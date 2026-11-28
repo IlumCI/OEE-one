@@ -16,11 +16,19 @@ void Life::copy_row(int rd,const Life& s,int rs){const std::size_t n=(std::size_
   std::copy(s.W.begin()+rs*n,s.W.begin()+(rs+1)*n,W.begin()+rd*n);std::copy(s.e.begin()+rs*n,s.e.begin()+(rs+1)*n,e.begin()+rd*n);b[rd]=s.b[rs];}
 namespace {
 inline int xin(const std::int8_t* h,const std::int8_t* x,int j,int D){return j<D?h[j]:j==D?64:x[j-D-1];}
+constexpr int kJ=1024;  // inputs gathered into one array (branch-free loops the compiler vectorises); larger J: scalar path
+inline void gather(std::int32_t* X,const std::int8_t* h,const std::int8_t* x,int D,int J){for(int j=0;j<D;++j)X[j]=h[j];X[D]=64;for(int j=D+1;j<J;++j)X[j]=x[j-D-1];}
+inline std::int64_t dot(const std::int32_t* __restrict w,const std::int32_t* __restrict X,int a,int b){std::int64_t s=0;for(int j=a;j<b;++j)s+=(std::int64_t)w[j]*X[j];return s;}
+// trace and synapse update over inputs a..b-1 at shift s (the loop of learn8; dm = d*m, the same product as d*t*m)
+inline void upd(std::int32_t* __restrict w,std::int32_t* __restrict t,const std::int32_t* __restrict X,int a,int b,std::int64_t lam,std::int64_t g,std::int64_t dm,int s){
+  for(int j=a;j<b;++j){std::int64_t tr=(((std::int64_t)t[j]*lam)>>8)+((g*X[j])>>7);tr=std::min<std::int64_t>(std::max<std::int64_t>(tr,-(1LL<<30)),1LL<<30);t[j]=(std::int32_t)tr;
+    std::int64_t nw=(std::int64_t)w[j]+((dm*tr)>>s);nw=std::min<std::int64_t>(std::max<std::int64_t>(nw,-(1LL<<28)),1LL<<28);w[j]=(std::int32_t)nw;}}
 }
 void Life::apply(const LifeCfg& c,std::uint32_t msk,int r,const std::int8_t* h,const std::int8_t* x,std::int8_t* l) const{
   if(!c.on)return;
-  for(int a=0;a<nl;++a){if(a<na&&!((msk>>a)&1u))continue;const std::int32_t* w=&W[((std::size_t)r*nl+a)*J];std::int64_t s=0;
-    for(int j=a<na||c.symh?0:D;j<J;++j)s+=(std::int64_t)w[j]*xin(h,x,j,D);
+  std::int32_t X[kJ];const bool v=J<=kJ;if(v)gather(X,h,x,D,J);
+  for(int a=0;a<nl;++a){if(a<na&&!((msk>>a)&1u))continue;const std::int32_t* w=&W[((std::size_t)r*nl+a)*J];std::int64_t s=0;const int j0=a<na||c.symh?0:D;
+    if(v)s=dot(w,X,j0,J);else for(int j=j0;j<J;++j)s+=(std::int64_t)w[j]*xin(h,x,j,D);
     const int li=a<na?a:so+a-na;l[li]=(std::int8_t)std::clamp<std::int64_t>((std::int64_t)l[li]+(s>>16),-128,127);}}
 // Units: g = 1[a chosen] - pi_a in Q15; trace e += g*x*256 per tick (x the input, int8); delta = dE - baseline in Q8
 // (energy units * 256); m in Q7 (128 = 1). dW = delta*e*m >> (eta + 15), i.e. W += 2^-eta * m * delta(energy) * e.
@@ -33,11 +41,14 @@ void Life::learn8(const LifeCfg& c,std::uint32_t msk,int r,const std::int8_t* h,
   const std::int64_t d=r8-b[r];b[r]+=(std::int32_t)(d>>c.beta);
   const std::int64_t m=c.mod?(std::int64_t)l[c.mlog]+128:128;
   std::int64_t Ss=0;if(nl>na)for(int k=0;k<4;++k)Ss+=E[(int)l[so+k]+128];
+  std::int32_t X[kJ];const bool v=J<=kJ;if(v)gather(X,h,x,D,J);
   for(int k=0;k<nl;++k){std::int64_t g;
     if(k<na){if(!((msk>>k)&1u))continue;g=((k==a?S:0)-E[(int)l[k]+128])*32768/S;}
     else g=Ss>0&&sg>=0?((k-na==sg?Ss:0)-E[(int)l[so+k-na]+128])*32768/Ss:0;
     std::int32_t* w=&W[((std::size_t)r*nl+k)*J];std::int32_t* t=&e[((std::size_t)r*nl+k)*J];const int sh=(k<na||c.seta<0?c.eta:c.seta)+15,shx=c.xeta>=0?c.xeta+15:sh;
-    for(int j=k<na||c.symh?0:D;j<J;++j){const std::int64_t tr=((std::int64_t)t[j]*c.lam>>8)+((g*xin(h,x,j,D))>>7);t[j]=(std::int32_t)std::clamp<std::int64_t>(tr,-(1LL<<30),1LL<<30);
+    const int j0=k<na||c.symh?0:D;
+    if(v){upd(w,t,X,j0,D+1,c.lam,g,d*m,sh);upd(w,t,X,D+1,J,c.lam,g,d*m,shx);continue;}
+    for(int j=j0;j<J;++j){const std::int64_t tr=((std::int64_t)t[j]*c.lam>>8)+((g*xin(h,x,j,D))>>7);t[j]=(std::int32_t)std::clamp<std::int64_t>(tr,-(1LL<<30),1LL<<30);
       const std::int64_t nw=(std::int64_t)w[j]+((d*t[j]*m)>>(j>D?shx:sh));w[j]=(std::int32_t)std::clamp<std::int64_t>(nw,-(1LL<<28),1LL<<28);}}}
 void Life::learn_obs(const LifeCfg& c,std::uint32_t msk,int r,const std::int8_t* h,const std::int8_t* x,const std::int8_t* l,int a,std::int64_t d){
   if(!c.on||a<0||a>=na||!((msk>>a)&1u))return;
