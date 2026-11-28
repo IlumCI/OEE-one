@@ -374,3 +374,35 @@ Calibration protocol (no long runs before the owner sees it):
 2. **Viability from random founders** for the chosen set: E arm, seeds 1–3, 1,000 epochs. Guard: no more than 10
    reseeds in any 200 epochs.
 3. Then the owner decides on runs (E, L, LT; 6 seeds), with pass and kill written before them.
+
+### AR5 calibration step 1: parameter screen (2026-11-28; docs/results/ar_cal/ar5_screen.txt)
+
+W2 champion against itself, A modified, 16 seeds × 2. Base: 96 artifacts per 1,024 cells, rest 20, lockout 10, eras
+of 1,000 ticks, 8 glyphs, `-art_code 1`.
+
+| Set (regrow / kmax / pay) | Share of A: guess / own memory / lineage memory / oracle | Population (agent-ticks): intact / guess / own memory | Tokens per opening: guess / own memory / oracle | Tokens per life, own memory |
+|---|---|---|---|---|
+| 4 / 1 / 100 | 0.92 / 0.997 / 0.999 / 0.9997 | 0.44M / 1.29M / 3.45M | 3.0 / 1.5 / 1.0 | 16.6 |
+| 4 / 1 / 200 | 0.93 / 0.97 / 0.999 / 0.999 | 0.98M / 3.37M / 3.69M | 3.0 / 1.5 / 1.0 | 16.2 |
+| **4 / 2 / 100** | **0.77 / 0.998 / 0.9998 / 0.9996** | **0.38M / 0.60M / 2.92M** | **4.7 / 2.3 / 1.4** | **22.1** |
+| 4 / 2 / 200 | 0.92 / 0.997 / 0.9998 / 0.999 | 0.54M / 2.31M / 3.58M | 4.8 / 2.3 / 1.4 | 21.4 |
+| 2 / 1 / 100 | 0.85 / 0.999 / 0.9998 / 0.9997 | 0.38M / 0.78M / 3.02M | 3.0 / 1.5 / 1.0 | 17.2 |
+| 2 / 1 / 200 | 0.98 / 0.97 / 0.999 / 0.999 | 0.62M / 3.13M / 3.63M | 3.0 / 1.5 / 1.0 | 16.5 |
+| 2 / 2 / 100 | 0.83 / 0.999 / 0.9999 / 0.9997 | 0.34M / 0.48M / 1.96M | 4.6 / 2.2 / 1.4 | 23.4 |
+| 2 / 2 / 200 | 0.91 / 0.996 / 0.9996 / 0.9998 | 0.43M / 1.43M / 3.30M | 4.7 / 2.3 / 1.4 | 21.9 |
+
+- Every set meets the screen criteria:
+  - **valuable:** oracle at least 0.999;
+  - **learnable by individuals:** own memory at least 0.97;
+  - **exercised:** an always-speaking agent tries 16–23 tokens per life, against about 3 in AR1;
+  - **non-substitutable:** artifact energy of a knowing agent is about 2.8–5.8 per agent-tick, above its upkeep.
+- The non-learning alternative is to speak at every ready artifact (artguess). Evolution alone can reach it; E
+  lineages in AR1 tripled their speaking rate.
+- So the set is chosen where guessing is weakest against knowledge: **regrow 4, kmax 2, pay 100.**
+  - guess 0.77 against own memory 0.998;
+  - own memory reaches a population 4.9 times guessing's;
+  - tokens per opening 4.7 when guessing, 2.3 with own memory.
+- Its free-food margin is higher than at regrow 2.
+
+Step 2 (viability from random founders, E arm, seeds 1–3, 1,000 epochs) uses binary runs8/oee_w_v30.
+
