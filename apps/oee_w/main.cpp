@@ -207,7 +207,7 @@ constexpr std::int64_t kCkMagic=0x3130574b43454f4fLL;  // "OEECKW01"
 int main(int argc,char** argv){
   int epochs=100,P=128,H=200,threads=4,layers=2,D=64,sig=4,archive_every=50,seeds=5,ticks=2000,Kmax=1,split_at=-1,hist_frac=0,hist_founders=8,ck_every=10,climate_every=5,climate_ticks=1000,stats=0,curve=0,skip=-1,split_age=0,null_es=0,hist_pair=0,gen=0,arena_progs=0,solo=0,swap_at=0,swap_win=500,cat_every=0;
   double prog_cont=0.7,cat_keep=0.1,stress=0;
-  double alpha_floor=0;std::uint64_t seed=1,seed0=1000;std::string logf,archive,ta,tb,ckf,ablate,arena_ck,probef,maskf,mask_mode="zero";int probe_games=2,obs_norm=0,ef=0,life_b=-1,rew_b=-1;w::LifeCfg lcfg;w::WParams wp;int founders=16;
+  double alpha_floor=0;std::uint64_t seed=1,seed0=1000;std::string logf,archive,ta,tb,ckf,ablate,arena_ck,probef,maskf,mask_mode="zero";int probe_games=2,obs_norm=0,ef=0,life_b=-1,rew_b=-1,teach_b=-1;w::LifeCfg lcfg;w::WParams wp;int founders=16;
   for(int a=1;a<argc;a+=2){const char* s=argv[a];const char* v=a+1<argc?argv[a+1]:"";
     if(!std::strcmp(s,"-epochs"))epochs=std::atoi(v);else if(!std::strcmp(s,"-pairs"))P=std::atoi(v);else if(!std::strcmp(s,"-H"))H=std::atoi(v);
     else if(!std::strcmp(s,"-L"))wp.L=std::atoi(v);else if(!std::strcmp(s,"-S"))wp.S=std::atoi(v);else if(!std::strcmp(s,"-founders"))founders=std::atoi(v);
@@ -221,7 +221,7 @@ int main(int argc,char** argv){
     else if(!std::strcmp(s,"-hist_frac"))hist_frac=std::atoi(v);else if(!std::strcmp(s,"-hist_founders"))hist_founders=std::atoi(v);
     else if(!std::strcmp(s,"-probe"))probef=v;else if(!std::strcmp(s,"-probe_games"))probe_games=std::atoi(v);else if(!std::strcmp(s,"-mask"))maskf=v;else if(!std::strcmp(s,"-mask_mode"))mask_mode=v;else if(!std::strcmp(s,"-obs_norm"))obs_norm=std::atoi(v);else if(!std::strcmp(s,"-ef"))ef=std::atoi(v);
     else if(!std::strcmp(s,"-life"))lcfg.on=std::atoi(v);else if(!std::strcmp(s,"-life_repro"))lcfg.repro=std::atoi(v);else if(!std::strcmp(s,"-life_mod"))lcfg.mod=std::atoi(v);
-    else if(!std::strcmp(s,"-life_eta"))lcfg.eta=std::atoi(v);else if(!std::strcmp(s,"-life_lam"))lcfg.lam=std::atoi(v);else if(!std::strcmp(s,"-life_beta"))lcfg.beta=std::atoi(v);else if(!std::strcmp(s,"-life_b"))life_b=std::atoi(v);else if(!std::strcmp(s,"-rew_b"))rew_b=std::atoi(v);
+    else if(!std::strcmp(s,"-life_eta"))lcfg.eta=std::atoi(v);else if(!std::strcmp(s,"-life_lam"))lcfg.lam=std::atoi(v);else if(!std::strcmp(s,"-life_beta"))lcfg.beta=std::atoi(v);else if(!std::strcmp(s,"-life_b"))life_b=std::atoi(v);else if(!std::strcmp(s,"-rew_b"))rew_b=std::atoi(v);else if(!std::strcmp(s,"-teach_b"))teach_b=std::atoi(v);
     else if(!std::strcmp(s,"-life_sym"))lcfg.sym=std::atoi(v);else if(!std::strcmp(s,"-life_seta"))lcfg.seta=std::atoi(v);else if(!std::strcmp(s,"-life_symh"))lcfg.symh=std::atoi(v);else if(!std::strcmp(s,"-life_xeta"))lcfg.xeta=std::atoi(v);else if(!std::strcmp(s,"-life_in")){if(std::sscanf(v,"%d,%d",&lcfg.in0,&lcfg.in1)!=2){std::fprintf(stderr,"-life_in A,B\n");return 2;}}
     else if(!std::strcmp(s,"-art_code"))wp.art_code=std::atoi(v);else if(!std::strcmp(s,"-kinds"))wp.kinds=std::atoi(v);else if(!std::strcmp(s,"-kind_era"))wp.kind_era=std::atoi(v);else if(!std::strcmp(s,"-kind_tox"))wp.kind_tox=std::atoi(v);else if(!std::strcmp(s,"-kind_bad"))wp.kind_bad=std::atoi(v);
     else if(!std::strcmp(s,"-life_rew"))lcfg.rew=std::atoi(v);else if(!std::strcmp(s,"-life_teach"))lcfg.teach=std::atoi(v);else if(!std::strcmp(s,"-life_obs"))lcfg.obs=std::atoi(v);
@@ -311,7 +311,8 @@ int main(int argc,char** argv){
       std::vector<const Norm*> nmv(q.K,nullptr);nmv[0]=sw?(hB?&nB:nullptr):(hA?&nA:nullptr);if(!solo)nmv[1]=sw?(hA?&nA:nullptr):(hB?&nB:nullptr);
       w::Life lfg;std::vector<w::LifeCfg> lcv(q.K,lcfg);if(lcfg.on){lfg.init(q.K*q.S,bc.D,q.nact,lcfg.sym?4:0,lcfg.in1-lcfg.in0,W.sig_off());if(!solo||sw==0){if(ablate=="freeze")lcv[sa].on=0;if(ablate=="noteach")lcv[sa].teach=0;if(ablate=="noobs")lcv[sa].obs=0;if(ablate=="norew")lcv[sa].rew=0;}  // A without learning / teaching / observing
         if(life_b==0)for(int k=0;k<q.K;++k)if(solo?sw==1:k!=sa)lcv[k].on=0;  // -life_b 0: B learns nothing (a genome evolved without learning)
-        if(rew_b==0)for(int k=0;k<q.K;++k)if(solo?sw==1:k!=sa)lcv[k].rew=0;}  // -rew_b 0: B learns from energy only (a genome evolved without -life_rew)
+        if(rew_b==0)for(int k=0;k<q.K;++k)if(solo?sw==1:k!=sa)lcv[k].rew=0;  // -rew_b 0: B learns from energy only (a genome evolved without -life_rew)
+        if(teach_b==0)for(int k=0;k<q.K;++k)if(solo?sw==1:k!=sa)lcv[k].teach=0;}  // -teach_b 0: B does not teach (a genome evolved without -life_teach)
       Probe pr;pr.k=sa;pr.game=gi;if(!solo||sw==0)pr.mask=msk;pr.shuf=mask_mode=="shuffle";pr.rec=!probef.empty()&&gi<probe_games;one[0].probe=pr.rec;
       int step=curve>0?std::min(curve,climate_ticks):climate_ticks;long la=-1,lb=-1;if(ablate=="wipe")step=std::min(step,100);  // wipe A's machines every 100 ticks
       long sp0=-1,sp1=-1,sp2=-1;  // swap test: integrated biomass at swap_at - swap_win, swap_at, swap_at + swap_win

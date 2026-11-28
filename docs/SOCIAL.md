@@ -137,3 +137,42 @@ Kill: giving costs nothing in every seed, or the index is at the null everywhere
   - SL1 O: `-life 1 <arm A> -life_obs 1`.
   - IN1: `-life 1 <arm A> -give 1 -nact 8`.
 
+
+## SL1 V in the LL1c world (protocol fixed 2026-11-28 01:42 UTC, before the runs)
+
+Chosen when the owner's decision timer expired with the recommended option applied, after the LL1c replication
+(docs/LIFE.md).
+- The gate is met: learning is used, and freezing it costs fitness (12 of 12 learning runs).
+- The measured cause of learning not paying is the hiding effect. Each newborn relearns from zero, the genome leans
+  on learning, and innate competence decays: frozen learners win 0.02–0.22 against E genomes.
+- Teaching at birth attacks that cost. A newborn starts with half its parent's learned synapses (Life::inherit), so
+  the lineage carries what it has learned across generations (vertical cultural transmission).
+
+Runs:
+- **SV:** the LL1c L arm plus `-life_teach 1`, seeds 1–6 (runs8/w1k_SV_s{1..6}, binary runs8/oee_w_v29).
+- **Controls:** the existing LL1c runs of the same seeds, E (no learning) and L (learning without teaching).
+
+Measures (final champions, fresh held-out arenas, 16 seeds × 2; tools/w/ll1c_eval.sh):
+1. **Teaching is used:** `-ablate noteach` (A's newborns start at zero) against an intact copy.
+2. **SV beats evolution alone:** against the E champion of the same seed (B does not learn).
+3. **SV beats learning without teaching:** against the L champion of the same seed (B does not teach,
+   `-teach_b 0`).
+4. **Learning used:** freeze, as LL1c.
+5. **Newborns:** the toxic share of eats at ages 0–99, against L. Teaching should lower it.
+6. **Hiding:** SV frozen against E, as docs/results/ll1c/hiding.txt.
+
+Pass:
+- teaching is used (noteach t < −3) in at least 4 of 6 seeds;
+- and SV beats E (t > 2) in at least 4 of 6.
+
+Secondary:
+- SV beats L (t > 2) in at least 4 of 6;
+- the pooled share against E is above 0.5 (t > 2 over seeds).
+
+Kill: noteach costs nothing (|t| < 2) in every seed, or SV beats E in at most 2 of 6. Then transmission of learned
+synapses does not turn learning into a lineage advantage.
+
+Viability: reported, not an exclusion (as LL1c).
+
+Smoke check before the runs (2 arenas, not a result): the LL1c L seed 1 champion with teaching switched on beats its
+own copy without it, 0.84.
