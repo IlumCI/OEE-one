@@ -303,6 +303,21 @@ W2 champion, eras of 4,000 ticks, games of 8,000 ticks, 16 seeds × 2, the LT le
   t −0.15), and neither does `-ablate noteach` (0.50, t −0.02).
 - In the food-kinds world, freezing was fatal by epoch 2,000. Here, after 500 epochs, the lineage neither depends on
   learning nor on teaching: there is too little to learn (rule 3 below). The same test is repeated at epoch 1,000.
+- **At epoch 1,000 (LT seed 1; docs/results/ar_cal/w2ar_LT_s1.txt) the picture is the same:**
+  - freeze 0.59 (t +1.4): learning not used;
+  - noteach 0.48 (t −0.4): teaching not used;
+  - against the E seed 1 champion at epoch 1,000: 0.49 (t −0.1);
+  - 5.3 tokens per opening, random level.
+- LT seeds 2 and 3 are viable so far (0–1 reseeds by epoch 720) and continue to epoch 1,000 for the record.
+
+**Calibration verdict (2026-11-28 07:40 UTC).**
+- The artifacts world is viable: E 0, 0, 0 reseeds in 1,000 epochs; LT 0 so far.
+- But it does not exercise knowledge enough for learning or culture to start. No learner variant moved tokens per
+  opening off the random level, with a fixed genome or after 1,000 epochs of evolution, and learning and teaching
+  are not used.
+- Culture runs in this world would be expected to fail for the measured reason (rule 3). So the decision goes back
+  to the owner: AR5 (locked food), or another direction.
+
 
 ## A design rule from LL1c, SL1 V and this calibration (2026-11-28)
 
