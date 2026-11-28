@@ -344,3 +344,33 @@ Applied to the worlds tested:
 - Related benchmarks with hidden rules redrawn per episode: Alchemy (Wang et al. 2021, arXiv:2102.02926), where
   meta-learning agents failed; XLand-MiniGrid (Nikulin et al., arXiv:2312.12044), hidden production rules.
 
+
+## AR5: locked food (design and calibration protocol fixed 2026-11-28 09:10 UTC, before building)
+
+Chosen when the owner's decision timer expired with the recommended option applied. The aim is a world that meets
+all three conditions of the design rule. The natural precedent is puzzle-box foraging: in wild great tits, a
+door-sliding solution to a food box spread socially and persisted as a local tradition (Aplin et al. 2015, Nature
+518:538).
+
+Design: the artifacts world (AR1) with food locked away.
+- **Free food is scarce:** low `-regrow`. Most energy comes from opening artifacts, so the knowledge cannot be
+  replaced (rule 2).
+- **Artifacts are many and soon ready again:** high `-art`, short `-art_rest`. A forager meets ready artifacts
+  constantly, so knowledge is exercised (rule 3).
+- **The key law is redrawn each era,** as in AR1. Knowing it pays (rule 1).
+- **Naive agents must survive:**
+  - keys are short, with new `-art_kmax 1|2` capping key length (default 3, unchanged);
+  - the lockout after a wrong token is short (`-art_lock`).
+  - A random speaker then opens a fraction of what it tries.
+- There is no new channel. Agents see glyphs and lock states (`-art_code 1`) and speak symbols, as in AR1.
+
+Calibration protocol (no long runs before the owner sees it):
+1. **Parameter screen with the W2 champion** (runs8/w2_sig_s1 epoch 3000; 16 seeds × 2). For each candidate
+   set, the value-of-information ladder (intact, artguess, artmemo, artmemol, artoracle):
+   - **exercised:** tokens to ready artifacts per life (tokens per thousand agent-ticks × 0.5) at least 20;
+   - **valuable:** oracle share at least 0.8;
+   - **learnable by individuals:** artmemo share at least 0.7, so individual learning can get it;
+   - **non-substitutable:** artifact energy at least half of a knowing agent's intake.
+2. **Viability from random founders** for the chosen set: E arm, seeds 1–3, 1,000 epochs. Guard: no more than 10
+   reseeds in any 200 epochs.
+3. Then the owner decides on runs (E, L, LT; 6 seeds), with pass and kill written before them.

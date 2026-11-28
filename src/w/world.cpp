@@ -74,7 +74,8 @@ void World::art_key(int g,long era,int* key,int& k) const{
   if(p.art_family){const std::uint64_t h=mix(mix(p.seed^0xa4f0ULL)+(std::uint64_t)g),e=mix(mix(p.seed^0xe7a0ULL)+(std::uint64_t)era);  // base table, era shift and order
     k=(int)(h%7)<4?1:(int)(h%7)<6?2:3;const int sh=(int)(e%3),rev=(int)((e>>8)&1);for(int i=0;i<k;++i)key[rev?k-1-i:i]=1+((int)((h>>(8+2*i))%3)+sh)%3;}
   else{const std::uint64_t h=mix(mix(p.seed^0xa4f0ULL)+((std::uint64_t)era<<16)+(std::uint64_t)g);k=(int)(h%7)<4?1:(int)(h%7)<6?2:3;
-    for(int i=0;i<k;++i)key[i]=1+(int)((h>>(8+2*i))%3);}}
+    for(int i=0;i<k;++i)key[i]=1+(int)((h>>(8+2*i))%3);}
+  if(p.art_kmax<3)k=std::min(k,std::max(1,p.art_kmax));}  // AR5: short keys
 
 void World::set_climate(std::uint64_t salt){
   if(p.season<=0)return;const std::uint64_t h=mix(mix(p.seed^0xc11eULL)+salt);
@@ -355,6 +356,7 @@ constexpr std::int64_t kExt13=0x4445564157LL;  // W4g homesteads (kExt12 + home_
 constexpr std::int64_t kExt14=0x4545564157LL;  // IN1 give (give, give_amt)
 constexpr std::int64_t kExt15=0x4645564157LL;  // AR1 artifacts (params, glyphs, locks, rest)
 constexpr std::int64_t kExt16=0x4745564157LL;  // art_code; LL1c food kinds (params, kind map)
+constexpr std::int64_t kExt17=0x4845564157LL;  // AR5 art_kmax
 template<class T> void wv(std::FILE* f,const std::vector<T>& v){wr(f,(std::int64_t)v.size());if(!v.empty())std::fwrite(v.data(),sizeof(T),v.size(),f);}
 template<class T> bool rv(std::FILE* f,std::vector<T>& v){std::int64_t n=0;if(!rd(f,n)||n<0||n>(1<<26))return false;v.resize((std::size_t)n);
   return n==0||std::fread(v.data(),sizeof(T),(std::size_t)n,f)==(std::size_t)n;}
@@ -378,6 +380,7 @@ void World::save(std::FILE* f) const{
   if(p.give){wr(f,kExt14);wr(f,p.give);wr(f,p.give_amt);}
   if(p.art>0){wr(f,kExt15);for(std::int64_t x:{p.art,p.art_glyphs,p.art_pay,p.art_rest,p.art_era,p.art_family,p.art_lock})wr(f,x);wv(f,aglyph);wv(f,aprog);wv(f,arest);}
   if(p.art_code||p.kinds>0){wr(f,kExt16);for(std::int64_t x:{p.art_code,p.kinds,p.kind_era,p.kind_tox,p.kind_bad})wr(f,x);wv(f,fkind);}
+  if(p.art_kmax!=3){wr(f,kExt17);wr(f,(std::int64_t)p.art_kmax);}
   wv(f,res);wv(f,fert);wv(f,racc);wv(f,occ);wr(f,(std::int64_t)ag.size());
   for(auto& a:ag){const std::int64_t r[]={a.x,a.y,a.dir,a.energy,a.age,a.lineage,a.alive,(std::int64_t)a.id};for(auto x:r)wr(f,x);}
   if(ext())for(auto& a:ag){wr(f,a.sig);}
@@ -440,6 +443,10 @@ bool World::load(std::FILE* f){
   {std::int64_t m=0;const long pos=std::ftell(f);if(!rd(f,m))return false;
     if(m==kExt16){std::int64_t x[5];for(auto& y:x)if(!rd(f,y))return false;if(!rv(f,fkind))return false;p.art_code=(int)x[0];p.kinds=(int)x[1];p.kind_era=(int)x[2];p.kind_tox=(int)x[3];p.kind_bad=(int)x[4];}
     else if(std::fseek(f,pos,SEEK_SET)!=0)return false;}  // no art_code / kinds block
+  p.art_kmax=3;
+  {std::int64_t m=0;const long pos=std::ftell(f);if(!rd(f,m))return false;
+    if(m==kExt17){std::int64_t x=3;if(!rd(f,x))return false;p.art_kmax=(int)x;}
+    else if(std::fseek(f,pos,SEEK_SET)!=0)return false;}  // no AR5 block
   if(!rv(f,res)||!rv(f,fert)||!rv(f,racc)||!rv(f,occ)){return false;}std::int64_t n=0;if(!rd(f,n)||n<0||n>(1<<24)){return false;}ag.assign((std::size_t)n,Agent{});
   for(auto& a:ag){std::int64_t r[8];for(auto& x:r)if(!rd(f,x))return false;
     a.x=(int)r[0];a.y=(int)r[1];a.dir=(int)r[2];a.energy=(int)r[3];a.age=(int)r[4];a.lineage=(int)r[5];a.alive=r[6]!=0;a.id=(std::uint64_t)r[7];a.sig=0;}

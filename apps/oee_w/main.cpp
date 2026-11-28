@@ -223,7 +223,7 @@ int main(int argc,char** argv){
     else if(!std::strcmp(s,"-life"))lcfg.on=std::atoi(v);else if(!std::strcmp(s,"-life_repro"))lcfg.repro=std::atoi(v);else if(!std::strcmp(s,"-life_mod"))lcfg.mod=std::atoi(v);
     else if(!std::strcmp(s,"-life_eta"))lcfg.eta=std::atoi(v);else if(!std::strcmp(s,"-life_lam"))lcfg.lam=std::atoi(v);else if(!std::strcmp(s,"-life_beta"))lcfg.beta=std::atoi(v);else if(!std::strcmp(s,"-life_b"))life_b=std::atoi(v);else if(!std::strcmp(s,"-rew_b"))rew_b=std::atoi(v);else if(!std::strcmp(s,"-teach_b"))teach_b=std::atoi(v);
     else if(!std::strcmp(s,"-life_sym"))lcfg.sym=std::atoi(v);else if(!std::strcmp(s,"-life_seta"))lcfg.seta=std::atoi(v);else if(!std::strcmp(s,"-life_symh"))lcfg.symh=std::atoi(v);else if(!std::strcmp(s,"-life_xeta"))lcfg.xeta=std::atoi(v);else if(!std::strcmp(s,"-life_in")){if(std::sscanf(v,"%d,%d",&lcfg.in0,&lcfg.in1)!=2){std::fprintf(stderr,"-life_in A,B\n");return 2;}}
-    else if(!std::strcmp(s,"-art_code"))wp.art_code=std::atoi(v);else if(!std::strcmp(s,"-kinds"))wp.kinds=std::atoi(v);else if(!std::strcmp(s,"-kind_era"))wp.kind_era=std::atoi(v);else if(!std::strcmp(s,"-kind_tox"))wp.kind_tox=std::atoi(v);else if(!std::strcmp(s,"-kind_bad"))wp.kind_bad=std::atoi(v);
+    else if(!std::strcmp(s,"-art_code"))wp.art_code=std::atoi(v);else if(!std::strcmp(s,"-kinds"))wp.kinds=std::atoi(v);else if(!std::strcmp(s,"-kind_era"))wp.kind_era=std::atoi(v);else if(!std::strcmp(s,"-kind_tox"))wp.kind_tox=std::atoi(v);else if(!std::strcmp(s,"-kind_bad"))wp.kind_bad=std::atoi(v);else if(!std::strcmp(s,"-art_kmax"))wp.art_kmax=std::atoi(v);
     else if(!std::strcmp(s,"-life_rew"))lcfg.rew=std::atoi(v);else if(!std::strcmp(s,"-life_teach"))lcfg.teach=std::atoi(v);else if(!std::strcmp(s,"-life_tkeep"))lcfg.tkeep=std::atoi(v);else if(!std::strcmp(s,"-life_obs"))lcfg.obs=std::atoi(v);
     else if(!std::strcmp(s,"-give"))wp.give=std::atoi(v);else if(!std::strcmp(s,"-give_amt"))wp.give_amt=std::atoi(v);
     else if(!std::strcmp(s,"-art"))wp.art=std::atoi(v);else if(!std::strcmp(s,"-art_glyphs"))wp.art_glyphs=std::atoi(v);else if(!std::strcmp(s,"-art_pay"))wp.art_pay=std::atoi(v);
@@ -263,6 +263,7 @@ int main(int argc,char** argv){
   if(wp.give&&wp.nact!=(wp.matter?11:8)){std::fprintf(stderr,"-give 1 needs -nact %d (give is action %d)\n",wp.matter?11:8,wp.matter?10:7);return 2;}
   if(wp.art>0&&(!wp.signals||wp.matter||wp.art_glyphs<1||wp.art_glyphs>8||wp.art_era<0||wp.art_rest<0)){std::fprintf(stderr,"-art needs -signals 1 and no matter; 1..8 glyphs\n");return 2;}
   if(wp.kinds&&(wp.kinds<1||wp.kinds>4||wp.signals||wp.matter||wp.kind_era<0||wp.kind_tox<0||wp.kind_bad<0||wp.kind_bad>=wp.kinds)){std::fprintf(stderr,"-kinds 1..4 needs a world without signals or matter\n");return 2;}
+  if(wp.art_kmax!=3&&(!wp.art||wp.art_kmax<1||wp.art_kmax>3)){std::fprintf(stderr,"-art_kmax 1..3 needs -art\n");return 2;}
   if(wp.art_code&&(!wp.art||wp.give||wp.art_code!=1)){std::fprintf(stderr,"-art_code 1 needs -art (and no -give: it uses entries 104..127)\n");return 2;}
   if(lcfg.sym&&(!lcfg.on||!wp.signals||wp.matter||lcfg.sym!=1)){std::fprintf(stderr,"-life_sym 1 needs -life 1, -signals 1 and no matter\n");return 2;}
   if(lcfg.xeta>=0&&(lcfg.in1==lcfg.in0||lcfg.xeta>40)){std::fprintf(stderr,"-life_xeta 0..40 needs -life_in\n");return 2;}
@@ -420,6 +421,7 @@ int main(int argc,char** argv){
   if(lcfg.xeta>=0)fp2.push_back(9991800+lcfg.xeta);
   if(lcfg.tkeep!=1)fp2.push_back(9991900+lcfg.tkeep);
   if(wp.art_code)fp2.push_back(9992100+wp.art_code);
+  if(wp.art_kmax!=3)fp2.push_back(9992600+wp.art_kmax);
   if(wp.kinds){fp2.push_back(9992200+wp.kinds);fp2.push_back(9992300000LL+wp.kind_era);fp2.push_back(9992400+wp.kind_tox);if(wp.kind_bad)fp2.push_back(9992500+wp.kind_bad);}
   if(wp.give){fp2.push_back(9991100+wp.give);fp2.push_back(9991200+wp.give_amt);}
   if(wp.art){for(std::int64_t x:{wp.art,wp.art_glyphs,wp.art_pay,wp.art_rest,wp.art_era,wp.art_family,wp.art_lock})fp2.push_back(9992000000LL+x);}
@@ -486,6 +488,7 @@ int main(int argc,char** argv){
     if(lcfg.sym||lcfg.in1!=lcfg.in0)std::fprintf(lg,"# life_sym %d life_in %d,%d seta %d symh %d xeta %d (plastic symbol head, raw inputs; docs/ARTIFACTS.md, LIFE.md)\n",lcfg.sym,lcfg.in0,lcfg.in1,lcfg.seta,lcfg.symh,lcfg.xeta);
     if(wp.kinds)std::fprintf(lg,"# LL1c kinds %d era %d tox %d bad %d (food kinds whose value changes by era; docs/LIFE.md)\n",wp.kinds,wp.kind_era,wp.kind_tox,wp.kind_bad);
     if(wp.art_code)std::fprintf(lg,"# art_code %d (the lock state in front as one line of 3 x glyphs at 104..)\n",wp.art_code);
+    if(wp.art_kmax!=3)std::fprintf(lg,"# AR5 art_kmax %d (keys of at most %d tokens)\n",wp.art_kmax,wp.art_kmax);
     if(wp.art)std::fprintf(lg,"# AR1 artifacts %d per 1024 cells, glyphs %d, pay %d, rest %d, era %d, family %d, lock %d (docs/ARTIFACTS.md)\n",wp.art,wp.art_glyphs,wp.art_pay,wp.art_rest,wp.art_era,wp.art_family,wp.art_lock);
     if(ef)std::fprintf(lg,"# ef %d (update with error feedback: residual decay 2^-%d, the top alpha of |residual| move)\n",ef,ef);
     if(obs_norm)std::fprintf(lg,"# obs_norm %d (input normalisation: running mean and SD of each observation entry, ARS V2)\n",obs_norm);

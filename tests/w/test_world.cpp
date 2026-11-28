@@ -297,5 +297,11 @@ int main(){
     for(long e=0;e<64;++e){int n=0;for(int i=0;i<4;++i)if(wb.ktox(i,e)){++n;++seen0[i];}one=one&&n==1;}
     bool all=true;for(int i=0;i<4;++i)all=all&&seen0[i]>4;
     CHECK(one&&all,"LL1c kind_bad 1: exactly one kind is toxic in each era, and each kind is the toxic one in some eras");}
+  {// AR5: art_kmax caps the key length; the default (3) leaves every key as AR1 drew it
+    WParams g;g.L=12;g.S=4;g.K=1;g.nact=7;g.signals=1;g.art=8;World a;a.init(g,0);WParams g1=g;g1.art_kmax=1;World b;b.init(g1,0);WParams g2=g;g2.art_kmax=2;World c;c.init(g2,0);
+    bool cap1=true,cap2=true,same=true,long3=false;for(long e=0;e<40;++e)for(int gl=0;gl<8;++gl){int k0,k1,k2,x0[3],x1[3],x2[3];a.art_key(gl,e,x0,k0);b.art_key(gl,e,x1,k1);c.art_key(gl,e,x2,k2);
+      cap1=cap1&&k1==1&&x1[0]==x0[0];cap2=cap2&&k2==std::min(k0,2)&&std::equal(x2,x2+k2,x0);long3=long3||k0==3;}
+    World d;d.init(g,0);for(long e=0;e<5;++e)for(int gl=0;gl<8;++gl){int k0,kd,x0[3],xd[3];a.art_key(gl,e,x0,k0);d.art_key(gl,e,xd,kd);same=same&&k0==kd&&std::equal(x0,x0+k0,xd);}
+    CHECK(cap1&&cap2&&same&&long3,"AR5 art_kmax: keys capped at 1 or 2 tokens (the prefix of the AR1 key); default unchanged");}
   std::printf(fails?"%d FAILED\n":"all passed\n",fails);return fails?1:0;
 }

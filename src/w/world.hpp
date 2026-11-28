@@ -91,6 +91,8 @@ struct WParams{
   // kind_bad b >= 1: instead, exactly b kinds are toxic in each era (drawn from the seed and the era), so a naive
   // eater keeps a viable share of its intake (from random founders)
   int kinds=0,kind_era=1000,kind_tox=1,kind_bad=0;
+  // AR5 (docs/ARTIFACTS.md): art_kmax caps the key length of artifacts (1..3; 3 = AR1 unchanged)
+  int art_kmax=3;
 };
 
 struct Agent{int x=0,y=0,dir=0,energy=0,age=0,lineage=0;bool alive=false;std::uint64_t id=0;int sig=0,wpos=0;};
