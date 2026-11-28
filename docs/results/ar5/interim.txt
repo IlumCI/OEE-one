@@ -31,3 +31,12 @@ LT_s2 e650 vs E_s2 e650 solo: 0.1481 t 3.80 wins 14/16 (head-to-head 0.4695 t -0
 LT_s1 e950 vs L_s1 e950 solo: -0.2720 t -12.38 wins 0/16 (head-to-head 0.9320 t 34.21)
 LT_s2 e650 vs L_s2 e650 solo: 0.0520 t 3.56 wins 14/16 (head-to-head 0.3362 t -4.50)
 L_s1 e950 freeze solo: -0.2877 t -10.52 wins 0/16 (head-to-head 0.4071 t -8.15)
+
+# tokens per opening by speaker age (self-play, 16 seeds x 2; age bins 0-99, 100-199, ..., 400+, born in an earlier era)
+LT_s1 e1200: 0:4.03 100:3.69 200:3.55 300:3.33 400:3.29 old_era:4.52
+LT_s1 e1200 noteach: 0:4.44 100:3.86 200:3.77 300:3.53 400:3.41 old_era:4.21
+L_s1 e950: 0:4.42 100:3.20 200:2.81 300:2.63 400:2.53 old_era:3.47
+LT_s2 e650: 0:4.33 100:3.67 200:3.30 300:2.96 400:2.77 old_era:4.07
+LT_s2 e650 noteach: 0:4.67 100:3.84 200:3.36 300:3.12 400:2.92 old_era:3.90
+L_s2 e725: 0:4.46 100:4.18 200:4.05 300:3.92 400:3.89 old_era:4.56
+E_s1 e1200: 0:4.55 100:4.74 200:4.97 300:5.22 400:5.50 old_era:4.85
