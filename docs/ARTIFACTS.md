@@ -467,3 +467,38 @@ Set: regrow 8, kmax 2, pay 150 (with 96 artifacts, rest 20, lockout 10, eras of 
   - **non-substitutable** (the best substitute is already in place and loses to knowledge).
 - AR5 is calibrated. The next step is the owner's decision on the runs.
 
+
+## AR5 runs (protocol fixed 2026-11-28 11:10 UTC, before the runs)
+
+Started when the owner's decision timer expired with the recommended option applied.
+
+World: AR5 as calibrated (the flags of runs8/w2a6_E_s1: regrow 8, 96 artifacts, pay 150, rest 20, lockout 10, eras
+of 1,000 ticks, 8 glyphs, `-art_code 1 -art_kmax 2`). 2,000 epochs, binary runs8/oee_w_v30.
+
+Arms, seeds 1–3 (runs8/w2a7_{E,L,LT}_s{1,2,3}):
+- **E:** no learning.
+- **L:** the learner with the symbol head:
+  `-life 1 -life_eta 12 -life_lam 230 -life_beta 7 -life_sym 1 -life_in 104,128 -life_xeta 7`.
+- **LT:** L with teaching at birth (`-life_teach 1`).
+
+Measures: final champions in fresh held-out arenas, 16 seeds × 2 (tools/w/ar5_eval.sh, into docs/results/ar5/):
+- freeze, for L and LT;
+- noteach, for LT;
+- against the E champion of the same seed (B does not learn);
+- LT against L of the same seed (B does not teach);
+- knowledge: tokens per opening, openings and artifact energy, by speaker age;
+- progress against epoch 1,000.
+
+Pass, per learning arm:
+- freeze t < −3 in at least 2 of 3 seeds;
+- and it beats E (t > 2) in at least 2 of 3;
+- and its tokens per opening are below E's in at least 2 of 3.
+
+LT also: noteach t < −3 in at least 2 of 3, and it beats L (t > 2) in at least 2 of 3.
+
+Kill: freeze costs nothing (|t| < 2) in every seed of L and LT. Then the learner cannot use knowledge even where it
+is valuable, exercised and non-substitutable.
+
+Extension: if any deciding t lies between 2 and 3, the arm is extended to 6 seeds before a verdict (LL1c lesson).
+
+Viability: reported per run (tools/w/viab_any.sh), not an exclusion.
