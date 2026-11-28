@@ -478,3 +478,11 @@ Conclusions:
   - inheritance of what was learned (SL1 V, teaching at birth, built), so a newborn does not restart from zero;
   - or the long-run test of genetic assimilation (the Baldwin effect may need longer than 2,000 epochs).
 
+Hiding over time (docs/results/ll1c/hiding_trend.txt). Each frozen learning lineage was played against the E lineage of
+the same seed at the same epoch (500, 1,000, 1,500, 2,000):
+- In 10 of 12 lineages the gap stays or widens over the run. For example, L seed 3 goes from 0.23 to 0.06 and LL2
+  seed 1 from 0.32 to 0.05. Innate competence falls further behind.
+- The exception is L seed 5 (0.04 to 0.57). It is also the lineage that beat E most clearly (0.84).
+- So there is no sign of genetic assimilation within 2,000 epochs. Longer runs are unlikely to close the gap in most
+  seeds.
+
