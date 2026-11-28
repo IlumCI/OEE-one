@@ -283,3 +283,43 @@ W2 champion, eras of 4,000 ticks, games of 8,000 ticks, 16 seeds × 2, the LT le
 - Added for this check: `-life_tkeep k` (teaching keeps 1 − 2^−k of the parent's synapses; default 1, half,
   unchanged).
 
+### Calibration (a), interim (2026-11-28 06:20 UTC)
+
+- **E is viable from random founders.** Seeds 1 and 2 had 0 reseeds in 1,000 epochs.
+- **Seed 3 and the LT runs are under way,** also with 0 reseeds so far. LT is much slower per epoch, with larger
+  populations.
+- **Evolution raises engagement only modestly.** E seed 1 at epoch 1,000 against itself (16 seeds × 2), compared
+  with the W2 champion:
+  - it speaks on 0.76 of ticks against 0.26;
+  - tokens to ready artifacts per thousand agent-ticks: 6.6 against 5.1;
+  - openings: 1.17 against 0.90;
+  - tokens per opening: 5.6 against 5.7, so no knowledge, as expected without learning;
+  - it beats the W2 champion (0.65, t 2.6).
+- So 1,000 epochs bring about 30% more artifact use. An agent still speaks to a ready artifact about 3–4 times per
+  life, which is too few to learn the law.
+
+## A design rule from LL1c, SL1 V and this calibration (2026-11-28)
+
+Knowledge drives the evolution of learning and culture only if it is:
+1. **valuable:** knowing it raises fitness a lot;
+2. **non-substitutable:** no other evolvable strategy gets the same fitness without it;
+3. **exercised:** many trials per life, so it can be learned within a life and then passed on.
+
+Applied to the worlds tested:
+- **The food-kinds world** has 1 and 3 (about 200 eats per life), not 2. E lineages match learners by breeding fast
+  (SOCIAL.md, SL1 V verdict).
+- **The artifacts world** has 1 and largely 2: an artifact cannot be opened without its key. It lacks 3: about 3
+  trials per life.
+
+## Proposal AR5: locked food (not built; for the owner's decision)
+
+- Food comes only from artifacts: no free food, or little. An opened artifact releases food. The law (glyph to key)
+  is redrawn each era.
+- Every meal becomes a trial, so 3 holds. Fitness cannot be had without the key, so 2 holds.
+- The world must stay viable for naive agents, so guessing must still feed a population. Short keys and a short
+  lockout are the levers, and they trade viability against the value of knowing.
+- That trade-off is calibrated first: viability from random founders over at least 1,000 epochs, and the value of
+  information.
+- Related benchmarks with hidden rules redrawn per episode: Alchemy (Wang et al. 2021, arXiv:2102.02926), where
+  meta-learning agents failed; XLand-MiniGrid (Nikulin et al., arXiv:2312.12044), hidden production rules.
+
