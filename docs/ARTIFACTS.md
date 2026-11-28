@@ -558,3 +558,6 @@ The seed-3 runs will start with v31. Scoring (build/rel/oee_w) is the same binar
 have produced.
 - A further 12–18% is available: `-mprefer-vector-width=512` for life.cpp gives identical tournament output, against
   the 256-bit default. It is held back until AR5 is scored, so that build/rel stays the binary the runs use.
+- Threads: a copy of L s1 resumed from its epoch-1,050 checkpoint gives a byte-identical checkpoint and log at
+  epoch 1,060 with 1 and with 2 threads (2026-11-28 18:17 UTC). L s3 and LT s3 therefore run with `-threads 2`, to use
+  the cores the other runs free as they finish.
